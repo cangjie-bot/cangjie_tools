@@ -14,7 +14,7 @@ target_link_libraries(cjfmt
 if (CMAKE_BUILD_TYPE MATCHES Release AND MINGW)
     target_link_options(cjfmt PRIVATE -static-libgcc -static-libstdc++ LINKER:-Bstatic,--whole-archive -lwinpthread LINKER:-Bdynamic,--no-whole-archive)
 endif ()
-if(CMAKE_SYSTEM_NAME STREQUAL "DarWin")
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set_target_properties(cjfmt PROPERTIES LINK_FLAGS "${LINK_FLAGS} -Wl,-rpath,@loader_path/../lib")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set_target_properties(cjfmt PROPERTIES LINK_FLAGS "-Wl,-rpath,\\$ORIGIN/../lib")
