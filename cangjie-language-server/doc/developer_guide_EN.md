@@ -26,7 +26,7 @@ cangjie-language-server/
 
 ### Prerequisites
 
-The language service build depends on cjc, so before building this project, we should first complete the prerequisite build. For build methods, refer to the [Cangjie SDK Integration Build Guide](https://gitcode.com/Cangjie/cangjie_build/blob/dev/README_zh.md). For additional software dependencies, see [Environment Preparation](https://gitcode.com/Cangjie/cangjie_build/blob/dev/docs/env_zh.md).
+The language service build depends on cjc, so before building this project, we should first complete the prerequisite build. For build methods, refer to the [Cangjie SDK Integration Build Guide](). For additional software dependencies, see [Environment Preparation]().
 
 ### Build Steps
 
