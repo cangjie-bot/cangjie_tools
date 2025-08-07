@@ -4,7 +4,7 @@
 
 `cjpm (cangjie package manager)` is a build tool for compiling Cangjie projects, implemented in the Cangjie language. It provides capabilities such as project creation, compilation, execution, and unit testing, supporting automatic dependency analysis for multi-module projects to achieve sequential builds. Its design goals are to simplify user workflows, enhance cross-platform development efficiency, and offer highly customizable configuration options. The overall architecture of this tool is shown below:
 
-![cjpm Architecture Diagram](../figures/cjpm架构.jpg)
+![cjpm Architecture Diagram]()
 
 ## Directory Structure
 
@@ -289,7 +289,7 @@ Key configuration fields:
 
 In addition to the aforementioned commands and configuration items, `cjpm` also supports other features such as build scripts, command extensions, etc.
 
-For detailed information on all commands, configuration items, and additional features of `cjpm`, please refer to the [《Cangjie Package Manager User Guide》](./user_guide.md).
+For detailed information on all commands, configuration items, and additional features of `cjpm`, please refer to the [《Cangjie Package Manager User Guide》](./user_guide_EN.md).
 
 ## Related Repositories
 
