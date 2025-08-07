@@ -72,6 +72,7 @@ Available options:
 The `init` command initializes a new Cangjie module or workspace. When initializing a module, it creates a configuration file `cjpm.toml` in the current folder by default and establishes a `src` source code directory. If the module's output is of executable type, it generates a default `main.cj` file under `src`, which prints `hello world` after compilation. When initializing a workspace, only the `cjpm.toml` file is created, and existing Cangjie modules in the path are automatically scanned and added to the `members` field. If `cjpm.toml` already exists or `main.cj` is present in the source directory, corresponding file creation steps are skipped.
 
 Configurable options for `init` include:
+
 - `--workspace` creates a workspace configuration file; other options are ignored when this is specified
 - `--name <value>` specifies the `root` package name for the new module; defaults to the parent folder name if unspecified
 - `--path <value>` specifies the path for the new module; defaults to the current folder if unspecified
@@ -265,7 +266,7 @@ Output: cjpm build success
 ```
 
 > **Note:**
-> Per Cangjie package specifications, only compliant source packages are included in compilation. Warnings like `no '.cj' file` indicate non-compliant package structures. Refer to [Cangjie Package Specifications](./user_guide.md#cangjie-package-specifications) for directory structure requirements.
+> Per Cangjie package specifications, only compliant source packages are included in compilation. Warnings like `no '.cj' file` indicate non-compliant package structures. Refer to [Cangjie Package Specifications](#cangjie-package-specifications) for directory structure requirements.
 
 ### run
 
@@ -431,7 +432,7 @@ The unit test code structure for a module is as follows, where `xxx.cj` contains
 - `--cfg`: Allows passing custom `cfg` options from `cjpm.toml`.
 - `--module <value>`: Specifies the target test module(s). The specified module(s) must be directly or indirectly dependent on the current module (or the module itself). Multiple modules can be specified using `--module "module1 module2"`. If unspecified, only the current module is tested.
 - `-m, --member <value>`: Only usable in workspaces, specifies testing a single module.
-- `--target <value>`: Enables cross-compilation for target platforms. Refer to the [target](./user_guide.md#target) section in `cjpm.toml`.
+- `--target <value>`: Enables cross-compilation for target platforms. Refer to the [target](#target) section in `cjpm.toml`.
 - `--target-dir <value>`: Specifies the output directory for unit test artifacts.
 - `--dry-run`: Prints test cases without executing them.
 - `--filter <value>`: Filters test subsets. `value` formats:
@@ -959,7 +960,7 @@ Dependencies within `test-dependencies` can only be used in test files named lik
 
 ### "script-dependencies"
 
-This field has the same format as the `dependencies` field. It is used to specify dependencies that are only used in build scripts, not for building the main project. Build script-related features will be detailed in the [Other-Build Scripts](./user_guide.md#build-scripts) section.
+This field has the same format as the `dependencies` field. It is used to specify dependencies that are only used in build scripts, not for building the main project. Build script-related features will be detailed in the [Other-Build Scripts](#build-scripts) section.
 
 ### "replace"
 
@@ -1052,7 +1053,7 @@ PATH = { value = "/usr/bin", splice-type = "prepend" }
 
 Test configuration supports specifying options for compiling and running test cases. All fields are optional and will not take effect if not configured. Only the `profile.test` settings of the top-level module will take effect. The option list is consistent with the console execution options provided by `cjpm test`. If an option is configured in both the configuration file and the console, the console option takes precedence over the configuration file. `profile.test` supports the following runtime options:
 
-- `filter` specifies a test case filter, with a string value format consistent with the `--filter` value format in the [test command description](./user_guide.md#test).
+- `filter` specifies a test case filter, with a string value format consistent with the `--filter` value format in the [test command description](#test).
 - `timeout-each <value>` where `value` is in the format `%d[millis|s|m|h]`, specifying the default timeout for each test case.
 - `parallel` specifies the parallel execution scheme for test cases, with `value` as follows:
     - `<BOOL>`: `true` or `false`. When `true`, test classes can run in parallel, with the number of parallel processes controlled by the CPU cores on the system.
@@ -1608,7 +1609,7 @@ Build script dependencies (`script-dependencies`) are independent of source code
 
 ## Usage Examples
 
-The following example demonstrates the usage of `cjpm` with the directory structure of a Cangjie project. The corresponding source code files for this example can be found in [Source Code](./user_guide.md#example-source-code). The module name of this Cangjie project is `test`.
+The following example demonstrates the usage of `cjpm` with the directory structure of a Cangjie project. The corresponding source code files for this example can be found in [Source Code](#example-source-code). The module name of this Cangjie project is `test`.
 
 ```text
 cj_project
