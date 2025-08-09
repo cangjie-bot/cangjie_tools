@@ -63,63 +63,32 @@ add_executable(gtest_LSPServer_test main.cpp)
 # Ensure that LSPServerlib is compiled before gtest_LSPServer_test.
 add_dependencies(gtest_LSPServer_test LSPServerlib)
 
-# ${GTEST_LIBRARY}, gtest library
-# ${CMAKE_THREAD_LIBS_INIT}, -lpthread
-option(isPreSmoke OFF)
-if(isPreSmoke)
-    target_link_libraries(gtest_LSPServer_test
-        libLSPServerlib.a
-        GTest::gtest
-        GTest::gtest_main
-        ${CMAKE_THREAD_LIBS_INIT}
-        DocHighlightTest
-        DocumentSymbolTest
-        CompletionTest
-        GoToDefinitionTest
-        ReferenceTest
-        RenameTest
-        SemanticHighlightTest
-        HoverTest
-        DiagnosticTest
-        CodeCovTest
-        WorkspaceSymbolTest
-        SignatureHelpTest
-        TypeHierarchyTest
-        BreakpointsTest
-        CallHierarchyTest
-        CodeLensTest
-        Common
-        libflatbuffers.a
-        ffi
-        -lcangjie-lsp
-        ${CMAKE_DL_LIBS}
-        )
-else()
-    target_link_libraries(gtest_LSPServer_test
-        libLSPServerlib.a
-        ${GTEST_LIBRARY}
-        ${CMAKE_THREAD_LIBS_INIT}
-        DocHighlightTest
-        DocumentSymbolTest
-        CompletionTest
-        GoToDefinitionTest
-        ReferenceTest
-        RenameTest
-        SemanticHighlightTest
-        HoverTest
-        DiagnosticTest
-        CodeCovTest
-        WorkspaceSymbolTest
-        CallHierarchyTest
-        SignatureHelpTest
-        TypeHierarchyTest
-        BreakpointsTest
-        CodeLensTest
-        Common
-        libflatbuffers.a
-        ffi
-        -lcangjie-lsp
-        ${CMAKE_DL_LIBS}
-            )
-endif()
+target_link_libraries(gtest_LSPServer_test
+    libLSPServerlib.a
+    GTest::gtest
+    GTest::gtest_main
+    ${CMAKE_THREAD_LIBS_INIT}
+    DocHighlightTest
+    DocumentSymbolTest
+    CompletionTest
+    GoToDefinitionTest
+    ReferenceTest
+    RenameTest
+    SemanticHighlightTest
+    HoverTest
+    DiagnosticTest
+    CodeCovTest
+    WorkspaceSymbolTest
+    SignatureHelpTest
+    TypeHierarchyTest
+    BreakpointsTest
+    CallHierarchyTest
+    CodeLensTest
+    Common
+    libflatbuffers.a
+    ffi
+    -lcangjie-lsp
+    ${CMAKE_DL_LIBS}
+    )
+
 add_test(NAME gtest_simple_test COMMAND gtest_LSPServer_test)
