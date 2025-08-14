@@ -158,6 +158,8 @@ public class TransMethod {
         transparamToken: Tokens): Tokens {
         let moduleName = gconfig.requireModuleName
         let modulePrefix = gconfig.requireModulePrefixToken
+        let typeParameters = getTypeParametersToken()
+        let typeConstraintsToken = getTypeConstraintsToken()
         let retValueToken = getSyncRetToken(this.cjRetType)
         let retTypeToken = Token(TokenKind.IDENTIFIER, this.cjRetType)
         let call = if (transparamToken.size == 0) {
@@ -167,7 +169,7 @@ public class TransMethod {
         }
         quote(jsModule.callMethod($(getArkTSFuncName()), $(transparamToken)))
         let template: Tokens = quote(
-                $(prefix) func $(funcName)($(paramToken)):$(retTypeToken) {
+                $(prefix) func $(funcName)$(typeParameters)($(paramToken)):$(retTypeToken) $(typeConstraintsToken) {
                     basicJsSkeleton<$(retTypeToken)> {
                         ret, exception, sync =>
                         let ctx = getGlobalContext()
@@ -184,6 +186,8 @@ public class TransMethod {
     public func processAsyncFunc(funcName: Token, paramToken: Tokens, prefix: ArrayList<Modifier>,
         transparamToken: Tokens): Tokens {
         let moduleName = gconfig.requireModuleName
+        let typeParameters = getTypeParametersToken()
+        let typeConstraintsToken = getTypeConstraintsToken()
         let retTypeToken = Token(TokenKind.IDENTIFIER, this.cjRetType)
         let third_param = Tokens()
         if (this.methodType.params.size == 0) {
@@ -206,7 +210,7 @@ public class TransMethod {
         }
 
         let template: Tokens = quote(
-                $(prefix) func $(funcName)($(paramToken)):$(retTypeToken) {
+                $(prefix) func $(funcName)$(typeParameters)($(paramToken)):$(retTypeToken) $(typeConstraintsToken) {
                     let ctx = getGlobalContext()
                     $(apiToken)<$(retTypeToken)>($(staticConstructor) $(moduleName), $(getArkTSFuncName()),$(third_param))$(forth_param)
                 }
@@ -258,6 +262,7 @@ public class TransMethod {
         let ctxToken = quote(ctx)
         let paramToken = paramListToCJ()
         let typeParameters = getTypeParametersToken()
+        let typeConstraintsToken = getTypeConstraintsToken()
         let transparamToken = (parametersToJS(ctxToken) |> reduce {l, r => l + commaToken + r}).getOrDefault {
             => quote()
         }
@@ -293,7 +298,7 @@ public class TransMethod {
         }
 
         let template: Tokens = quote(
-            $(prefix) func $(funcName)$(typeParameters)($(paramToken)):$(retTypeToken) {
+            $(prefix) func $(funcName)$(typeParameters)($(paramToken)):$(retTypeToken) $(typeConstraintsToken) {
                 $(cbToken)$(apiToken)<$(retTypeToken)>($(staticConstructor)$(moduleName), $(getArkTSFuncName()), $(third_param))$(forth_param)
             }
         )
@@ -318,7 +323,7 @@ public class TransMethod {
         let paramToken = getParamToken()
         let transparamToken = getTransParamToken()
         let typeParameters = getTypeParametersToken()
-
+        let typeConstraintsToken = getTypeConstraintsToken()
         let retTypeToken = Token(TokenKind.IDENTIFIER, this.cjRetType)
 
         if (isSync(this.origFuncSignature)) {
@@ -329,7 +334,7 @@ public class TransMethod {
                 quote(arkts_object.callMethod($(getArkTSFuncName()), $(transparamToken)))
             }
             let template: Tokens = quote(
-                $(prefix) func $(funcName)($(paramToken)):$(retTypeToken) {
+                $(prefix) func $(funcName)$(typeParameters)($(paramToken)):$(retTypeToken) $(typeConstraintsToken) {
                     basicJsSkeleton<$(retTypeToken)> {
                         ret, exception, sync =>
                         let ctx = getGlobalContext()
@@ -351,7 +356,7 @@ public class TransMethod {
             let forth_param = getAsyncRetToken(this.cjRetType, retTypeToken, sync: true)
 
             let template: Tokens = quote(
-                $(prefix) func $(funcName)$(typeParameters)($(paramToken)):$(retTypeToken) {
+                $(prefix) func $(funcName)$(typeParameters)($(paramToken)):$(retTypeToken) $(typeConstraintsToken) {
                     let ctx = getGlobalContext()
                     arktsObjApiCallAsync<$(retTypeToken)>(arkts_object, $(getArkTSFuncName()), $(third_param)) $(forth_param)
                 }
@@ -396,6 +401,8 @@ public class TransMethod {
             third_param.append(quote({$(ctxToken) => [$(transparamToken)]}))
         }
         let moduleName = gconfig.requireModuleName
+        let typeParameters = getTypeParametersToken()
+        let typeConstraintsToken = getTypeConstraintsToken()
 
         let forth_param = getAsyncRetToken(this.cjRetType, retTypeToken)
 
@@ -417,7 +424,7 @@ public class TransMethod {
         }
 
         let template: Tokens = quote(
-            $(prefix) func $(funcName)($(paramToken)):$(retTypeToken) {
+            $(prefix) func $(funcName)$(typeParameters)($(paramToken)):$(retTypeToken) $(typeConstraintsToken) {
                 $(cbToken)jsObjApiCall<$(retTypeToken)>($(staticConstructor)$(memberToken)$(getArkTSFuncName()), $(third_param)) $(forth_param)
             }
         )
@@ -466,6 +473,24 @@ public class TransMethod {
         }
         typeParametersToken.append(Token(TokenKind.GT))
         return typeParametersToken
+    }
+
+    public func getTypeConstraintsToken(typeParameters!: ArrayList<TypeParameter> = this.methodType.typeParameters): Tokens {
+        let typeConstraintsToken = Tokens()
+        if (typeParameters.size == 0) {
+            return typeConstraintsToken
+        } else {
+            var name = "where "
+            for (i in 0..typeParameters.size) {
+                name += "${typeParameters[i].name} <: JSInteropType<${typeParameters[i].name}>"
+                name += if (i != typeParameters.size - 1) {
+                    ", "
+                } else {
+                    ""
+                }
+            }
+            return Token(TokenKind.IDENTIFIER, name).toTokens()
+        }
     }
 
     // @deprecated
