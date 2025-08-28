@@ -224,6 +224,19 @@ public class A2CJ {
         handleUseBigInt(gconfig, out)
         handleUseContext(gconfig, out)
         handleHashMap(gconfig, out)
+        handleTypeImport(gconfig, out)
+    }
+
+    public func handleTypeImport(gconfig: GlobalConfig, out: Tokens): Unit {
+        if(!gconfig.moduleMeta.importInfo.isEmpty()) {
+            out.append(addComment("**********IMPORT**********"))
+            for (i in gconfig.moduleMeta.importInfo) {
+                let importContent = Token(TokenKind.IDENTIFIER, i)
+                out.append(addComment("FIXME: Import details need to be verified and rewritten by user."))
+                println("WARNING: import is not supproted - ${i}")
+                out.append(addComment(i) + nl)
+            }
+        }
     }
 
     public func handleThirdParty(gconfig: GlobalConfig, out: Tokens): Unit {
