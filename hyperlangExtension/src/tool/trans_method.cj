@@ -262,6 +262,8 @@ public class TransMethod {
             => quote()
         }
 
+        let typeConstraintsToken = getTypeConstraintsToken()
+
         let retTypeToken = Token(TokenKind.IDENTIFIER, this.cjRetType)
 
         let moduleName = gconfig.requireModuleName
@@ -291,7 +293,7 @@ public class TransMethod {
         }
 
         let template: Tokens = quote(
-            $(prefix) func $(funcName)$(typeParameters)($(paramToken)):$(retTypeToken) {
+            $(prefix) func $(funcName)$(typeParameters)($(paramToken)):$(retTypeToken) $(typeConstraintsToken) {
                 $(cbToken)$(apiToken)<$(retTypeToken)>($(staticConstructor)$(moduleName), $(getArkTSFuncName()), $(third_param))$(forth_param)
             }
         )
@@ -394,6 +396,8 @@ public class TransMethod {
             third_param.append(quote({$(ctxToken) => [$(transparamToken)]}))
         }
         let moduleName = gconfig.requireModuleName
+        let typeParameters = getTypeParametersToken()
+        let typeConstraintsToken = getTypeConstraintsToken()
 
         let forth_param = getAsyncRetToken(this.cjRetType, retTypeToken)
 
@@ -415,7 +419,7 @@ public class TransMethod {
         }
 
         let template: Tokens = quote(
-            $(prefix) func $(funcName)($(paramToken)):$(retTypeToken) {
+            $(prefix) func $(funcName)($(paramToken)):$(retTypeToken) $(typeConstraintsToken) {
                 $(cbToken)jsObjApiCall<$(retTypeToken)>($(staticConstructor)$(memberToken)$(getArkTSFuncName()), $(third_param)) $(forth_param)
             }
         )
@@ -464,6 +468,24 @@ public class TransMethod {
         }
         typeParametersToken.append(Token(TokenKind.GT))
         return typeParametersToken
+    }
+
+    public func getTypeConstraintsToken(typeParameters!: ArrayList<TypeParameter> = this.methodType.typeParameters): Tokens {
+        let typeConstraintsToken = Tokens()
+        if (typeParameters.size == 0) {
+            return typeConstraintsToken
+        } else {
+            var name = "where "
+            for (i in 0..typeParameters.size) {
+                name += "${typeParameters[i].name} <: JSInteropType<${typeParameters[i].name}>"
+                name += if (i != typeParameters.size - 1) {
+                    ", "
+                } else {
+                    ""
+                }
+            }
+            return Token(TokenKind.IDENTIFIER, name).toTokens()
+        }
     }
 
     // @deprecated
