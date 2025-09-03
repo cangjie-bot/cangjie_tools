@@ -37,13 +37,11 @@ void FuncBodyFormatter::AddFuncBody(
         astToFormatSource.AddGenericBound(doc, *generic, level);
     }
 
-    int changedlevel = level;
     if (funcBody.doubleArrowPos != INVALID_POSITION) {
         doc.members.emplace_back(DocType::STRING, level, funcBody.paramLists[0]->params.empty() ? "=>" : " =>");
         if (funcOptions.isLambda && funcBody.body) {
             if (funcBody.body->body.size() > 1) {
-                changedlevel++;
-                doc.members.emplace_back(DocType::LINE, changedlevel, "");
+                doc.members.emplace_back(DocType::LINE, level + 1, "");
             } else if (funcBody.body->body.size() == 1) {
                 doc.members.emplace_back(DocType::STRING, level, " ");
             }
@@ -55,9 +53,8 @@ void FuncBodyFormatter::AddFuncBody(
         }
     }
     funcOptions.patternOrEnum = funcBody.doubleArrowPos != INVALID_POSITION;
-    doc.members.emplace_back(astToFormatSource.ASTToDoc(funcBody.body.get(), changedlevel, funcOptions));
+    doc.members.emplace_back(astToFormatSource.ASTToDoc(funcBody.body.get(), level, funcOptions));
 }
-
 void FuncBodyFormatter::AddFuncBodyIsLambda(
     Doc& doc, const Cangjie::AST::FuncBody& funcBody, int level, FuncOptions funcOptions)
 {

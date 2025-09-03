@@ -58,11 +58,6 @@ class DepModel {
     public var targetMacroPkgs: HashSet<String> = HashSet<String>() // used by cross compile
     public var targetMacroMods: HashSet<String> = HashSet<String>() // used by cross compile
 
-    // Super package record
-    public var superPkgMap: HashMap<String, SuperPackageConfig> = HashMap<String, SuperPackageConfig>()
-    // Sub package map to super package
-    public var superPkgSubMap: HashMap<String, String> = HashMap<String, String>()
-    public var isCrossBin = false
     // Binary dependencies record
     public var binDepCacheMap: HashMap<String, RequiresPackages> = HashMap<String, RequiresPackages>()
 
@@ -217,16 +212,6 @@ class DepModel {
             }
         }
 
-        if (!tomlInfo.profile.build.combined.isEmpty()) {
-            if (this.globalConfig.isForScript) {
-                println("Warning: module '${tomlInfo.pkg.name}' will not be compiled as combined module when depended by build.cj")
-            } else {
-                for ((pkgName, outputType) in tomlInfo.profile.build.combined) {
-                    this.superPkgMap[pkgName] = SuperPackageConfig(pkgName, outputType)
-                }
-            }
-        }
-
         if (let Some(depInfo) <- requires) {
             if (let Some(outputType) <- depInfo.outputType) {
                 tomlInfo.pkg.outputType = outputType
@@ -312,18 +297,7 @@ class DepModel {
         if (!this.buildCheckTargetBinDep(tomlInfo)) {
             return FAILED_BUILD_CHECK_RESULT
         }
-
-        this.isCrossBin = true
         if (!crossCompileTarget.isEmpty() && !this.buildCheckCrossBinDep(tomlInfo)) {
-            return FAILED_BUILD_CHECK_RESULT
-        }
-        this.isCrossBin = false
-
-        if (!this.buildCheckTargetFfi(tomlInfo)) {
-            return FAILED_BUILD_CHECK_RESULT
-        }
-
-        if (!crossCompileTarget.isEmpty() && !this.buildCheckCrossFFi(tomlInfo)) {
             return FAILED_BUILD_CHECK_RESULT
         }
 
@@ -352,14 +326,6 @@ class DepModel {
 
     func buildCheckCrossBinDep(tomlInfo: TomlInfo): Bool {
         return buildCheckBinDependencies(tomlInfo, crossCompileTarget, this.crossBinDepMap)
-    }
-
-    func buildCheckTargetFfi(tomlInfo: TomlInfo): Bool {
-        return buildCheckFfi(tomlInfo, targetConfigName, tomlInfo.ffi.cLibs, this.globalConfig.isDebug)
-    }
-
-    func buildCheckCrossFFi(tomlInfo: TomlInfo): Bool {
-        return buildCheckFfi(tomlInfo, crossCompileTarget, tomlInfo.crossFfi.cLibs, this.globalConfig.isDebug)
     }
 
     func buildCheckBinDependencies(tomlInfo: TomlInfo, targetName: String, deps: HashMap<String, BinDeps>): Bool {
@@ -453,7 +419,7 @@ class DepModel {
         return true
     }
 
-    // process 'bin-dependencies.package-option' field in cjpm.toml.
+    // process 'package_requires/package_option' field in cjpm.toml.
     func processPkgOption(pkgMap: HashMap<String, RequiresPackagesInfo>, pkgOption: HashMap<String, String>,
         size: Int64, tomlPath: String): Bool {
         if (pkgOption.isEmpty()) {
@@ -483,7 +449,7 @@ class DepModel {
         return taskFlag
     }
 
-    // process 'bin-dependencies.path-option' field in cjpm.toml.
+    // process 'package_requires/path_option' field in cjpm.toml.
     func processPathOption(pkgMap: HashMap<String, RequiresPackagesInfo>, pathOption: ArrayList<String>,
         size: Int64): Bool {
         if (pathOption.isEmpty()) {
@@ -537,18 +503,17 @@ class DepModel {
             } else {
                 pkgInfo.libName = cjoInfo.packageName
             }
-            if (!isPackageExist(pkgInfo.libName, pkgInfo.libPath, false, "", pkgInfo.isMacroPackage) &&
-                isSuperPackageExist(pkgInfo.libName, pkgInfo.libPath, this.isCrossBin)) {
-                this.superPkgSubMap.add(pkgInfo.libName, pkgInfo.libName.split(".")[0])
+            if (!isPackageExist(pkgInfo.libName, pkgInfo.libPath, false, "", pkgInfo.isMacroPackage)) {
+                return true
             }
-            pkgInfo.isDyLib = isDyLibExist(pkgInfo.libName, pkgInfo.libPath, this.isCrossBin)
+            pkgInfo.isDyLib = isDyLibExist(pkgInfo.libName, pkgInfo.libPath)
         } else {
             pkgInfo.libName = libName
             if (!isPackageExist(pkgInfo.libName, libPath, true, "'bin-dependencies' field at ${tomlPath}",
                 pkgInfo.isMacroPackage)) {
                 return false
             }
-            pkgInfo.isDyLib = isDyLibExist(pkgInfo.libName, libPath, this.isCrossBin)
+            pkgInfo.isDyLib = isDyLibExist(pkgInfo.libName, libPath)
         }
         for (k in cjoInfo.dependencies) {
             pkgInfo.requires.add(k.packageName)
@@ -614,7 +579,7 @@ class DepModel {
 
     // read incremental cache of bin-dependencies
     func loadBinIncrementalCache(): Unit {
-        let binCachePath = Path(this.globalConfig.targetDir).join(BIN_INCREMENTAL_CACHE).toString()
+        let binCachePath = Path(this.globalConfig.targetDir).join(BIN_INCREMENTAO_CACHE).toString()
         if (!fileExists(binCachePath)) {
             return
         }
@@ -630,9 +595,9 @@ class DepModel {
 
     // update incremental cache of bin-dependencies
     func updateBinIncrementalCache(): Unit {
-        let binCachePath = Path(this.globalConfig.targetDir).join(BIN_INCREMENTAL_CACHE).toString()
+        let binCachePath = Path(this.globalConfig.targetDir).join(BIN_INCREMENTAO_CACHE).toString()
         let cacheString = this.binDepCacheMap.serialize().toJson().toJsonString()
-        createAndWriteFile(binCachePath, cacheString)
+        creatAndWriteFile(binCachePath, cacheString)
         return
     }
 
@@ -999,10 +964,6 @@ class DepModel {
             jsonData.add(k)
             jsonData.add(v)
         }
-        for ((k, v) in tomlInfo.crossFfi.cLibs) {
-            jsonData.add(k)
-            jsonData.add(v)
-        }
         jsonData.add(tomlInfo.pkg.outputType)
         jsonData.add(tomlInfo.pkg.compileOption)
         jsonData.add(tomlInfo.pkg.linkOption)
@@ -1050,46 +1011,6 @@ class DepModel {
             }
         }
         return true
-    }
-
-    func checkSuperPkgDep(): Unit {
-        for ((superPkgName, superPkgCfg) in this.superPkgMap) {
-            // add requirement between combined root packages
-            if (!this.packageDepMap.contains(superPkgName)) {
-                continue
-            }
-            let checkedPkgSet: HashSet<String> = HashSet<String>()
-            for (subPkg in superPkgCfg.subPkgSet) {
-                let extraSuperPkgDep: HashSet<String> = HashSet<String>()
-                getDepBetweenSuperPkg(subPkg, extraSuperPkgDep, checkedPkgSet)
-                this.packageDepMap[superPkgName].requires.add(all: extraSuperPkgDep)
-            }
-            this.packageDepMap[superPkgName].requires.remove(superPkgName)
-
-            // add force-linked sub-packages into requires, and record them
-            // after toposort, remove them from requires
-            this.packageDepMap[superPkgName].forcedRequires.add(all: superPkgCfg.subPkgSet)
-            this.packageDepMap[superPkgName].forcedRequires.remove(all: this.packageDepMap[superPkgName].requires)
-            this.packageDepMap[superPkgName].requires.add(all: this.packageDepMap[superPkgName].forcedRequires)
-        }
-    }
-
-    func getDepBetweenSuperPkg(pkgName: String, extraSuperPkgDep: HashSet<String>,
-        checkedPkgSet: HashSet<String>): Unit {
-        if (checkedPkgSet.contains(pkgName)) {
-            return
-        }
-        checkedPkgSet.add(pkgName)
-        if (!this.packageDepMap.contains(pkgName)) {
-            return
-        }
-        for (dep in this.packageDepMap[pkgName].requires) {
-            let superPkgName = dep.split(".")[0]
-            if (this.superPkgMap.contains(superPkgName)) {
-                extraSuperPkgDep.add(superPkgName)
-            }
-            getDepBetweenSuperPkg(dep, extraSuperPkgDep, checkedPkgSet)
-        }
     }
 }
 

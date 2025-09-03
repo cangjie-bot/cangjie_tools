@@ -18,7 +18,6 @@ public:
     std::string pathBuildScript = "";
     std::string caseProPath = "";
     std::string binaryPath = "";
-    bool useDB = false;
     std::map<std::string, std::string> replaceMap = {};
     static SingleInstance* GetInstance()
     {

@@ -5,7 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 #include "Format/TomlParser.h"
-#include <limits>
 
 using namespace Cangjie::Format;
 
@@ -71,15 +70,12 @@ std::optional<TomlParser::ValueType> TomlParser::ParseValue(const std::string& v
     }
 
     // Process integers.
-    if (!trimmedValue.empty() &&
-        (std::isdigit(trimmedValue[0]) || trimmedValue[0] == '-' || trimmedValue[0] == '+')) {
-        size_t idx;
-        long intValue = std::stol(trimmedValue, &idx);
-        // Check if the entire string was converted and ensure it is within the int range
-        if (idx == trimmedValue.size() && intValue >= std::numeric_limits<int>::min() &&
-            intValue <= std::numeric_limits<int>::max()) {
-            return static_cast<int>(intValue);
-        }
+    try {
+        return std::stoi(trimmedValue);
+    } catch (const std::invalid_argument&) {
+        // trimmedValue can't cover to integer
+    } catch (const std::out_of_range&) {
+        return std::nullopt;
     }
 
     // Process the string (remove the quotes)

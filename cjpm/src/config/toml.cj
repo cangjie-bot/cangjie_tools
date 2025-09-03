@@ -29,7 +29,6 @@ public class TomlInfo <: Serializable<TomlInfo> {
     public var scriptDependencies: HashMap<String, DepInfo> = HashMap<String, DepInfo>()
     public var replaceDeps: HashMap<String, DepInfo> = HashMap<String, DepInfo>()
     public var ffi: ForeignInterfaces = ForeignInterfaces()
-    public var crossFfi: ForeignInterfaces = ForeignInterfaces()
     public var profile: Profile = Profile()
     public var targetConfigMap: HashMap<String, TargetConfig> = HashMap<String, TargetConfig>()
     public var isPkgConfig: Bool = true
@@ -95,7 +94,6 @@ public class TomlInfo <: Serializable<TomlInfo> {
         result.replaceDeps = HashMap<String, DepInfo>.deserialize(
             (dms.get(REPLACE) as DataModelStruct) ?? DataModelStruct())
         result.ffi = ForeignInterfaces.deserialize((dms.get("ffi") as DataModelStruct) ?? DataModelStruct())
-        result.crossFfi = ForeignInterfaces.deserialize((dms.get("ffi") as DataModelStruct) ?? DataModelStruct())
         result.profile = Profile.deserialize((dms.get(PROFILE) as DataModelStruct) ?? DataModelStruct())
         result.targetConfigMap = HashMap<String, TargetConfig>.deserialize(
             (dms.get(TARGET_CONFIG) as DataModelStruct) ?? DataModelStruct())
@@ -164,10 +162,6 @@ public class TomlInfo <: Serializable<TomlInfo> {
             checkList.add(cLibPath)
         }
 
-        for ((_, cLibPath) in this.crossFfi.cLibs) {
-            checkList.add(cLibPath)
-        }
-
         for ((_, v) in this.pkg.packageConfiguration) {
             checkList.add(v.compileOption)
         }
@@ -208,10 +202,6 @@ public class TomlInfo <: Serializable<TomlInfo> {
 
         for ((cLibName, cLibPath) in this.ffi.cLibs) {
             this.ffi.cLibs[cLibName] = replaceEnvVars(cLibPath)
-        }
-
-        for ((cLibName, cLibPath) in this.crossFfi.cLibs) {
-            this.crossFfi.cLibs[cLibName] = replaceEnvVars(cLibPath)
         }
 
         for ((k, v) in this.profile.customizedOption) {
@@ -384,7 +374,6 @@ public class TomlInfo <: Serializable<TomlInfo> {
         }
 
         this.ffi.combineForeigns(COMMON_INFO.ffi)
-        this.crossFfi.combineForeigns(COMMON_INFO.crossFfi)
         return true
     }
 }
@@ -484,7 +473,7 @@ public func verifyModuleConfigPre(cfg: TomlInfo, path: String, rootPath: String,
         for ((pkg, pkgCfg) in cfg.pkg.packageConfiguration) {
             pkgCfg.compileOption = fixCompileOption(pkgCfg.compileOption, configFilePath)
         }
-        return verifyCombinedField(cfg, path) && verifyPackageField(cfg, path)
+        return verifyPackageField(cfg, path)
     }
     return true
 }
@@ -494,9 +483,6 @@ public func verifyModuleConfigPost(cfg: TomlInfo, path: String, isTest!: Bool = 
     let configFilePath: String = Path(path).join(CONFIG_FILE_NAME).toString()
 
     if (!verifyCLibConfig(cfg.ffi.cLibs, path, configFilePath)) {
-        return false
-    }
-    if (!verifyCLibConfig(cfg.crossFfi.cLibs, path, configFilePath)) {
         return false
     }
     if (!verifyTargetConfig(cfg.targetConfigMap, path, configFilePath, isTest: isTest)) {

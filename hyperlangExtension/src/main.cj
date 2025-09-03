@@ -107,8 +107,10 @@ main(args: Array<String>) {
     }
 
     // Parse multiple files under a directory
-    if (!cla.directoryPath.isEmpty() && !parseMultipleFiles(moduleNameTemp)) {
-        return 1
+    if (!cla.directoryPath.isEmpty()) {
+        if (!parseMultipleFiles(moduleNameTemp)) {
+            return 1
+        }
     }
 
     let end = MonoTime.now()
@@ -241,44 +243,6 @@ func createDir(dir: String) {
     mtx.unlock()
 }
 
-func getModuleName(thirdpartyName: ?String, module: String) {
-    match (thirdpartyName) {
-        case Some(v) => v
-        case None =>
-            if (module.startsWith("@ohos")) {
-                module.replace("@ohos.", "")
-            } else if (module.startsWith("@hms")) {
-                module.replace("@hms.", "")
-            } else {
-                module
-            }
-    }
-}
-
-func getArkTSModuleName(gconfig: GlobalConfig, moduleName: String, moduleFullName: String): String {
-    var arkTSModuleName = ""
-    if (!cla.directoryPath.isEmpty()) {
-        if (!cla.directoryPath.endsWith("/")) {
-            cla.directoryPath += "/"
-        }
-        let dir = cla.directoryPath.split("/")
-        if (dir.size >= 2) {
-            arkTSModuleName = dir[dir.size - 2]
-        }
-    } else {
-        let dir = cla.arkpath.split("/")
-        if (dir.size >= 2) {
-            arkTSModuleName = dir[dir.size - 2]
-        }
-    }
-    arkTSModuleName = if (gconfig.is3rd && moduleFullName != gconfig.typeDeclFile) {
-        arkTSModuleName + "_" + removeTsSuffix(moduleName)
-    } else {
-        arkTSModuleName
-    }
-    arkTSModuleName
-}
-
 func parseFile(arkpath: String, outDir: String, jsASTPath: String, gconfig: GlobalConfig,
     moduleNameTemp!: String = "", thirdpartyName!: ?String = None, relativePathName!: String = "", tsPath!: String = "") {
     let isInvalid = !File.exists(arkpath) || !arkpath.endsWith(".d.ts") && !arkpath.endsWith(".d.ets")
@@ -296,15 +260,26 @@ func parseFile(arkpath: String, outDir: String, jsASTPath: String, gconfig: Glob
     let module = arkFileName.split("/")[0]
     let moduleFullName = module
 
-    var moduleName = getModuleName(thirdpartyName, module)
+    var moduleName = match (thirdpartyName) {
+        case Some(v) => v
+        case None =>
+            if (module.startsWith("@ohos")) {
+                module.replace("@ohos.", "")
+            } else if (module.startsWith("@hms")) {
+                module.replace("@hms.", "")
+            } else {
+                module
+            }
+    }
 
     let jsonDir = outDir + "json/arkts/"
     createDir(jsonDir)
 
     // Avoid duplicate filename in different directories, append prefix to filename
-    var prefix = ""
-    if (relativePathName != "") {
-        prefix = relativePathName.replace("/", "_") + "_"
+    let prefix = if (relativePathName != "") {
+        relativePathName.replace("/", "_") + "_"
+    } else {
+        ""
     }
 
     println("========Analyzing ${arkFileName} Begins!========")
@@ -343,8 +318,26 @@ func parseFile(arkpath: String, outDir: String, jsASTPath: String, gconfig: Glob
         moduleNameTemp
     }
 
-    var arkTSModuleName = getArkTSModuleName(gconfig, moduleName, moduleFullName)
-
+    var arkTSModuleName = ""
+    if (!cla.directoryPath.isEmpty()) {
+        if (!cla.directoryPath.endsWith("/")) {
+            cla.directoryPath += "/"
+        }
+        let dir = cla.directoryPath.split("/")
+        if (dir.size >= 2) {
+            arkTSModuleName = dir[dir.size - 2]
+        }
+    } else {
+        let dir = cla.arkpath.split("/")
+        if (dir.size >= 2) {
+            arkTSModuleName = dir[dir.size - 2]
+        }
+    }
+    arkTSModuleName = if (gconfig.is3rd && moduleFullName != gconfig.typeDeclFile) {
+        arkTSModuleName + "_" + removeTsSuffix(moduleName)
+    } else {
+        arkTSModuleName
+    }
     gconfig.load(transform, prefix + moduleName, name, arkTSModuleName, outCJPath)
     gconfig.showConfig()
 }

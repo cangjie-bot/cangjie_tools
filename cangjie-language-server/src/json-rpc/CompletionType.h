@@ -41,7 +41,6 @@ enum class CompletionItemKind {
     CIK_MODULE = 9,
     CIK_ENUM = 13,
     CIK_KEYWORD = 14,
-    CIK_STRUCT = 22,
 };
 
 enum class InsertTextFormat {

@@ -58,7 +58,7 @@ Local build process:
 3. Compile `cjfmt` using build scripts in `cjfmt/build`:
 
     ```shell
-    cd cangjie_tools/cjfmt/build
+    cd cangjie-tools/cjfmt/build
     python3 build.py build -t release
     ```
 

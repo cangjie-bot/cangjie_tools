@@ -58,7 +58,7 @@ cjfmt/
 3. 通过 `cjfmt/build` 目录下的构建脚本编译 `cjfmt`：
 
     ```shell
-    cd cangjie_tools/cjfmt/build
+    cd cangjie-tools/cjfmt/build
     python3 build.py build -t release
     ```
 

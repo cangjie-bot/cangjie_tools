@@ -89,6 +89,7 @@
 #include "Format/NodeFormatter/Node/MatchCaseFormatter.h"
 #include "Format/NodeFormatter/Node/MatchCaseOtherFormatter.h"
 #include "Format/NodeFormatter/Node/ModifierFormatter.h"
+#include "Format/NodeFormatter/Node/PackageFormatter.h"
 #include "Format/NodeFormatter/Node/PackageSpecFormatter.h"
 #include "Format/NodeFormatter/Node/StructBodyFormatter.h"
 #include "Format/NodeFormatter/Pattern/ConstPatternFormatter.h"
@@ -180,6 +181,7 @@ void TraveDepthLimitedDirs(
 
 void RegisterNode(ASTToFormatSource& toSourceManager, FormattingOptions& options)
 {
+    toSourceManager.RegisterNode<PackageFormatter>(ASTKind::PACKAGE, options);
     toSourceManager.RegisterNode<PackageSpecFormatter>(ASTKind::PACKAGE_SPEC, options);
     toSourceManager.RegisterNode<FileFormatter>(ASTKind::FILE, options);
     toSourceManager.RegisterNode<ImportSpecFormatter>(ASTKind::IMPORT_SPEC, options);

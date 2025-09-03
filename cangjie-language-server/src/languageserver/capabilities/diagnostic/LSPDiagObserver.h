@@ -37,7 +37,7 @@ private:
     Callbacks *callback = nullptr;
     void FormatDiags(DiagnosticToken &diagToken, SubDiagnostic &subDiag, std::set<char> endPunctuation);
     void AddNoteInfo(Cangjie::Diagnostic &diagnostic, std::vector<DiagnosticRelatedInformation> &relatedInformation);
-    void DealMacroDiags(Cangjie::Diagnostic &diagnostic, const DiagnosticToken &token);
+    void addMacroDiags(Cangjie::Diagnostic &diagnostic, const DiagnosticToken &diagToken);
 };
 } // namespace ark
 

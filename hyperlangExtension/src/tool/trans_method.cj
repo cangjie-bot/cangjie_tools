@@ -280,14 +280,16 @@ public class TransMethod {
             Token(TokenKind.IDENTIFIER, "hmsGlobalApiCall")
         }
 
-        var staticConstructor = Token(TokenKind.IDENTIFIER, "")
-        if (this.isStatic) {
-            staticConstructor = Token(TokenKind.IDENTIFIER, "getClassConstructorObj(\"${moduleName}\", \"${this.memberClassName}\"), ")
+        let staticConstructor = if (this.isStatic) {
+            Token(TokenKind.IDENTIFIER, "getClassConstructorObj(\"${moduleName}\", \"${this.memberClassName}\"), ")
+        } else {
+            Token(TokenKind.IDENTIFIER, "")
         }
 
-        var cbToken = quote()
-        if (hasAsyncCallback) {
-            cbToken = handleAsyncCallBack() + nl
+        let cbToken = if (hasAsyncCallback) {
+            handleAsyncCallBack() + nl
+        } else {
+            quote()
         }
 
         let template: Tokens = quote(
@@ -397,11 +399,11 @@ public class TransMethod {
 
         let forth_param = getAsyncRetToken(this.cjRetType, retTypeToken)
 
-        var cbToken = quote()
-        if (hasAsyncCallback) {
-            cbToken = handleAsyncCallBack() + nl
+        let cbToken = if (hasAsyncCallback) {
+            handleAsyncCallBack() + nl
+        } else {
+            quote()
         }
-
         let staticConstructor = if (this.isStatic) {
             Token(TokenKind.IDENTIFIER, "getClassConstructorObj(\"${moduleName}\", \"${this.memberClassName}\"),")
         } else {
@@ -543,9 +545,10 @@ public class TransMethod {
         var paraName = arkP[0] //arkts参数名
 
         // If js does not have type, we used "any" before type check implemented
-        var paraType = arkP[1]
-        if (arkP.size < 2) {
-            paraType = "any"
+        let paraType = if (arkP.size < 2) {
+            "any"
+        } else {
+            arkP[1]
         }
 
         var optional = false
@@ -747,28 +750,32 @@ public class TransMethod {
             paramToken.append(commaToken)
         }
         paramToken.append(getParamToken())
+        let ctxToken = quote(ctx)
 
-        let transparamToken = (parametersToJS(quote(ctx)) |> reduce {l, r => l + commaToken + r}).getOrDefault {
+        let transparamToken = (parametersToJS(ctxToken) |> reduce {l, r => l + commaToken + r}).getOrDefault {
             => quote()
         }
 
-        var transParam = quote({ctx => [$(transparamToken)]})
-        if (this.methodType.params.size == 0) {
-            transParam = quote(emptyArg)
+        let transParam = if (this.methodType.params.size == 0) {
+            quote(emptyArg)
+        } else {
+            quote({$(ctxToken) => [$(transparamToken)]})
         }
 
-        var apiToken = Token(TokenKind.IDENTIFIER, "hmsGlobalApiCallPromise")
-        if (gconfig.isOhos) {
-            apiToken = Token(TokenKind.IDENTIFIER, "ohosGlobalApiCallPromise")
+        let apiToken = if (gconfig.isOhos) {
+            Token(TokenKind.IDENTIFIER, "ohosGlobalApiCallPromise")
+        } else {
+            Token(TokenKind.IDENTIFIER, "hmsGlobalApiCallPromise")
         }
 
         let resolveRetToken = getAsyncRetToken(this.cjRetType, innerType)
+        let moduleName = gconfig.requireModuleName
 
-        var staticConstructor = Token(TokenKind.IDENTIFIER, "")
-        if (this.isStatic) {
-            staticConstructor = Token(TokenKind.IDENTIFIER, "getClassConstructorObj(\"${gconfig.requireModuleName}\", \"${this.memberClassName}\"),")
+        let staticConstructor = if (this.isStatic) {
+            Token(TokenKind.IDENTIFIER, "getClassConstructorObj(\"${moduleName}\", \"${this.memberClassName}\"),")
+        } else {
+            Token(TokenKind.IDENTIFIER, "")
         }
-
         let template = if (isMember) {
             if (this.isStatic) {
                 quote(
@@ -786,7 +793,7 @@ public class TransMethod {
         } else {
             quote(
                 $(prefix) func $(funcName)($(paramToken)): Unit {
-                    $(apiToken)<$(innerType)>($(staticConstructor) $(gconfig.requireModuleName), $(getArkTSFuncName()), callback, $(transParam)) $(resolveRetToken)
+                    $(apiToken)<$(innerType)>($(staticConstructor) $(moduleName), $(getArkTSFuncName()), callback, $(transParam)) $(resolveRetToken)
                 }
             )
         }

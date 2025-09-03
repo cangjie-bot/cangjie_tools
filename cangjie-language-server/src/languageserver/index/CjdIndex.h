@@ -47,7 +47,6 @@ struct DPkgInfo : public PkgInfo {
         : PkgInfo(pkgPath, curModulePath, curModuleName, callback)
     {
         compilerInvocation->globalOptions.compileCjd = true;
-        compilerInvocation->globalOptions.enableAddCommentToAst = true;
     }
 };
 
@@ -71,12 +70,7 @@ public:
         cacheManager->InitDir();
     }
 
-    ~CjdIndexer() = default;
-
-    static void InitInstance(Callbacks *cb, const std::string& stdCjdPathOption,
-                             const std::string& ohosCjdPathOption, const std::string& cjdCachePathOption);
-
-    static void DeleteInstance()
+    ~CjdIndexer() noexcept
     {
         if (instance) {
             delete instance;
@@ -84,11 +78,12 @@ public:
         }
     }
 
+    static void InitInstance(Callbacks *cb, const std::string& stdCjdPathOption,
+                             const std::string& ohosCjdPathOption, const std::string& cjdCachePathOption);
+
     static CjdIndexer *GetInstance();
 
     SymbolLocation GetSymbolDeclaration(SymbolID id, const std::string& fullPkgName);
-
-    CommentGroups GetSymbolComments(SymbolID id, const std::string& fullPkgName);
 
     std::unordered_map<std::string, std::unique_ptr<DPkgInfo>> &GetPkgMap()
     {
@@ -108,12 +103,11 @@ public:
 
 private:
     void ReadCJDSource(const std::string &rootPath, const std::string &modulePath,
-                       std::map<int, std::vector<std::string>> &fileMap, const std::string &parentPkg = "");
+                       const std::string &parentPkg = "");
 
     void LoadAllCJDResource();
 
-    void ReadPackagedCjdResource(const std::string& rootPath, const std::string& filePath,
-        std::map<int, std::vector<std::string>> &fileMap);
+    void ReadPackagedCjdResource(const std::string& rootPath, const std::string& filePath);
 
     void ParsePackageDependencies();
 

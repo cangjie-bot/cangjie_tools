@@ -11,9 +11,6 @@
 #ifdef __linux__
 #include <malloc.h>
 #endif
-#if __APPLE__
-#include <malloc/malloc.h>
-#endif
 
 namespace ark {
 using namespace Cangjie;
@@ -50,8 +47,6 @@ public:
         (void) lruHashMap.erase(key);
 #ifdef __linux__
         (void) malloc_trim(0);
-#elif __APPLE__
-        (void) malloc_zone_pressure_relief(malloc_default_zone(), 0);
 #endif
     }
 
@@ -83,8 +78,6 @@ public:
             deleteCI.detach();
 #ifdef __linux__
             (void) malloc_trim(0);
-#elif __APPLE__
-            (void) malloc_zone_pressure_relief(malloc_default_zone(), 0);
 #endif
             return deleteKey;
         }
@@ -105,8 +98,6 @@ public:
         }
 #ifdef __linux__
         (void) malloc_trim(0);
-#elif __APPLE__
-        (void) malloc_zone_pressure_relief(malloc_default_zone(), 0);
 #endif
         (void) lruList.emplace_front(key, std::move(value));
         lruHashMap[key] = lruList.begin();
@@ -123,8 +114,6 @@ public:
             value.reset(nullptr);
 #ifdef __linux__
             (void) malloc_trim(0);
-#elif __APPLE__
-            (void) malloc_zone_pressure_relief(malloc_default_zone(), 0);
 #endif
         }
     }

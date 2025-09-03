@@ -94,7 +94,7 @@ public:
         }
     }
 
-    void TaskCompleted(const uint64_t taskId, bool inPool = true)
+    void TaskCompleted(const uint64_t taskId)
     {
         std::unique_lock<std::mutex> lock(queueMu);
         for (uint64_t dep : dependentTasks[taskId]) {
@@ -110,7 +110,7 @@ public:
         taskDependencies.erase(taskId);
         taskMap.erase(taskId);
 
-        if (inPool && --tasksRemaining == 0) {
+        if (--tasksRemaining == 0) {
             completionCv.notify_all(); // Ensure to notify when all tasks complete
         }
     }
@@ -169,7 +169,6 @@ private:
     {
         TaskWrapper *taskWrapper = static_cast<TaskWrapper *>(arg);
         (*taskWrapper)();
-        delete taskWrapper;
         return nullptr;
     }
 

@@ -6,7 +6,6 @@
 
 #include "FindReferencesImpl.h"
 #include "../../CompilerCangjieProject.h"
-#include "../../index/Symbol.h"
 
 using namespace Cangjie;
 using namespace Cangjie::AST;
@@ -74,7 +73,7 @@ void FindReferencesImpl::FindReferences(const ArkAST &ast, ReferencesResult &res
         CompilerCangjieProject::GetInstance()->SubmitTasksToPool(tasks);
     }
 
-    lsp::SymbolIndex *index = ark::CompilerCangjieProject::GetInstance()->GetIndex();
+    auto index = ark::CompilerCangjieProject::GetInstance()->GetMemIndex();
     if (!index) {
         return;
     }
@@ -92,7 +91,6 @@ void FindReferencesImpl::FindReferences(const ArkAST &ast, ReferencesResult &res
         if (id == lsp::INVALID_SYMBOL_ID) {
             continue;
         }
-
         std::unordered_set<lsp::SymbolID> ids;
         lsp::SymbolID topId = id;
         index->FindRiddenUp(id, ids, topId);
@@ -112,7 +110,7 @@ void FindReferencesImpl::FindReferences(const ArkAST &ast, ReferencesResult &res
             if (EndsWith(realPath, ".macrocall")) {
                 return;
             }
-            if (IsInvalidRef(ref, pos, curIdx, ast)) {
+            if (FindReferencesImpl::IsInvalidRef(ref, pos, curIdx, ast)) {
                 return;
             }
             CompilerCangjieProject::GetInstance()->GetRealPath(realPath);

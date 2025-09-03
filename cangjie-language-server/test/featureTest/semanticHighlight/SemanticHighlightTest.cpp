@@ -4,14 +4,13 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-#include "gtest/gtest.h"
-
 #include<string>
-#include<thread>
 #include<vector>
 
-#include "common.h"
-#include "SingleInstance.h"
+#include "gtest/gtest.h"
+#include<thread>
+#include<common.h>
+#include<SingleInstance.h>
 
 using namespace test::common;
 
@@ -35,7 +34,7 @@ namespace TestLspSemanticHighlight {
             BuildDynamicBinary(p->pathBuildScript);
         }
         /* Wait until the task is complete. The join blocking mode is not used. */
-        StartLspServer(SingleInstance::GetInstance()->useDB);
+        StartLspServer();
 
         /* Check the test case result. */
         nlohmann::json expLines = ReadExpectedResult(param.baseFile);
