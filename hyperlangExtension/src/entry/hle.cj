@@ -26,6 +26,7 @@ let mtx = Mutex()
 public class A2CJ {
     var gconfig: GlobalConfig
     var outSrcDir: String = ""
+    var globalUnionTypeSet: HashSet<String> = HashSet<String>()
 
     public init(gconfigArg: GlobalConfig) {
         gconfig = gconfigArg
@@ -159,7 +160,18 @@ public class A2CJ {
             params |> forEach {
                 it =>
                 m.parameters = it
-                methodToken.append(transMethod(m))
+                let uaIndex = detectUnionArrayParam(m)
+                if (let Some(idx) <- uaIndex) {
+                    let enumName = genArgsEnumNameForGlobal(cns, m)
+                    if (!globalUnionTypeSet.contains(enumName)) {
+                        methodToken.append(genArgsEnumTokens(enumName))
+                        globalUnionTypeSet.add(enumName)
+                    }
+                    let tm = TransMethod(m, "", gconfig)
+                    methodToken.append(tm.generateFuncWithUnionArray(enumName, idx))
+                } else {
+                    methodToken.append(transMethod(m))
+                }
             }
         }
         if (hasEventAPI(cns.methods)) {
@@ -168,6 +180,7 @@ public class A2CJ {
         outToken.append(methodToken + nl)
     }
 
+    
     // 几个transXX函数都只考虑了只给arkjson的情况
     public func transInterface(objectType: ObjectType): Tokens {
         let to = TransObject(objectType, gconfig)
@@ -185,7 +198,7 @@ public class A2CJ {
 
     public func transMethod(methodType: MethodType): Tokens {
         let tm = TransMethod(methodType, "", gconfig)
-        return tm.generateFunc() + nl //按照非成员函数生成
+        return tm.generateFunc() //按照非成员函数生成
 
     }
 

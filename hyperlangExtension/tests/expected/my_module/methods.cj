@@ -458,14 +458,14 @@ public class Greeter {
     public init(greeting: String) {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "Greeter").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "Greeter").toJSValue().asClass(__ctx)
             clazz.new(greeting.toJSValue(__ctx)).asObject()
         }
     }
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "Greeter").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "Greeter").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -697,14 +697,14 @@ public open class Animal {
     public init(name: String) {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "Animal").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "Animal").toJSValue().asClass(__ctx)
             clazz.new(name.toJSValue(__ctx)).asObject()
         }
     }
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "Animal").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "Animal").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -821,14 +821,14 @@ public class MyClass {
     public init(name: String) {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "MyClass").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "MyClass").toJSValue().asClass(__ctx)
             clazz.new(name.toJSValue(__ctx)).asObject()
         }
     }
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "MyClass").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "MyClass").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -1065,14 +1065,12 @@ public func getFavoriteNumber < T >(t: T): T {
 public func test(callback: AsyncCallback < Unit >): Unit {
     hmsGlobalApiCallPromise < Unit >( "my_module_methods", "test", callback, emptyArg)
 }
-
 /**
 	 * @brief test1(name:string): Promise<void>
 	 */
 public func test1(callback: AsyncCallback < Unit >, name: String): Unit {
     hmsGlobalApiCallPromise < Unit >( "my_module_methods", "test1", callback, { ctx =>[name.toJSValue(ctx)] })
 }
-
 /**
 	 * @brief testUnion1(t: string | undefined): undefined | String
 	 */

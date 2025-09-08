@@ -26,3 +26,12 @@ export declare class d10 {
     static getInstance(): d10;
     putSync(key: string, value: number | string | boolean | Array<number> | Array<string> | Array<boolean>): d10;
 }
+
+export declare class Logger {
+    static logEnable: boolean;
+    private domain;
+    private prefix;
+    constructor(prefix: string);
+    debug(...args: (number | string | boolean | null | undefined)[]): void;
+    info(...args: (number | string | boolean)[]): void;
+}

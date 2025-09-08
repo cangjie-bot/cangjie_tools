@@ -35,7 +35,7 @@ public class TDDiagBuilder {
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_class", "TDDiagBuilder").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_class", "TDDiagBuilder").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -279,6 +279,152 @@ public class d10 {
     
     static func fromJSValue(context: JSContext, input: JSValue): d10 {
         d10(input.asObject())
+    }
+}
+
+/*class ExportKeyword DeclareKeyword Logger {
+    StaticKeywordlogEnable: boolean;
+    constructor(prefix: string): void
+    debug(...args: (number | string | boolean | null | undefined)[]): void
+    info(...args: (number | string | boolean)[]): void
+    }*/
+public enum Logger_debug_arg_Types {
+    | INT64(Int64)
+    | DOUBLE(Float64)
+    | STRING(String)
+    | BOOL(Bool)
+    | JSVALUE(JSValue)
+    
+    protected static func fromJSValue(context: JSContext, input: JSValue): Logger_debug_arg_Types {
+        return if(input.isString()) {
+            STRING(String.fromJSValue(context, input))
+        } else if(input.isNumber()) {
+            DOUBLE(Float64.fromJSValue(context, input))
+        } else if(input.isBoolean()) {
+            BOOL(Bool.fromJSValue(context, input))
+        } else {
+            JSVALUE(input)
+        }
+    }
+    
+    protected func toJSValue(context: JSContext): JSValue {
+        match(this) {
+            case INT64(n) => n.toJSValue(context)
+            case DOUBLE(n) => n.toJSValue(context)
+            case STRING(n) => n.toJSValue(context)
+            case BOOL(n) => n.toJSValue(context)
+            case JSVALUE(n) => n
+        }
+    }
+    
+    public func toString(): String {
+        match(this) {
+            case INT64(n) => n.toString()
+            case DOUBLE(n) => n.toString()
+            case STRING(n) => n.toString()
+            case BOOL(n) => n.toString()
+            case _ => ""
+        }
+    }
+}
+
+public enum Logger_info_arg_Types {
+    | INT64(Int64)
+    | DOUBLE(Float64)
+    | STRING(String)
+    | BOOL(Bool)
+    | JSVALUE(JSValue)
+    
+    protected static func fromJSValue(context: JSContext, input: JSValue): Logger_info_arg_Types {
+        return if(input.isString()) {
+            STRING(String.fromJSValue(context, input))
+        } else if(input.isNumber()) {
+            DOUBLE(Float64.fromJSValue(context, input))
+        } else if(input.isBoolean()) {
+            BOOL(Bool.fromJSValue(context, input))
+        } else {
+            JSVALUE(input)
+        }
+    }
+    
+    protected func toJSValue(context: JSContext): JSValue {
+        match(this) {
+            case INT64(n) => n.toJSValue(context)
+            case DOUBLE(n) => n.toJSValue(context)
+            case STRING(n) => n.toJSValue(context)
+            case BOOL(n) => n.toJSValue(context)
+            case JSVALUE(n) => n
+        }
+    }
+    
+    public func toString(): String {
+        match(this) {
+            case INT64(n) => n.toString()
+            case DOUBLE(n) => n.toString()
+            case STRING(n) => n.toString()
+            case BOOL(n) => n.toString()
+            case _ => ""
+        }
+    }
+}
+
+
+public class Logger {
+    
+    protected Logger(var arkts_object: JSObject) {}
+    /**
+	 * @brief constructor(prefix: string): void
+	 */
+    public init(prefix: String) {
+        arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
+            __ctx =>
+            let clazz = getClassConstructorObj("cases_class", "Logger").toJSValue().asClass(__ctx)
+            clazz.new(prefix.toJSValue(__ctx)).asObject()
+        }
+    }
+    public init() {
+        arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
+            __ctx =>
+            let clazz = getClassConstructorObj("cases_class", "Logger").toJSValue().asClass(__ctx)
+            clazz.new().asObject()
+        }
+    }
+    
+    public static mut prop logEnable: Bool {
+        get() {
+            checkThreadAndCall < Bool >(getMainContext()) {
+                ctx: JSContext => Bool.fromJSValue(ctx, getClassConstructorObj("my_module_class", "Logger")["logEnable"])
+            }
+        }
+        set(v) {
+            checkThreadAndCall < Unit >(getMainContext()) {
+                ctx: JSContext => getClassConstructorObj("my_module_class", "Logger")["logEnable"] = v.toJSValue(ctx)
+            }
+        }
+        
+    }
+    
+    /**
+	 * @brief debug(...args: (number | string | boolean | null | undefined)[]): void
+	 */
+    public func debug(args: Array<Logger_debug_arg_Types>): Unit {
+        jsObjApiCall < Unit >( arkts_object, "debug", { ctx =>[toJSArray < Logger_debug_arg_Types >(ctx, args, { ctx: JSContext, val: Logger_debug_arg_Types => val.toJSValue(ctx) })] })
+    }
+    
+    /**
+	 * @brief info(...args: (number | string | boolean)[]): void
+	 */
+    public func info(args: Array<Logger_info_arg_Types>): Unit {
+        jsObjApiCall < Unit >( arkts_object, "info", { ctx =>[toJSArray < Logger_info_arg_Types >(ctx, args, { ctx: JSContext, val: Logger_info_arg_Types => val.toJSValue(ctx) })] })
+    }
+    
+    
+    func toJSValue(context: JSContext): JSValue {
+        arkts_object.toJSValue()
+    }
+    
+    static func fromJSValue(context: JSContext, input: JSValue): Logger {
+        Logger(input.asObject())
     }
 }
 
