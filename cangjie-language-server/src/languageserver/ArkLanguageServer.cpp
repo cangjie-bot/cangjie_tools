@@ -292,7 +292,7 @@ nlohmann::json GetServerCapabilities(int syncKind)
     serverCapabilities["completionProvider"]["resolveProvider"] = false;
     serverCapabilities["breakpointsProvider"] = true;
     if (!MessageHeaderEndOfLine::GetIsDeveco()) {
-        serverCapabilities["codeLensProvider"] = true;
+        serverCapabilities["codeLensProvider"]["resolveProvider"] = true;
     }
     std::set<std::string> triggerCharacters = {".", "`"};
     for (const std::string& item : triggerCharacters) {
