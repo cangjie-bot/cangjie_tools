@@ -530,6 +530,7 @@
 {"goToDefinition":{"testFile":"LSP_GoToDefinition_IncrementCompile_001.test","id":"5"}}
 {"goToDefinition":{"testFile":"LSP_GoToDefinition_IncrementCompile_002.test","id":"5"}}
 
+
 {"hover":{"testFile":"LSP_Hover_String_001.test","id":"7"}}
 {"hover":{"testFile":"LSP_Hover_Interface_001.test","id":"110"}}
 {"hover":{"testFile":"LSP_Hover_Interface_002.test","id":"110"}}
@@ -558,7 +559,6 @@
 {"hover":{"testFile":"LSP_Hover_Function_002.test","id":"7"}}
 {"hover":{"testFile":"LSP_Hover_Function_003.test","id":"7"}}
 {"hover":{"testFile":"LSP_Hover_Enum_001.test","id":"7"}}
-{"hover":{"testFile":"LSP_Hover_ConstantPattern_001.test","id":"7"}}
 {"hover":{"testFile":"LSP_Hover_Result_001.test","id":"9"}}
 {"hover":{"testFile":"LSP_Hover_Range_001.test","id":"9"}}
 {"hover":{"testFile":"LSP_Hover_Atomic_001.test","id":"104"}}
