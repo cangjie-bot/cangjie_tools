@@ -42,7 +42,7 @@ const std::unordered_set<TokenKind> OPERATOR_TO_OVERLOAD = {TokenKind::LSQUARE, 
 
 Ptr<Decl> ArkAST::FindDeclByNode(Ptr<Node> node) const
 {
-    Ptr<Decl> tmp = nullptr;
+    Ptr<Decl> tmp = nullptr;xxxxx
     if (!node) { return tmp; }
     return match(*node) (
         [](const MacroExpandDecl &macroExpandDecl) {
