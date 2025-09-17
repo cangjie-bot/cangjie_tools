@@ -45,9 +45,9 @@ TARGET_SYSTEM = TARGET_SYSTEM_TYPE.NATIVE
 IS_WINDOWS = platform.system() == "Windows"
 IS_MACOS = platform.system() == "Darwin"
 IS_LINUX = platform.system() == "Linux"
-JSON_GIT = "https://gitee.com/openharmony/third_party_json.git"
-FLATBUFFER_GIT = "https://gitee.com/openharmony/third_party_flatbuffers.git"
-SQLITE_GIT = "https://gitee.com/openharmony/third_party_sqlite.git"
+JSON_GIT = "https://gitcode.com/openharmony/third_party_json.git"
+FLATBUFFER_GIT = "https://gitcode.com/openharmony/third_party_flatbuffers.git"
+SQLITE_GIT = "https://gitcode.com/openharmony/third_party_sqlite.git"
 
 def resolve_path(path):
     if os.path.isabs(path):
