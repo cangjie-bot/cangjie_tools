@@ -34,7 +34,7 @@ namespace {
                                    bool &isMultiModule) {
         auto size = static_cast<int>(root["params"]["changes"].size());
         for (int i = 0; i < size; i++) {
-            ChangeMessageUrlOfTextDocument(projectPath, root["params"]["changes"][i]["uri"], rootUri, isMultiModule);
+            ChangeMessageUrlOfTextDocument(projectPath, root["params"]["changes"][i]["uri"], rootUri, isMultiModule);xxxxxxxx
         }
     }
 
