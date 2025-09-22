@@ -4,7 +4,7 @@
 
 `cjfmt (Cangjie Formatter)` is an automated code formatting tool developed based on the Cangjie language programming specifications. Its overall technical architecture is shown in the following diagram:
 
-![cjfmt Architecture Diagram]()
+![cjfmt Architecture Diagram](../figures/cjfmt-architecture.jpg)
 
 ## Directory Structure
 
