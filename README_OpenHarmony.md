@@ -1,12 +1,12 @@
 # cangjie_tools
 
-仓颉语言为开发者提供了丰富的命令行工具以及语言服务器工具，在成功安装仓颉工具链后，即可根据手册说明使用这些工具。
+仓颉语言为开发者提供了丰富的命令行工具以及语言服务工具，在成功安装仓颉工具链后，即可根据手册说明使用这些工具。
 
 ## 目录结构
 
 ```
 /cangjie_tools
-├─ cangjie-language-server/  # 仓颉语言服务器
+├─ cangjie-language-server/  # 仓颉语言服务工具
 ├─ cjfmt/                    # 仓颉格式化工具
 ├─ cjpm/                     # 仓颉包管理工具
 └─ hyperlangExtension/       # ArkTS 互操作代码模板自动生成工具
@@ -44,6 +44,14 @@ OpenHarmony 通过 `cangjie_tools` 各目录下的 `build` 目录内的提供的
 ## License
 
 基于 [Apache-2.0 with Runtime Library Exception](./LICENSE) 协议。
+
+## 使用的开源软件声明
+
+| 开源软件名称               | 开源许可协议              | 使用说明                  | 使用主体 | 使用方式         |
+|----------------------|---------------------|-----------------------|------|--------------|
+| flatbuffers          | Apache License V2.0 | 仓颉语言服务对索引数据进行序列化和反序列化 | 语言服务 | 集成到仓颉二进制发布包中 |
+| JSON  for Modern C++ | MIT License         | 仓颉语言服务用于报文解析和封装       | 语言服务 | 集成到仓颉二进制发布包中 |
+| SQLite               | Public Domain       | 仓颉语言服务使用数据库存储索引数据     | 语言服务 | 集成到仓颉二进制发布包中 |
 
 ## 风险提示
 
