@@ -21,6 +21,10 @@ OpenHarmony 编译使用 `cangjie_tools` 各目录下的 `src` 源码文件，�
 - `ArkTS` 互操作代码模板自动生成功能；
 - 仓颉语言服务功能。
 
+仓颉工具链的整体架构图为：
+
+![仓颉工具链整体架构图](./figures/整体架构.jpg)
+
 ## OpenHarmony 如何集成 cangjie_tools
 
 OpenHarmony 通过 `cangjie_tools` 各目录下的 `build` 目录内的提供的构建脚本 `build.py`，将源码文件编译成可执行文件。请参阅各工具对应的开发者指南，获取各工具构建脚本的使用方式：

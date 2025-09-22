@@ -13,6 +13,10 @@ The current Cangjie tools include:
 - Cangjie HyperLang Extension `hle`
 - Cangjie Languager Server `lsp`
 
+The overall architecture diagram of the Cangjie toolchain is as follows:
+
+![The overall architecture diagram of the Cangjie toolchain](./figures/整体架构.jpg)
+
 Please refer to the following software architecture diagrams for the command-line tools and language server tools:
 
 - [software architecture diagram for `cjpm`](./cjpm/doc/developer_guide.md#开源项目介绍)
