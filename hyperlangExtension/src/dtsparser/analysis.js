@@ -168,7 +168,7 @@ class ASTVisitor {
         if (comments) {
             comment = comments.join('\n');
         }
-        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, "\\\$1")}`, 'gm'), '').trim();
+        comment = comment.replace(new RegExp('^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, "\\\$1")}', 'gm'), '').trim();
         info.comment = comment;
 
         this.visit(node, content);
@@ -309,7 +309,7 @@ class ASTVisitor {
 
         rjson[rjson.length - 1].info.return = `${returnType}`;
 
-        this.handleTypeParameters(node, rjson[rjson.length - 1]['info']);
+        this.handleTypeParameters(node, rjson[rjson.length - 1].info);
 
         let comment = '';
         const comments = ts.getLeadingCommentRanges(fileContent, node.getFullStart())?.map(
