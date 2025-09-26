@@ -63,18 +63,18 @@ public class TypeMap {
 
         let ret = match (tmp) {
             // type_ark暂不考虑通配符T
-            case "number" => f64
-            case "string" => str
-            case "void" => unit
-            case "boolean" => bool
+            case "number" => F64
+            case "string" => STR
+            case "void" => UNIT
+            case "boolean" => BOOL
             case "bigint" => "BigInt"
-            case "Uint8Array" | "ArrayBuffer" => byteArr
+            case "Uint8Array" | "ArrayBuffer" => BYTE_ARR
             case "Float32Array" => "Array<Float32>"
-            case "any" | "---" | "" => any
+            case "any" | "---" | "" => ANY
             case "common.UIAbilityContext" | "Context" | "BaseContext" | "common.Context" | "unknown" =>
                 println("WARNING: type is not supported - ${tmp}")
                 return "JSValue/* FIXME: `${tmp}` */"
-            case _ where tmp.startsWith(promise) => match (arrMember.size) {
+            case _ where tmp.startsWith(PROMISE) => match (arrMember.size) {
                 case 2 => typeMap(arrMember[1])
                 case 3 => typeMap("${arrMember[1]}<${arrMember[2]}>")
                 case _ =>
@@ -87,7 +87,7 @@ public class TypeMap {
             case _ where tmp.contains("[]") =>
                 let cj_tp = typeMap(tmp.split("[]")[0])
                 "Array<${cj_tp}>"
-            case _ where (tmp.startsWith("'") && tmp.endsWith("'")) => str
+            case _ where (tmp.startsWith("'") && tmp.endsWith("'")) => STR
             case _ =>
                 if (userDefinedNames.contains(tmp)) {
                     return tmp
@@ -128,7 +128,7 @@ public class TypeMap {
                     transLambda = transLambda + "${typeMap(paramType)}"
                 }
                 if (i < params.size - 1) {
-                    transLambda = transLambda + comma
+                    transLambda = transLambda + COMMA
                 }
             }
             transLambda = transLambda + ")->" + returnValue
@@ -140,7 +140,7 @@ public class TypeMap {
 
     static func handleGeneric(lambda: String): Array<String> {
         if (let None <- lambda.indexOf("<")) {
-            return lambda.split(comma)
+            return lambda.split(COMMA)
         }
         let byteArr = lambda.toArray()
         var leftBracketCount = 0
@@ -156,9 +156,9 @@ public class TypeMap {
             }
         }
         let newStr = String.fromUtf8(byteArr)
-        let split = newStr.split(comma)
+        let split = newStr.split(COMMA)
         for (i in 0..split.size) {
-            split[i] = split[i].replace("\n", comma)
+            split[i] = split[i].replace("\n", COMMA)
         }
         split
     }

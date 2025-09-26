@@ -123,8 +123,8 @@ public class TransObject {
             fromJSValueItem.append(fromJs)
 
             if (!isLast) {
-                getPropertyItem.append(nl)
-                fromJSValueItem.append(commaToken + nl)
+                getPropertyItem.append(NL)
+                fromJSValueItem.append(COMMA_TOKEN + NL)
             }
         }
     }
@@ -305,7 +305,7 @@ public class TransObject {
             this.cjModifiers.add("open")
         }
 
-        let headToken = Tokens(Token(TokenKind.COMMENT, arkComment), nl)
+        let headToken = Tokens(Token(TokenKind.COMMENT, arkComment), NL)
         tokens.append(headToken)
         tokens.append(addComment(arkCategory + signature))
 
@@ -338,7 +338,7 @@ public class TransObject {
             let (typeToken, defToken) = if (let Some(def) <- arkProp.defValue) {
                 (proType, Token(TokenKind.IDENTIFIER, def))
             } else {
-                (Tokens(Token(TokenKind.IDENTIFIER, "Option<${proType}>")), noneToken)
+                (Tokens(Token(TokenKind.IDENTIFIER, "Option<${proType}>")), NONE_TOKEN)
             }
             if (fromParent) {
                 property.append(quote($(proName)!: $(typeToken) = $(defToken)))
@@ -353,7 +353,7 @@ public class TransObject {
             }
         }
         if (!last) {
-            property.append(commaToken + nl)
+            property.append(COMMA_TOKEN + NL)
         }
     }
 
