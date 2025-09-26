@@ -13,9 +13,9 @@ import std.regex.*
 
 public func addComment(msg: String, reason!: ?String = None): Tokens {
     if (let Some(r) <- reason) {
-        Tokens([Token(TokenKind.COMMENT, "// ${r}"), nl, Token(TokenKind.COMMENT, "/*${msg}*/"), nl])
+        Tokens([Token(TokenKind.COMMENT, "// ${r}"), NL, Token(TokenKind.COMMENT, "/*${msg}*/"), NL])
     } else {
-        Tokens([Token(TokenKind.COMMENT, "/*${msg}*/"), nl])
+        Tokens([Token(TokenKind.COMMENT, "/*${msg}*/"), NL])
     }
 }
 
@@ -34,7 +34,7 @@ public func dedupVarName(name: String): String {
 }
 
 public func checkCangjieKeyword(name: String): String {
-    if (cangjieKeyword.contains(name)) {
+    if (CANGJIE_KEYWORD.contains(name)) {
         "`${name}`"
     } else {
         name
@@ -129,7 +129,7 @@ public func funcRetPromiseOnly(methodType: MethodType): Bool {
             continue
         }
         if (method.name == methodType.name) {
-            if (method.returns.contains(promise)) {
+            if (method.returns.contains(PROMISE)) {
                 continue
             }
             let paramSize = methodType.params.size
@@ -216,22 +216,22 @@ public func isEventAPI(method: MethodType): Bool {
 }
 
 public func declareCallbackManager(): Tokens {
-    quote(let callbackManager = CallbackManager<String, JSValue>()) + nl + nl
+    quote(let callbackManager = CallbackManager<String, JSValue>()) + NL + NL
 }
 
 public func getParentName(base: String): String {
-    if (ViewBase.contains(base) || base == "Canvas") {
+    if (VIEW_BASE.contains(base) || base == "Canvas") {
         return "ViewBase"
-    } else if (ContainerBase.contains(base)) {
+    } else if (CONTAINER_BASE.contains(base)) {
         return "ContainerBase"
-    } else if (ShapeComponent.contains(base)) {
+    } else if (SHAPE_COMPONENT.contains(base)) {
         return "ShapeComponent"
     }
     return ""
 }
 
 public func getCmToken(str: String): Tokens {
-    return Token(TokenKind.COMMENT, str) + nl
+    return Token(TokenKind.COMMENT, str) + NL
 }
 
 public func getTokenWithoutNL(str: String): Tokens {
@@ -325,7 +325,7 @@ public func createUnionType(typeName: String, tokens: Tokens, unionTypeSet: Arra
                 .forEach {it: String => tokens.append(getCmToken("        case v: ${it} => v.toJSValue(context)"))}
             tokens.append(getCmToken("        case _ => throw IllegalArgumentException(\"Not support Type\")"))
             tokens.append(getCmToken("    }"))
-            tokens.append(getCmToken("}")).append(nl)
+            tokens.append(getCmToken("}")).append(NL)
             // generate FromJSValue
             tokens.append(
                 getCmToken("func ${unionTypeName}FromJSValue(objType: String, input: JSValue): ${unionTypeName} {"))
@@ -338,7 +338,7 @@ public func createUnionType(typeName: String, tokens: Tokens, unionTypeSet: Arra
                 }
             tokens.append(getCmToken("        case _ => throw IllegalArgumentException(\"Not support Type\")"))
             tokens.append(getCmToken("    }"))
-            tokens.append(getCmToken("}")).append(nl)
+            tokens.append(getCmToken("}")).append(NL)
         }
         unionTypeSet.add(unionTypeName)
         return unionTypeName
