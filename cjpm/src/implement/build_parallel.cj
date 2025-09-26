@@ -289,16 +289,16 @@ func moveCjcProfToCjpmDir(resolveConfig: ResolveConfig, profcompilePerformancePa
 }
 
 func addStartTime(fullName: String, cmdArgs: String): Unit {
-    synchronized(cacheMutex) {
-        showCache.add(PkgInfo(fullName, "B", DateTime.now().toUnixTimeStamp().toMilliseconds()))
-        commandCache.add(CommandInfo(fullName, cmdArgs))
+    synchronized(CACHEMUTEX) {
+        SHOWCACHE.add(PkgInfo(fullName, "B", DateTime.now().toUnixTimeStamp().toMilliseconds()))
+        COMMANDCACHE.add(CommandInfo(fullName, cmdArgs))
     }
     return
 }
 
 func addEndTime(fullName: String): Unit {
-    synchronized(cacheMutex) {
-        showCache.add(PkgInfo(fullName, "E", DateTime.now().toUnixTimeStamp().toMilliseconds()))
+    synchronized(CACHEMUTEX) {
+        SHOWCACHE.add(PkgInfo(fullName, "E", DateTime.now().toUnixTimeStamp().toMilliseconds()))
     }
     return
 }
