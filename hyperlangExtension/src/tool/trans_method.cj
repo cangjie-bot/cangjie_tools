@@ -60,7 +60,7 @@ public class TransMethod {
                 case _ => ()
             }
         }
-        if (origFuncSignature.contains(promise)) {
+        if (origFuncSignature.contains(PROMISE)) {
             isPromise = true
             promiseNeedGen = funcRetPromiseOnly(methodType)
         }
@@ -258,7 +258,7 @@ public class TransMethod {
         let ctxToken = quote(ctx)
         let paramToken = paramListToCJ()
         let typeParameters = getTypeParametersToken()
-        let transparamToken = (parametersToJS(ctxToken) |> reduce {l, r => l + commaToken + r}).getOrDefault {
+        let transparamToken = (parametersToJS(ctxToken) |> reduce {l, r => l + COMMA_TOKEN + r}).getOrDefault {
             => quote()
         }
 
@@ -287,7 +287,7 @@ public class TransMethod {
 
         var cbToken = quote()
         if (hasAsyncCallback) {
-            cbToken = handleAsyncCallBack() + nl
+            cbToken = handleAsyncCallBack() + NL
         }
 
         let template: Tokens = quote(
@@ -381,7 +381,7 @@ public class TransMethod {
 
         let ctxToken = quote(ctx)
         let paramToken = paramListToCJ()
-        let transparamToken = (parametersToJS(ctxToken) |> reduce {l, r => l + commaToken + r}).getOrDefault {
+        let transparamToken = (parametersToJS(ctxToken) |> reduce {l, r => l + COMMA_TOKEN + r}).getOrDefault {
             => quote()
         }
 
@@ -399,7 +399,7 @@ public class TransMethod {
 
         var cbToken = quote()
         if (hasAsyncCallback) {
-            cbToken = handleAsyncCallBack() + nl
+            cbToken = handleAsyncCallBack() + NL
         }
 
         let staticConstructor = if (this.isStatic) {
@@ -425,7 +425,7 @@ public class TransMethod {
     }
 
     public func isSync(sign: String): Bool {
-        for (keyword in syncKeyword) {
+        for (keyword in SYNC_KEY_WORD) {
             if (sign.contains(keyword)) {
                 return false
             }
@@ -445,7 +445,7 @@ public class TransMethod {
                 } else {
                     quote($(pName): $(pType))
                 }
-            } |> reduce {l, r => l + commaToken + r})
+            } |> reduce {l, r => l + COMMA_TOKEN + r})
             .getOrDefault {=> quote()}
     }
 
@@ -459,7 +459,7 @@ public class TransMethod {
         for (i in 0..typeParameters.size) {
             typeParametersToken.append(Token(TokenKind.IDENTIFIER, typeParameters[i].name))
             if (i < typeParameters.size - 1) {
-                typeParametersToken.append(commaToken)
+                typeParametersToken.append(COMMA_TOKEN)
             }
         }
         typeParametersToken.append(Token(TokenKind.GT))
@@ -513,7 +513,7 @@ public class TransMethod {
                         paraType))
             }
             if (i < params.size - 1) {
-                paramToken.append(commaToken)
+                paramToken.append(COMMA_TOKEN)
             }
         }
         return paramToken
@@ -530,7 +530,7 @@ public class TransMethod {
             }
             transparamToken.append(paramToJS(params[i], ctxName, gconfig))
             if (i < params.size - 1) {
-                transparamToken.append(commaToken)
+                transparamToken.append(COMMA_TOKEN)
             }
         }
         return transparamToken
@@ -558,7 +558,7 @@ public class TransMethod {
         let ctx = Token(TokenKind.IDENTIFIER, ctxName)
         if (isAsyncCallback(paraType)) {
             quote(jsCallback)
-        } else if (paraType == AbilityContext) {
+        } else if (paraType == ABILITY_CONTEXT) {
             quote(getJSContext(mainThreadRuntime.getOrThrow(), $(nameToken)))
         } else {
             if (optional) {
@@ -625,7 +625,7 @@ public class TransMethod {
         let retValueToken = Tokens()
         let cjType = TypeMap.typeMap(retType)
         let retToken = Token(TokenKind.IDENTIFIER, cjType)
-        if (cjType == unit) {
+        if (cjType == UNIT) {
             retValueToken.append(quote(ret.value = ))
             retValueToken.append(Token(TokenKind.IDENTIFIER, "()"))
             return retValueToken
@@ -650,7 +650,7 @@ public class TransMethod {
 
     func getAsyncRetToken(retType: String, retTypeToken: Token, sync!: Bool = false): Tokens {
         let cjType = TypeMap.typeMap(retType)
-        if (interopTypes.contains(cjType)) {
+        if (INTEROP_TYPES.contains(cjType)) {
             return quote()
         }
         let valueToken = if (sync) {
@@ -696,7 +696,7 @@ public class TransMethod {
     func getCbRetToken(retType: String): Tokens {
         let retTypeToken = Token(TokenKind.IDENTIFIER, TypeMap.typeMap(retType))
         let cjType = TypeMap.typeMap(retType)
-        if (interopTypes.contains(cjType)) {
+        if (INTEROP_TYPES.contains(cjType)) {
             return quote()
         }
         let retToken = Tokens()
@@ -744,11 +744,11 @@ public class TransMethod {
         let innerType = Token(TokenKind.IDENTIFIER, callbackInnerType)
         let paramToken = quote(callback: AsyncCallback<$(innerType)>)
         if (this.methodType.params.size > 0) {
-            paramToken.append(commaToken)
+            paramToken.append(COMMA_TOKEN)
         }
         paramToken.append(getParamToken())
 
-        let transparamToken = (parametersToJS(quote(ctx)) |> reduce {l, r => l + commaToken + r}).getOrDefault {
+        let transparamToken = (parametersToJS(quote(ctx)) |> reduce {l, r => l + COMMA_TOKEN + r}).getOrDefault {
             => quote()
         }
 
@@ -818,8 +818,8 @@ public class TransMethod {
                 })
             callbackParams.append(argName)
             if (i < callbackInnerTypes.size - 1) {
-                wrapperArgs.append(nl)
-                callbackParams.append(commaToken)
+                wrapperArgs.append(NL)
+                callbackParams.append(COMMA_TOKEN)
             }
         }
         let call = if (isMember) {
@@ -1045,7 +1045,7 @@ public class TransMethod {
             }
             paramToken.append(Token(TokenKind.IDENTIFIER, paraName + ".toJSValue(ctx)"))
             if (i < params.size - 1) {
-                paramToken.append(commaToken)
+                paramToken.append(COMMA_TOKEN)
             }
         }
         return paramToken
@@ -1077,7 +1077,7 @@ public class TransMethod {
                 getTokenWithoutNL("jsObjApiCall(jsObj.getOrThrow(), \"create\", { ctx => [${paramNameTokens}]})"))
         }
         if (isContainedBase) {
-            call.append(nl)
+            call.append(NL)
             call.append(quote(mychild = child))
         }
 
@@ -1130,7 +1130,7 @@ public class TransMethod {
         for (i in 0..argNames.size) {
             argToken.append(Token(TokenKind.IDENTIFIER, argNames[i] + ".toJSValue(" + ctxName + ")"))
             if (i < argNames.size - 1) {
-                argToken.append(commaToken)
+                argToken.append(COMMA_TOKEN)
             }
         }
         argToken

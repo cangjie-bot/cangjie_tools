@@ -69,12 +69,12 @@ private func normalize(ty: TsType): TsType {
 
 private func toCJType(ty: TsType): String {
     match (ty) {
-        case TsNumber => f64
-        case TsString => str
-        case TsVoid => unit
-        case TsBoolean => bool
+        case TsNumber => F64
+        case TsString => STR
+        case TsVoid => UNIT
+        case TsBoolean => BOOL
         case TsBigInt => "BigInt"
-        case TsAny => any
+        case TsAny => ANY
 
         case TsFunction(ret, params, generics) =>
             if (generics.size > 0) {
@@ -186,7 +186,7 @@ private func wrapJSFunc(ret: TsType, gconfig: GlobalConfig, ctxParam: Tokens, pa
         let pValue = quote($(callInfo)[$(i)])
         let pFromJS = fromJSValue(p.ty, gconfig, pValue, innerCtx)
         quote(let $(varName) = $(pFromJS))
-    } |> reduce {v: Tokens, elem: Tokens => v + nl + elem}
+    } |> reduce {v: Tokens, elem: Tokens => v + NL + elem}
 
     let paramList = Token(TokenKind.IDENTIFIER,
         params.map {_: TsParameter, i: Int64 => "p${i}"} |> collectString<String>(delimiter: ", "))
@@ -342,7 +342,7 @@ private func genFunction(ret: TsType, gconfig: GlobalConfig, targetObj: Tokens, 
         let pName = Token(TokenKind.IDENTIFIER, p.name)
         let argToJs = toJSValue(p.ty, gconfig, Tokens(pName), innerCtx, isOptional: p.optional)
         quote(let $(pVar) = $(argToJs))
-    } |> fold(quote()) {l, r => l + nl + r}
+    } |> fold(quote()) {l, r => l + NL + r}
 
     let call = if (params.size > 0) {
         quote($(targetObj).asFunction().call([$(args.getOrThrow())]))

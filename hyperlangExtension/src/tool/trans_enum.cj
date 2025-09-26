@@ -56,7 +56,7 @@ public class TransEnum {
                 this.values.add(v.replace("'", ""))
                 this.tips.add(" //todo: please check the value")
             } else { //此时应该是有指定值的数值枚举
-                let vv = if (v.endsWith(comma)) {
+                let vv = if (v.endsWith(COMMA)) {
                     v[..v.size - 1]
                 } else {
                     v
@@ -76,17 +76,17 @@ public class TransEnum {
     }
 
     public func generate(): Tokens {
-        token.append(Tokens([Token(TokenKind.COMMENT, comment), nl]))
+        token.append(Tokens([Token(TokenKind.COMMENT, comment), NL]))
 
         token.append(addComment(signature))
         let nameToken = Token(TokenKind.IDENTIFIER, name)
 
-        token.append(quote(public enum $(nameToken) <: ToString & Equatable<$(nameToken)> {) + nl)
+        token.append(quote(public enum $(nameToken) <: ToString & Equatable<$(nameToken)> {) + NL)
         for (i in 0..keys.size) {
             let keyToken = Token(TokenKind.IDENTIFIER, keys[i])
             token.append(quote(| $(keyToken)))
             if (i != keys.size - 1) {
-                token.append(nl)
+                token.append(NL)
             } else {
                 token.append(Token(TokenKind.COMMENT, "\n"))
             }
@@ -101,7 +101,7 @@ public class TransEnum {
         addToString()
         addEquatable()
 
-        token.append(quote(}) + nl)
+        token.append(quote(}) + NL)
 
         checkAPIAndCommentOut(token, comment)
     }
@@ -112,20 +112,20 @@ public class TransEnum {
             let tip = Token(TokenKind.IDENTIFIER, tips[i])
             if (isNumber) {
                 let valueToken = Token(TokenKind.INTEGER_LITERAL, values[i])
-                token.append(quote(case $(keyToken) => $(valueToken)$(tip)) + nl)
+                token.append(quote(case $(keyToken) => $(valueToken)$(tip)) + NL)
             } else {
-                token.append(quote(case $(keyToken) => $(values[i])$(tip)) + nl)
+                token.append(quote(case $(keyToken) => $(values[i])$(tip)) + NL)
             }
         }
     }
     private func addGetJSV() {
-        token.append(nl)
+        token.append(NL)
         let typeToken = getTypeToken()
         token.append(quote(func get(): $(typeToken) {
-            match (this) {) + nl)
+            match (this) {) + NL)
         addGetJSVHelper();
-        token.append(quote(}) + nl)
-        token.append(quote(}) + nl)
+        token.append(quote(}) + NL)
+        token.append(quote(}) + NL)
     }
 
     private func addParseJSVHelper() {
@@ -134,29 +134,29 @@ public class TransEnum {
             let tip = Token(TokenKind.IDENTIFIER, tips[i])
             if (isNumber) {
                 let valueToken = Token(TokenKind.INTEGER_LITERAL, values[i])
-                token.append(quote(case $(valueToken) => $(keyToken)$(tip)) + nl)
+                token.append(quote(case $(valueToken) => $(keyToken)$(tip)) + NL)
             } else {
-                token.append(quote(case $(values[i]) => $(keyToken)$(tip)) + nl)
+                token.append(quote(case $(values[i]) => $(keyToken)$(tip)) + NL)
             }
         }
     }
 
     private func addParseJSV() {
         let nameToken = Token(TokenKind.IDENTIFIER, name)
-        token.append(nl)
+        token.append(NL)
         let typeToken = getTypeToken()
-        token.append(quote(static func parse(val: $(typeToken)): $(nameToken){) + nl)
+        token.append(quote(static func parse(val: $(typeToken)): $(nameToken){) + NL)
 
-        token.append(quote(match (val) {) + nl)
+        token.append(quote(match (val) {) + NL)
         addParseJSVHelper()
-        token.append(quote(case _ => throw IllegalArgumentException("unknown value ${val}")) + nl)
-        token.append(quote(}) + nl)
-        token.append(quote(}) + nl)
+        token.append(quote(case _ => throw IllegalArgumentException("unknown value ${val}")) + NL)
+        token.append(quote(}) + NL)
+        token.append(quote(}) + NL)
     }
 
     private func addTryParseJSV() {
         let nameToken = Token(TokenKind.IDENTIFIER, "?${name}")
-        token.append(nl)
+        token.append(NL)
         let typeToken = getTypeToken(op: true)
         token.append(
             quote(static func tryParse(val: $(typeToken)): $(nameToken){
@@ -165,55 +165,55 @@ public class TransEnum {
                 case None => None
             }
         }) +
-                nl)
+                NL)
     }
 
     private func addToStringhelper() {
         for (i in 0..keys.size) {
             let keyToken = Token(TokenKind.IDENTIFIER, keys[i])
-            token.append(quote(case $(keyToken) => $(keys[i])) + nl)
+            token.append(quote(case $(keyToken) => $(keys[i])) + NL)
         }
     }
     private func addToString() {
-        token.append(nl)
+        token.append(NL)
         if (!isNumber) {
             token.append(quote(public func toString(): String {
                 get()
             }))
         } else {
             token.append(quote(public func toString(): String {
-                match (this) {) + nl)
+                match (this) {) + NL)
             addToStringhelper()
-            token.append(quote(}) + nl + quote(}))
+            token.append(quote(}) + NL + quote(}))
         }
-        token.append(nl)
+        token.append(NL)
     }
 
     private func addEquatable() {
-        token.append(nl)
+        token.append(NL)
         let nameToken = Token(TokenKind.IDENTIFIER, name)
         token.append(
             quote(public override operator func ==(that: $(nameToken)): Bool {
-            match ((this, that)) {) + nl)
+            match ((this, that)) {) + NL)
         for (i in 0..keys.size) {
             let keyToken = Token(TokenKind.IDENTIFIER, keys[i])
-            token.append(quote(case ($(keyToken), $(keyToken)) => true) + nl)
+            token.append(quote(case ($(keyToken), $(keyToken)) => true) + NL)
         }
-        token.append(quote(case _ => false) + nl)
-        token.append(quote(}) + nl + quote(}) + nl + nl)
+        token.append(quote(case _ => false) + NL)
+        token.append(quote(}) + NL + quote(}) + NL + NL)
         token.append(
             quote(public override operator func !=(that: $(nameToken)): Bool {
             !(this == that)
         }))
-        token.append(nl)
+        token.append(NL)
     }
 
     private func getTypeToken(op!: Bool = false) {
         match ((isNumber, op)) {
-            case (true, true) => i32opToken
-            case (true, false) => i32Token
-            case (false, true) => stropToken
-            case (false, false) => strToken
+            case (true, true) => I32_OP_TOKEN
+            case (true, false) => I32_TOKEN
+            case (false, true) => STR_OP_TOKEN
+            case (false, false) => STR_TOKEN
         }
     }
 }
