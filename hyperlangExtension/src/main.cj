@@ -25,9 +25,9 @@ const OS_OTHERS = "Others"
 const OS = OS_WINDOWS
 @When[os != "Windows"]
 const OS = OS_OTHERS
-public const analysisFilePath: String = "./src/dtsparser/analysis.js"
-let mtx = Mutex()
-let cla = CommandLineArg()
+public const ANALYSIS_FILE_PATH: String = "./src/dtsparser/analysis.js"
+let MTX = Mutex()
+let CLA = CommandLineArg()
 let HELP_INFO = """
 Usage: main [options]
 
@@ -83,22 +83,22 @@ main(args: Array<String>) {
     parseCommandLine(pa)
 
     // we want to get `lz4js` from `src/dtsparser/node_modules/@types/lz4js/`
-    var moduleNameTemp = cla.cjModuleName
-    cla.directoryPath = (pa.options.get("d") ?? "")
-    if (!cla.directoryPath.isEmpty() && moduleNameTemp == "") {
-        if (!cla.directoryPath.endsWith("/")) {
-            cla.directoryPath += "/"
+    var moduleNameTemp = CLA.cjModuleName
+    CLA.directoryPath = (pa.options.get("d") ?? "")
+    if (!CLA.directoryPath.isEmpty() && moduleNameTemp == "") {
+        if (!CLA.directoryPath.endsWith("/")) {
+            CLA.directoryPath += "/"
         }
-        let dir = cla.directoryPath.split("/")
+        let dir = CLA.directoryPath.split("/")
         if (dir.size >= 2) {
             moduleNameTemp = dir[dir.size - 2]
         }
     }
 
     // Parse one file
-    if (!cla.arkpath.isEmpty()) {
-        if (cla.arkpath.contains("/") && moduleNameTemp == "") {
-            let dir = cla.arkpath.split("/")
+    if (!CLA.arkpath.isEmpty()) {
+        if (CLA.arkpath.contains("/") && moduleNameTemp == "") {
+            let dir = CLA.arkpath.split("/")
             if (dir.size >= 2) {
                 moduleNameTemp = dir[dir.size - 2]
             }
@@ -107,7 +107,7 @@ main(args: Array<String>) {
     }
 
     // Parse multiple files under a directory
-    if (!cla.directoryPath.isEmpty() && !parseMultipleFiles(moduleNameTemp)) {
+    if (!CLA.directoryPath.isEmpty() && !parseMultipleFiles(moduleNameTemp)) {
         return 1
     }
 
@@ -119,14 +119,14 @@ main(args: Array<String>) {
 func parseCommandLine(pa: ParsedArguments): Unit {
     let currentPath = getHomeDirectory().toString()
 
-    cla.arkpath = (pa.options.get("i") ?? "") //  输入的ArkTS文件路径
-    cla.outDir = (pa.options.get("o") ?? currentPath) //  输出的Cangjie文件路径
-    if (!cla.outDir.endsWith("/")) {
-        cla.outDir += "/"
+    CLA.arkpath = (pa.options.get("i") ?? "") //  输入的ArkTS文件路径
+    CLA.outDir = (pa.options.get("o") ?? currentPath) //  输出的Cangjie文件路径
+    if (!CLA.outDir.endsWith("/")) {
+        CLA.outDir += "/"
     }
-    cla.jsASTPath = (pa.options.get("j") ?? analysisFilePath) //  ArkTS文件分析器路径
-    cla.cjModuleName = (pa.options.get("module-name") ?? "")
-    cla.is3rd = pa.options.contains("lib")
+    CLA.jsASTPath = (pa.options.get("j") ?? ANALYSIS_FILE_PATH) //  ArkTS文件分析器路径
+    CLA.cjModuleName = (pa.options.get("module-name") ?? "")
+    CLA.is3rd = pa.options.contains("lib")
 
     @When[cjc_version < "0.59.4"]
     let pathName = pa.options.get("r") ?? "typescript"
@@ -134,15 +134,15 @@ func parseCommandLine(pa: ParsedArguments): Unit {
     @When[cjc_version >= "0.59.4"]
     let pathName = Path(pa.options.get("r") ?? "typescript").normalize().toString()
 
-    cla.tsPath = pathName
+    CLA.tsPath = pathName
 }
 
 func parseMultipleFiles(moduleNameTemp: String): Bool {
     let fileInfos = ArrayList<FileInfo>()
-    let dir = Path(cla.directoryPath)
+    let dir = Path(CLA.directoryPath)
     getFiles(fileInfos, dir)
     if (fileInfos.isEmpty()) {
-        println("Error: generation failed! Not found .d.ts or .d.ets file under ${cla.directoryPath}")
+        println("Error: generation failed! Not found .d.ts or .d.ets file under ${CLA.directoryPath}")
         return false
     }
 
@@ -187,9 +187,9 @@ func parseMultipleFiles(moduleNameTemp: String): Bool {
 }
 
 func parseOneFiles(moduleNameTemp: String): Unit {
-    let gconfig: GlobalConfig = GlobalConfig(cla.cjModuleName, cla.is3rd)
-    parseFile(cla.arkpath, cla.outDir, cla.jsASTPath, gconfig, moduleNameTemp: moduleNameTemp,
-        tsPath: cla.tsPath)
+    let gconfig: GlobalConfig = GlobalConfig(CLA.cjModuleName, CLA.is3rd)
+    parseFile(CLA.arkpath, CLA.outDir, CLA.jsASTPath, gconfig, moduleNameTemp: moduleNameTemp,
+        tsPath: CLA.tsPath)
     gconfig.gconfigArray = ArrayList<GlobalConfig>([gconfig])
     gconfig.collectParentPropertiesAndMethods()
     let a2cj = A2CJ(gconfig)
@@ -208,11 +208,11 @@ func parseFilesSpawn(f: FileInfo, dir: Path, name: String, gconfigList: Concurre
 
     let relativePathName = Path(relativeFilePath).parent.toString()
 
-    let gconfig: GlobalConfig = GlobalConfig(cla.cjModuleName, cla.is3rd,
+    let gconfig: GlobalConfig = GlobalConfig(CLA.cjModuleName, CLA.is3rd,
         typeDeclFileArg: getTypeDeclFile(f))
-    parseFile(moduleName, cla.outDir, cla.jsASTPath, gconfig, moduleNameTemp: name,
+    parseFile(moduleName, CLA.outDir, CLA.jsASTPath, gconfig, moduleNameTemp: name,
         thirdpartyName: moduleName.split("/")[moduleName.split("/").size - 1], relativePathName: relativePathName,
-        tsPath: cla.tsPath)
+        tsPath: CLA.tsPath)
     let _ = gconfigList.add(gconfig)
 }
 
@@ -234,11 +234,11 @@ func getTypeDeclFile(file: FileInfo): String {
 }
 
 func createDir(dir: String) {
-    mtx.lock()
+    MTX.lock()
     if (!Directory.exists(dir)) {
         Directory.create(dir, recursive: true)
     }
-    mtx.unlock()
+    MTX.unlock()
 }
 
 func getModuleName(thirdpartyName: ?String, module: String) {
@@ -257,16 +257,16 @@ func getModuleName(thirdpartyName: ?String, module: String) {
 
 func getArkTSModuleName(gconfig: GlobalConfig, moduleName: String, moduleFullName: String): String {
     var arkTSModuleName = ""
-    if (!cla.directoryPath.isEmpty()) {
-        if (!cla.directoryPath.endsWith("/")) {
-            cla.directoryPath += "/"
+    if (!CLA.directoryPath.isEmpty()) {
+        if (!CLA.directoryPath.endsWith("/")) {
+            CLA.directoryPath += "/"
         }
-        let dir = cla.directoryPath.split("/")
+        let dir = CLA.directoryPath.split("/")
         if (dir.size >= 2) {
             arkTSModuleName = dir[dir.size - 2]
         }
     } else {
-        let dir = cla.arkpath.split("/")
+        let dir = CLA.arkpath.split("/")
         if (dir.size >= 2) {
             arkTSModuleName = dir[dir.size - 2]
         }

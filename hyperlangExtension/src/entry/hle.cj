@@ -14,14 +14,14 @@ import std.time.DateTime
 import std.collection.*
 import std.fs.{exists, remove}
 
-let fileHead = """
+let FILE_HEAD = """
 // Copyright (c) Huawei Technologies Co., Ltd. ${DateTime.nowUTC().year}. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 """
-let mtx = Mutex()
+let MTX = Mutex()
 
 public class A2CJ {
     var gconfig: GlobalConfig
@@ -52,11 +52,11 @@ public class A2CJ {
 
         file.write(outToken.toString().toArray())
 
-        mtx.lock()
+        MTX.lock()
         generateTemplateFile("${outSrcDir}/ark_api_call_async.cj", createArkAPICallAsync(gconfig))
         generateTemplateFile("${outSrcDir}/basic_service_kit.cj", createBasicServiceKit(gconfig))
         generateTemplateFile("${outSrcDir}/callback_manager.cj", createCallbackManager(gconfig))
-        mtx.unlock()
+        MTX.unlock()
     }
 
     private func createDirAndFile(): File {
@@ -110,7 +110,7 @@ public class A2CJ {
             for (c in cns.consts) {
                 constToken.append(transConst(c))
             }
-            outToken.append(constToken + nl)
+            outToken.append(constToken + NL)
         }
 
         //enums
@@ -126,7 +126,7 @@ public class A2CJ {
         }
 
         if (objectToken.size > 0) {
-            outToken.append(objectToken + nl)
+            outToken.append(objectToken + NL)
         }
 
         //methods
@@ -140,7 +140,7 @@ public class A2CJ {
         for (t in cns.types) {
             typeToken.append(transType(t))
         }
-        outToken.append(typeToken + nl)
+        outToken.append(typeToken + NL)
     }
 
     private func processEnums(cns: NameSpace, outToken: Tokens): Unit {
@@ -149,7 +149,7 @@ public class A2CJ {
         for (e in cns.enums) {
             enumToken.append(transEnum(e))
         }
-        outToken.append(enumToken + nl)
+        outToken.append(enumToken + NL)
     }
 
     private func processMethods(cns: NameSpace, outToken: Tokens): Unit {
@@ -165,7 +165,7 @@ public class A2CJ {
         if (hasEventAPI(cns.methods)) {
             outToken.append(declareCallbackManager())
         }
-        outToken.append(methodToken + nl)
+        outToken.append(methodToken + NL)
     }
 
     // 几个transXX函数都只考虑了只给arkjson的情况
@@ -173,47 +173,47 @@ public class A2CJ {
         let to = TransObject(objectType, gconfig)
         to.arkCategory = "interface"
         to.cjCategory = "class"
-        return to.generate() + nl
+        return to.generate() + NL
     }
 
     public func transClass(objectType: ObjectType): Tokens {
         let to = TransObject(objectType, gconfig)
         to.arkCategory = "class"
         to.cjCategory = "class"
-        return to.generate() + nl
+        return to.generate() + NL
     }
 
     public func transMethod(methodType: MethodType): Tokens {
         let tm = TransMethod(methodType, "", gconfig)
-        return tm.generateFunc() + nl //按照非成员函数生成
+        return tm.generateFunc() + NL //按照非成员函数生成
 
     }
 
     public func transType(typeType: TypeType): Tokens {
         let ret = Tokens()
-        ret.append(Token(TokenKind.COMMENT, typeType.comment) + nl)
-        ret.append(typeType.generate() + nl)
+        ret.append(Token(TokenKind.COMMENT, typeType.comment) + NL)
+        ret.append(typeType.generate() + NL)
         ret
     }
 
     public func transConst(constType: VariableType): Tokens {
         let commentToken = Token(TokenKind.COMMENT, constType.comment)
         let token = Token(TokenKind.IDENTIFIER, constType.signature())
-        Tokens(commentToken, nl, token, nl)
+        Tokens(commentToken, NL, token, NL)
     }
 
     public func transEnum(enumType: EnumType): Tokens {
         let te = TransEnum(enumType, gconfig)
-        return te.generate() + nl
+        return te.generate() + NL
     }
 
     // 添加输出文件的import信息
     public func addHeader(out: Tokens): Unit {
-        let headToken = Token(TokenKind.COMMENT, fileHead)
+        let headToken = Token(TokenKind.COMMENT, FILE_HEAD)
         let moduleName = gconfig.cjModuleName
         let packageName = Token(TokenKind.IDENTIFIER, moduleName)
-        out.append(headToken + nl)
-        out.append(quote(package ) + packageName + nl + nl)
+        out.append(headToken + NL)
+        out.append(quote(package ) + packageName + NL + NL)
         addImport(gconfig, out)
     }
 
@@ -228,35 +228,35 @@ public class A2CJ {
 
     public func handleThirdParty(gconfig: GlobalConfig, out: Tokens): Unit {
         if (!gconfig.is3rd) {
-            out.append(quote(import tpc.*) + nl)
+            out.append(quote(import tpc.*) + NL)
         }
     }
 
     public func handleDefault(out: Tokens): Unit {
-        out.append(quote(import ohos.ark_interop.*) + nl)
-        out.append(quote(import ohos.ark_interop_helper.*) + nl)
+        out.append(quote(import ohos.ark_interop.*) + NL)
+        out.append(quote(import ohos.ark_interop_helper.*) + NL)
     }
 
     public func handleAsyncPlan(out: Tokens): Unit {
-        out.append(quote(import ohos.base.*) + nl)
+        out.append(quote(import ohos.base.*) + NL)
     }
 
 
     public func handleUseBigInt(gconfig: GlobalConfig, out: Tokens): Unit {
         if (gconfig.moduleMeta.useBigInt) {
-            out.append(quote(import std.math.numeric.*) + nl)
+            out.append(quote(import std.math.numeric.*) + NL)
         }
     }
 
     public func handleUseContext(gconfig: GlobalConfig, out: Tokens): Unit {
         if (gconfig.moduleMeta.useContext) {
-            out.append(quote(import tpc.AbilityKit.common) + nl)
+            out.append(quote(import tpc.AbilityKit.common) + NL)
         }
     }
 
     public func handleHashMap(gconfig: GlobalConfig, out: Tokens): Unit {
         if (gconfig.moduleMeta.useHashMap) {
-            out.append(quote(import std.collection.{HashMap}) + nl)
+            out.append(quote(import std.collection.{HashMap}) + NL)
         }
     }
 }

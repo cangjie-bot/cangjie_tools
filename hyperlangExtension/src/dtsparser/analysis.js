@@ -309,7 +309,7 @@ class ASTVisitor {
 
         rjson[rjson.length - 1].info.return = `${returnType}`;
 
-        this.handleTypeParameters(node, rjson[rjson.length - 1]['info']);
+        this.handleTypeParameters(node, rjson[rjson.length - 1].info);
 
         let comment = '';
         const comments = ts.getLeadingCommentRanges(fileContent, node.getFullStart())?.map(
