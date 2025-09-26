@@ -11,51 +11,51 @@ import std.ast.*
 import std.regex.*
 import stdx.serialization.serialization.*
 
-public const i8: String = "Int8"
-public const i16: String = "Int16"
-public const i32: String = "Int32"
-public const i64: String = "Int64"
-public const u8: String = "UInt8"
-public const u16: String = "UInt16"
-public const u32: String = "UInt32"
-public const u64: String = "UInt64"
-public const f16: String = "Float16"
-public const f32: String = "Float32"
-public const f64: String = "Float64"
-public const bool: String = "Bool"
-public const str: String = "String"
-public const unit: String = "Unit"
-public const byteArr: String = "Array<UInt8>"
-public const any: String = "Any"
-public const promise: String = "Promise"
-public const JsBigInt: String = "bigint"
-public const JsHashMap: String = "Record"
-public const AbilityContext: String = "common.Context"
-public const UIContext: String = "common.UIAbilityContext"
-public let syncKeyword: Array<String> = ["Callback", promise, "Async", "AsyncCallback"]
-public let interopTypes: Array<String> = [i8, i16, i32, i64, u8, u16, u32, u64, f16, f32, f64, bool, str, unit, byteArr]
-public const comma: String = ","
-public let nl: Token = Token(TokenKind.NL)
-public let i32Token: Token = Token(TokenKind.INT32)
-public let i32opToken: Token = Token(TokenKind.IDENTIFIER, "?Int32")
-public let strToken: Token = Token(TokenKind.IDENTIFIER, str)
-public let stropToken: Token = Token(TokenKind.IDENTIFIER, "?String")
-public let commaToken: Token = Token(TokenKind.COMMA)
-public let noneToken: Token = Token(TokenKind.IDENTIFIER, "None")
-public let deriveToStringToken: Token = Token(TokenKind.IDENTIFIER, "@Derive[ToString]")
-public let cangjieKeyword: Array<String> = ["type", "in"]
-public let ViewBase: Array<String> = ["AlphabetIndexer", "Blank", "Button", "Checkbox", "CheckboxGroup", "DataPanel",
+public const I8: String = "Int8"
+public const I16: String = "Int16"
+public const I32: String = "Int32"
+public const I64: String = "Int64"
+public const U8: String = "UInt8"
+public const U16: String = "UInt16"
+public const U32: String = "UInt32"
+public const U64: String = "UInt64"
+public const F16: String = "Float16"
+public const F32: String = "Float32"
+public const F64: String = "Float64"
+public const BOOL: String = "Bool"
+public const STR: String = "String"
+public const UNIT: String = "Unit"
+public const BYTE_ARR: String = "Array<UInt8>"
+public const ANY: String = "Any"
+public const PROMISE: String = "Promise"
+public const JS_BIG_INT: String = "bigint"
+public const JS_HASH_MAP: String = "Record"
+public const ABILITY_CONTEXT: String = "common.Context"
+public const UI_CONTEXT: String = "common.UIAbilityContext"
+public let SYNC_KEY_WORD: Array<String> = ["Callback", PROMISE, "Async", "AsyncCallback"]
+public let INTEROP_TYPES: Array<String> = [I8, I16, I32, I64, U8, U16, U32, U64, F16, F32, F64, BOOL, STR, UNIT, BYTE_ARR]
+public const COMMA: String = ","
+public let NL: Token = Token(TokenKind.NL)
+public let I32_TOKEN: Token = Token(TokenKind.INT32)
+public let I32_OP_TOKEN: Token = Token(TokenKind.IDENTIFIER, "?Int32")
+public let STR_TOKEN: Token = Token(TokenKind.IDENTIFIER, STR)
+public let STR_OP_TOKEN: Token = Token(TokenKind.IDENTIFIER, "?String")
+public let COMMA_TOKEN: Token = Token(TokenKind.COMMA)
+public let NONE_TOKEN: Token = Token(TokenKind.IDENTIFIER, "None")
+public let DERIVE_TOSTRING_TOKEN: Token = Token(TokenKind.IDENTIFIER, "@Derive[ToString]")
+public let CANGJIE_KEYWORD: Array<String> = ["type", "in"]
+public let VIEW_BASE: Array<String> = ["AlphabetIndexer", "Blank", "Button", "Checkbox", "CheckboxGroup", "DataPanel",
     "Datepicker", "Divider", "Gauge", "Image", "ImageSpan", "LoadingProgress", "Menu", "MenuItem", "MenuItemGroup",
     "Progress", "QRCode", "Radio", "Rating", "RichEditor", "RichText", "ScrollBar", "Search", "Select", "Slider", "Span",
     "Stepper", "Stepperitem", "Text", "TextArea", "TextClock", "TextInput", "TextPicker", "TextTimer", "Toggle", "Video",
     "Web"]
-public let ContainerBase: Array<String> = ["Badge", "Column", "ColumnSplit", "Flex", "GridCol", "GridRow", "Grid",
+public let CONTAINER_BASE: Array<String> = ["Badge", "Column", "ColumnSplit", "Flex", "GridCol", "GridRow", "Grid",
     "GridItem", "List", "ListItem", "ListItemGroup", "Panel", "Refresh", "RelativeContainer", "Row", "RowSplit",
     "Scroll", "Stack", "Swiper", "Tabs", "WaterFlow", "TabContent"]
-public let ShapeComponent: Array<String> = ["Circle", "Line", "Path", "Rect", "Shape", "Polygon"]
+public let SHAPE_COMPONENT: Array<String> = ["Circle", "Line", "Path", "Rect", "Shape", "Polygon"]
 
 // 记录用户自定义的类型名称（定义类、接口、枚举、泛型类型时更新）
-public var userDefinedNames: HashSet<String> = HashSet<String>(interopTypes)
+public var userDefinedNames: HashSet<String> = HashSet<String>(INTEROP_TYPES)
 
 //记录一个namespace的内容
 public class NameSpace {
@@ -95,10 +95,10 @@ public class Transform {
     public init() {}
 
     public init(fileContent: String) {
-        useBigInt = fileContent.contains(JsBigInt)
-        useContext = fileContent.contains(UIContext) || fileContent.contains("common.Context") || fileContent.contains(
+        useBigInt = fileContent.contains(JS_BIG_INT)
+        useContext = fileContent.contains(UI_CONTEXT) || fileContent.contains("common.Context") || fileContent.contains(
             "Context")
-        useHashMap = fileContent.contains(JsHashMap)
+        useHashMap = fileContent.contains(JS_HASH_MAP)
     }
 }
 
@@ -206,7 +206,7 @@ public class MethodType <: Serializable<MethodType> {
         for (i in 0..n) {
             msg += "${params[i]}"
             if (i < n - 1) {
-                msg += comma + " "
+                msg += COMMA + " "
             }
         }
         msg = msg + "): ${returns}"
@@ -342,7 +342,7 @@ public class TypeType <: Serializable<TypeType> {
         }
         let nameToken = Token(TokenKind.IDENTIFIER, name)
         tok.append(quote(public type $(nameToken) = ))
-        tok.append(Token(TokenKind.IDENTIFIER, tsType.toCJType()) + nl)
+        tok.append(Token(TokenKind.IDENTIFIER, tsType.toCJType()) + NL)
         return tok
     }
 
@@ -656,24 +656,24 @@ public class UnionType {
     public func genTokens(): Tokens {
         var ret = Tokens()
         let nameToken = Token(TokenKind.IDENTIFIER, name)
-        ret.append(quote(public enum $(nameToken) { ) + nl)
+        ret.append(quote(public enum $(nameToken) { ) + NL)
         for (t in typeList) {
             let vToken = Token(TokenKind.IDENTIFIER, getStringToken(t))
-            ret.append(quote(| $(vToken)) + nl)
+            ret.append(quote(| $(vToken)) + NL)
         }
-        ret.append(nl)
+        ret.append(NL)
 
         let ctxToken = Token(TokenKind.IDENTIFIER, ctxName)
-        ret.append(quote(public func toJSValue($(ctxToken): JSContext): JSValue {) + nl)
+        ret.append(quote(public func toJSValue($(ctxToken): JSContext): JSValue {) + NL)
 
         // toJSValue function body
-        ret.append(quote(match(this) {) + nl)
+        ret.append(quote(match(this) {) + NL)
         for (t in typeList) {
             let (cs, cv) = getIdentifierToken(t)
-            ret.append(quote(case $(cs) => ) + cv + nl)
+            ret.append(quote(case $(cs) => ) + cv + NL)
         }
 
-        ret.append(quote(}) + nl + quote(}) + nl + quote(}) + nl)
+        ret.append(quote(}) + NL + quote(}) + NL + quote(}) + NL)
         ret
     }
 }
