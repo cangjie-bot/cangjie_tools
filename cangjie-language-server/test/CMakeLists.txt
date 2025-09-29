@@ -60,6 +60,7 @@ add_executable(gtest_LSPServer_test main.cpp)
 add_dependencies(gtest_LSPServer_test LSPServerlib)
 
 target_link_libraries(gtest_LSPServer_test
+    pthread
     libLSPServerlib.a
     GTest::gtest
     GTest::gtest_main
