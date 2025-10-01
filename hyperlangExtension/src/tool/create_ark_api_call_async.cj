@@ -350,10 +350,21 @@ protected func jsGlobalApiCall<T>(moduleName: String, modulePrefix: ?String, fun
     func call(context: JSContext): T {
         try {
             let jsModule = getJSModule(context, moduleName, modulePrefix)
-            let jsRet = jsModule.callMethod(funcName, args(context))
+            let jsRet = if (funcName.contains(".")) {
+                // 处理namespace调用：MathUtils.add -> jsModule.MathUtils.add
+                let parts = funcName.split(".")
+                var currentObj = jsModule
+                for (i in 0..parts.size - 1) {
+                    currentObj = currentObj[parts[i]].asObject()
+                }
+                currentObj.callMethod(parts[parts.size - 1], args(context))
+            } else {
+                // 直接调用
+                jsModule.callMethod(funcName, args(context))
+            }
             onResolve(context, jsRet)
         } catch (e: JSCodeError) {
-            throw BusinessException(e.code.getOrDefault({ => 0}), e.jsError)
+            throw BusinessException(e.code.getOrDefault({ => 0 }), e.jsError)
         }
     }
     checkThreadAndCall<T>(getMainContext(), call)
@@ -366,7 +377,7 @@ protected func jsObjApiCall<T>(obj: JSObject, funcName: String, args: (JSContext
             let jsRet = obj.callMethod(funcName, args(context))
             onResolve(context, jsRet)
         } catch (e: JSCodeError) {
-            throw BusinessException(e.code.getOrDefault({ => 0}), e.jsError)
+            throw BusinessException(e.code.getOrDefault({ => 0 }), e.jsError)
         }
     }
     checkThreadAndCall<T>(getMainContext(), call)
@@ -407,7 +418,25 @@ protected func jsGlobalApiCallPromise<T>(moduleName: String, modulePrefix: ?Stri
     callback: AsyncCallback<T>, args: (JSContext) -> Array<JSValue>, onResolve: (JSContext, JSValue) -> T): Unit {
     func call(context: JSContext): Unit {
         try {
-            let jsRet = getJSModule(context, moduleName, modulePrefix).callMethod(funcName, args(context))
+            let jsModule = getJSModule(context, moduleName, modulePrefix)
+            let jsRet = if (funcName.contains(".")) {
+                // 处理namespace调用：MathUtils.add -> 尝试直接访问namespace
+                let parts = funcName.split(".")
+                try {
+                    var currentObj = jsModule
+                    for (i in 0..parts.size - 1) {
+                        currentObj = currentObj[parts[i]].asObject()
+                    }
+                    currentObj.callMethod(parts[parts.size - 1], args(context))
+                } catch (e: JSCodeError) {
+                    // 如果namespace访问失败，尝试直接调用函数（如MathUtils_add）
+                    let fallbackFuncName = funcName.replace(".", "_")
+                    jsModule.callMethod(fallbackFuncName, args(context))
+                }
+            } else {
+                // 直接调用
+                jsModule.callMethod(funcName, args(context))
+            }
             let promise = jsRet.asPromise(context)
             let onResolved = context.function(
                 {

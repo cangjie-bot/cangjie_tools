@@ -84,10 +84,21 @@ public class A2CJ {
     private func parseNamespaces(i: Int64, outToken: Tokens): Unit {
         let cns: NameSpace = gconfig.moduleMeta.namespaces[i] //csc:current namespace
         if (cns.isEmpty()) {
+            // Even if the namespace is empty, we need to create a file for it if it's a nested namespace
+            // to ensure package structure integrity
+            if (!cns.spacePath.isEmpty()) {
+                createNamespaceFile(cns)
+            }
             return
         }
 
         gconfig.exceptionLog.add("********" + cns.spacePath + "********")
+
+        // For all namespaces, create separate files
+        if (!cns.spacePath.isEmpty()) {
+            createNamespaceFile(cns)
+            return
+        }
 
         //types
         if (cns.types.size > 0) {
@@ -96,6 +107,117 @@ public class A2CJ {
 
         let objectToken: Tokens = Tokens()
         let componentNames = HashSet<String>()
+
+        //interfaces
+        if (cns.interfaces.size > 0) {
+            objectToken.append(addComment("**********OBJECT**********"))
+            for ((_, i) in cns.interfaces) {
+                objectToken.append(transInterface(i))
+            }
+        }
+
+        //consts
+        if (cns.consts.size > 0) {
+            let constToken = Tokens()
+            for (c in cns.consts) {
+                constToken.append(transConst(c))
+            }
+            outToken.append(constToken + nl)
+        }
+
+        //enums
+        if (cns.enums.size > 0) {
+            processEnums(cns, outToken)
+        }
+
+        //class
+        if (cns.classes.size > 0) {
+            for ((_, c) in cns.classes) {
+                objectToken.append(transClass(c))
+            }
+        }
+
+        if (objectToken.size > 0) {
+            outToken.append(objectToken + nl)
+        }
+
+        //methods
+        if (cns.methods.size > 0) {
+            processMethods(cns, outToken)
+        }
+    }
+
+    private func createNamespaceFile(cns: NameSpace): Unit {
+        let namespaceParts = cns.spacePath.split("_")
+        let fileName = camelToUnderscore("${removeTsSuffix(gconfig.module)}_${cns.spacePath}")
+        
+        // Create nested directory structure
+        let namespaceDir = if (gconfig.is3rd && (!gconfig.cjModuleName.isEmpty())) {
+            var dir = gconfig.outPath
+            for (part in namespaceParts[0..=namespaceParts.size-1]) {
+                dir = "${dir}/${part}"
+                if (!exists(dir)) {
+                    Directory.create(dir, recursive: true)
+                }
+            }
+            dir
+        } else {
+            var dir = "${gconfig.outPath}/${gconfig.module}/src"
+            for (part in namespaceParts[0..=namespaceParts.size-1]) {
+                dir = "${dir}/${part}"
+                if (!exists(dir)) {
+                    Directory.create(dir, recursive: true)
+                }
+            }
+            dir
+        }
+        
+        // Create file with correct package name
+        let filePath = "${namespaceDir}/${fileName}.cj"
+        if (exists(filePath)) {
+            remove(filePath)
+        }
+        
+        let file = File.create(filePath)
+        let outToken = Tokens()
+        
+        // Add header with correct package name
+        let headToken = Token(TokenKind.COMMENT, fileHead)
+        let packageName = if (!gconfig.cjModuleName.isEmpty()) {
+            var pkg = gconfig.cjModuleName
+            for (part in namespaceParts) {
+                pkg = "${pkg}.${part}"
+            }
+            pkg
+        } else {
+            var pkg = gconfig.module
+            for (part in namespaceParts) {
+                pkg = "${pkg}.${part}"
+            }
+            pkg
+        }
+        
+        outToken.append(headToken + nl)
+        outToken.append(quote(package ) + Token(TokenKind.IDENTIFIER, packageName) + nl + nl)
+        
+        // Add imports
+        addImportForNamespaceFile(gconfig, outToken, namespaceParts.size)
+        outToken.append(nl)
+        
+        // Process namespace content
+        processNamespaceContent(cns, outToken)
+        
+        file.write(outToken.toString().toArray())
+        file.close()
+    }
+
+    private func processNamespaceContent(cns: NameSpace, outToken: Tokens): Unit {
+        //types
+        if (cns.types.size > 0) {
+            processTypes(cns, outToken)
+        }
+
+        let objectToken: Tokens = Tokens()
 
         //interfaces
         if (cns.interfaces.size > 0) {
@@ -271,5 +393,19 @@ public class A2CJ {
         if (gconfig.moduleMeta.useHashMap) {
             out.append(quote(import std.collection.{HashMap}) + nl)
         }
+    }
+
+    public func addImportForNamespaceFile(gconfig: GlobalConfig, out: Tokens, namespaceDepth: Int64): Unit {
+        // Import the main module to access hmsGlobalApiCall and other utility functions
+        let mainModuleName = gconfig.cjModuleName
+        let importStmt = "import ${mainModuleName}.*"
+        out.append(Token(TokenKind.COMMENT, importStmt) + nl)
+        
+        // Also add standard imports
+        handleDefault(out)
+        handleAsyncPlan(out)
+        handleUseBigInt(gconfig, out)
+        handleUseContext(gconfig, out)
+        handleHashMap(gconfig, out)
     }
 }
