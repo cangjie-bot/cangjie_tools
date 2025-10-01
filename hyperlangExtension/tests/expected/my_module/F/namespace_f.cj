@@ -4,4 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-package hle.dtsparser
+package my_module.F
+
+import my_module.*
+import ohos.ark_interop.*
+import ohos.ark_interop_helper.*
+import ohos.base.*
+
