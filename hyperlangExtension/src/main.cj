@@ -506,6 +506,11 @@ func dfs(contents: JsonValue, track: ArrayList<String>, transform: Transform): U
         return
     }
     for (i in 0..nameSpaceArray.size()) {
-        dfs(nameSpaceArray[i], track, transform)
+        // 为每个namespace创建独立的track数组，避免累积
+        let newTrack = ArrayList<String>()
+        for (item in track) {
+            newTrack.add(item)
+        }
+        dfs(nameSpaceArray[i], newTrack, transform)
     }
 }

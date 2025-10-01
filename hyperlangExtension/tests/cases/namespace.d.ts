@@ -6,6 +6,25 @@
 export declare namespace A {
     interface B {
     }
+    
+    class TestClass {
+        name: string;
+        getValue(): number;
+    }
+    
+    enum TestEnum {
+        VALUE1,
+        VALUE2
+    }
+    
+    class ClassWithMethod {
+        method(a: number, b: string): boolean;
+    }
+    
+    interface InterfaceWithMethod {
+        prop: string;
+        method(x: number): void;
+    }
 }
 export declare namespace C.D {
     interface E {
@@ -16,4 +35,18 @@ export declare namespace F {
         interface H {
         }
     }
+}
+
+export declare namespace MathUtils {
+    /**
+     * Calculate the sum of two numbers
+     */
+    function add(a: number, b: number): number;
+}
+
+export declare namespace StringUtils {
+    /**
+     * Concatenate two strings (same signature as MathUtils.add)
+     */
+    function add(a: number, b: number): number;
 }

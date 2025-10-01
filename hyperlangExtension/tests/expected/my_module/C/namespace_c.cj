@@ -4,8 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-package my_module
+package my_module.C
 
+import my_module.*
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
+
