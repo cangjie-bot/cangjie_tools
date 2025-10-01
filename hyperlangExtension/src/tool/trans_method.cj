@@ -42,11 +42,20 @@ public class TransMethod {
     //根据单个arkts的函数描述，默认地构造一个cj的描述
     public init(methodType: MethodType, memberClassName: String, gconfig: GlobalConfig) {
         this.origFuncSignature = methodType.signature()
-        this.arkName = methodType.name.replace(" ", "")
+        // 包含namespace信息到arkName中
+        this.arkName = if (let Some(ns) <- methodType.namespace) {
+            if (ns.spacePath.isEmpty()) {
+                methodType.name.replace(" ", "")
+            } else {
+                "${ns.spacePath}.${methodType.name.replace(" ", "")}"
+            }
+        } else {
+            methodType.name.replace(" ", "")
+        }
         this.cjName = if (methodType.isConstructor) {
             "init "
         } else {
-            dedupFuncName(arkName)
+            dedupFuncName(methodType.name.replace(" ", ""))
         }
         this.arkModifiers = methodType.modifiers
         this.comment = methodType.comment

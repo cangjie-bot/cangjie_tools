@@ -56,6 +56,69 @@ public class GlobalConfig {
         if (cjModuleName.isEmpty()) {
             cjModuleName = getCjModuleNameForTpc()
         }
+        
+        // Process nested namespaces to ensure empty namespaces are included
+        processNestedNamespaces()
+    }
+
+    // Ensure all levels of nested namespaces are represented, even empty ones
+    private func processNestedNamespaces(): Unit {
+        // Collect all existing namespace paths
+        let namespacePaths = HashSet<String>()
+        for (i in 0..this.moduleMeta.namespaces.size) {
+            let ns: NameSpace = this.moduleMeta.namespaces[i]
+            if (!ns.spacePath.isEmpty()) {
+                namespacePaths.add(ns.spacePath)
+            }
+        }
+        
+        // Identify all parent namespaces that should exist for nested namespaces
+        let parentNamespaces = HashSet<String>()
+        for (path in namespacePaths) {
+            if (path.contains("_")) {
+                let parts = path.split("_")
+                var currentPath = ""
+                // Add all parent levels except the full path
+                for (j in 0..parts.size-1) {
+                    currentPath = if (currentPath.isEmpty()) {
+                        parts[j]
+                    } else {
+                        "${currentPath}_${parts[j]}"
+                    }
+                    parentNamespaces.add(currentPath)
+                }
+            } else if (path.contains(".")) {
+                let parts = path.split(".")
+                var currentPath = ""
+                // Add all parent levels except the full path
+                for (j in 0..parts.size-1) {
+                    currentPath = if (currentPath.isEmpty()) {
+                        parts[j]
+                    } else {
+                        "${currentPath}.${parts[j]}"
+                    }
+                    parentNamespaces.add(currentPath)
+                }
+            }
+        }
+        
+        // Create missing parent namespaces
+        for (parent in parentNamespaces) {
+            var found = false
+            for (i in 0..this.moduleMeta.namespaces.size) {
+                let ns: NameSpace = this.moduleMeta.namespaces[i]
+                if (ns.spacePath == parent) {
+                    found = true
+                    break
+                }
+            }
+            
+            if (!found) {
+                let newNs = NameSpace()
+                newNs.spacePath = parent
+                this.moduleMeta.namespaces.add(newNs)
+            }
+        }
     }
 
     public func isObject(input: String): Bool {
