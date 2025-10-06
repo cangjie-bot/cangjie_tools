@@ -11,6 +11,8 @@ import std.collection.*
 enum SExpToken <: ToString {
     | Open // '('
     | Close // ')'
+    | OpenBracket // '['
+    | CloseBracket // ']'
     | Identifier(String)
     | Str(String)
     | Num(Int64)
@@ -21,6 +23,8 @@ enum SExpToken <: ToString {
         match (this) {
             case Open => "("
             case Close => ")"
+            case OpenBracket => "["
+            case CloseBracket => "]"
             case Identifier(x) => "Identifier(${x})"
             case Str(x) => "Str(\"${x}\")"
             case Num(x) => "Num(${x})"
@@ -70,6 +74,12 @@ class Scanner {
             case c == r')' =>
                 pos++
                 Close
+            case c == r'[' =>
+                pos++
+                OpenBracket
+            case c == r']' =>
+                pos++
+                CloseBracket
             case c == r'.' =>
                 pos++
                 DOT
@@ -77,20 +87,23 @@ class Scanner {
                 let start = pos
                 do {
                     pos++
-                } while (isAlpha(s[pos]) || isDigit(s[pos]) || s[pos] == r'_' || s[pos] == r'.')
+                } while (pos < s.size && (isAlpha(s[pos]) || isDigit(s[pos]) || s[pos] == r'_' || s[pos] == r'.'))
                 Identifier(input[start..pos])
             case isDigit(c) =>
                 var num = 0
                 do {
                     num = num * 10 + Int64(UInt32(s[pos]) - UInt32(r'0'))
                     pos++
-                } while (isDigit(s[pos])) // todo: floating numbers?
+                } while (pos < s.size && isDigit(s[pos])) // todo: floating numbers?
                 Num(num)
             case c == r'"' =>
                 let start = pos
                 do {
                     pos++
-                } while (s[pos] != r'"')
+                } while (pos < s.size && s[pos] != r'"')
+                if (pos >= s.size) {
+                    throw IllegalArgumentException("Unterminated string literal")
+                }
                 pos++
                 Str(input[start + 1..pos - 1])
             case _ => throw IllegalArgumentException("Unexpected token: ${c}")
@@ -221,6 +234,10 @@ class TypeParser {
             case Identifier("ref") => parseTypeRef()
             case Identifier("array") => TsArray(parseType())
             case Identifier("optional") => TsOptional(parseType())
+            case Identifier("Option") => 
+                // Handle (ref Option T) -> Option<T>
+                let innerType = parseType()
+                TsOptional(innerType)
             case Identifier("union") =>
                 let args = parseTypeList()
                 if (args.size > 0) {
@@ -237,6 +254,7 @@ class TypeParser {
                 }
             case Identifier("tuple") => TsTuple(parseTypeList())
             case Identifier("function") =>
+                //change here
                 let generics = parseGenerics()
                 let returnType = parseType()
                 let params = parseParameterList()
@@ -399,6 +417,7 @@ class TypeParser {
         scanner.nextToken() // ')'
         generics.toArray()
     }
+
 
     func syntaxError(expect: String, tok: SExpToken) {
         throw IllegalArgumentException("Syntax error: Expected ${expect}, got ${tok}")

@@ -308,11 +308,11 @@ public func splitUnionParams(params: ArrayList<TsParameter>): Array<ArrayList<Ts
 
 public func createUnionType(typeName: String, tokens: Tokens, unionTypeSet: ArrayList<String>): String {
     if (typeName.contains("|")) {
-        let unionTypeName = "Union_" + (typeName.replace(" ", "").split("|") |> map {it => TypeMap.typeMap(it)} |>
+        let unionTypeName = "Union_" + (typeName.replace(" ", "").split("|") |> map {it => TsType.fromSExp(wrapTypeForParser(it)).toCJType()} |>
             collectString<String>(delimiter: "_"))
         if (!unionTypeSet.contains(unionTypeName)) {
             tokens.append(getCmToken("public interface ${unionTypeName} {}"))
-            let subTypes = typeName.replace(" ", "").split("|").map {it => TypeMap.typeMap(it)}
+            let subTypes = typeName.replace(" ", "").split("|").map {it => TsType.fromSExp(wrapTypeForParser(it)).toCJType()}
             for (subType in subTypes) {
                 tokens.append(getCmToken("extend ${subType} <: ${unionTypeName} {}"))
             }

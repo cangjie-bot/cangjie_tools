@@ -455,8 +455,8 @@ public class Property <: Serializable<Property> & Comparable<Property> {
             }
         }
         result.cjKey = checkCangjieKeyword(result.propKey)
-        result.cjType = TypeMap.typeMap(result.propType)
         result.typeNode = TsType.fromSExp(String.deserialize(dms2.get("typeNode")))
+        result.cjType = result.typeNode.toCJType()
         return result
     }
 }
@@ -685,7 +685,8 @@ struct Parameter {
 
     init(_name: String, _type: String, _isOptional: Bool) {
         paramName = _name
-        paramType = TypeMap.typeMap(_type)
+        var t = TsType.fromSExp(wrapTypeForParser(_name))
+        paramType = t.toCJType()
         isOptional = _isOptional
     }
 
@@ -699,7 +700,9 @@ struct Parameter {
             paramName = splits[0]
             isOptional = false
         }
-        paramType = TypeMap.typeMap(splits[1])
+        var t = TsType.fromSExp(wrapTypeForParser(splits[1]))
+
+        paramType = t.toCJType()
     }
 
     func print(inMethod!: ?Bool = false): String {
@@ -740,7 +743,9 @@ public class CallbackType {
             if (splits[0] != "void") {
                 params.add(Parameter("parameter", splits[0], false))
             }
-            returnType = TypeMap.typeMap(splits[1])
+            var t = TsType.fromSExp(wrapTypeForParser(splits[1]))
+
+            returnType = t.toCJType()
             return
         }
             // Analyse forms like `(name: type, name1?: type1) => returnType`.
@@ -749,7 +754,9 @@ public class CallbackType {
             for (param in splits[0][1..splits[0].size - 1].split(",")) {
                 params.add(Parameter(param))
             }
-            returnType = TypeMap.typeMap(splits[1])
+            var t = TsType.fromSExp(wrapTypeForParser(splits[1]))
+
+            returnType = t.toCJType()
         }
     }
 
@@ -771,3 +778,255 @@ public class CommandLineArg {
     public var directoryPath: String = ""
     public var tsPath: String = ""
 }
+
+// Helper function to wrap type names appropriately for TypeParser
+func wrapTypeForParser(typeName: String): String {
+    let basicTypes = ["number", "string", "boolean", "bigint", "symbol", "void", "never", "undefined", "null", "any"]
+    
+    // If the type already starts with '(', check if it's already an S-expression
+    if (typeName.startsWith("(")) {
+        // Check if it's already a proper S-expression (starts with known tags)
+        let knownTags = ["function", "ref", "union", "intersection", "tuple", "array", "optional", "literal", "unsupported"]
+        let firstToken = typeName[1..].split(" ")[0]
+        if (knownTags.contains(firstToken)) {
+            return typeName
+        }
+        
+        // If it's TypeScript function syntax like "(s: String) => void", return as unsupported for now
+        if (typeName.contains("=>")) {
+            return "(unsupported function)"
+        }
+        
+        // Otherwise, assume it's already an S-expression
+        return typeName
+    }
+    
+    // Handle Promise types specifically
+    if (typeName.startsWith("Promise<") && typeName.endsWith(">")) {
+        let innerType = typeName[8..(typeName.size - 1)] // Remove "Promise<" and ">"
+        let innerTypeSExp = wrapTypeForParser(innerType)
+        return "(ref Promise ${innerTypeSExp})"
+    }
+    
+    // Handle inline object literal types like { a: number } or {}
+    // No String.trim() in std; emulate by removing common whitespace
+    let _t = typeName.replace(" ", "").replace("\t", "").replace("\n", "").replace("\r", "")
+    if (_t.startsWith("{")) {
+        return "(object)"
+    }
+
+    // Handle array types (e.g., number[], string[])
+    if (typeName.endsWith("[]")) {
+        let elementType = typeName[0..(typeName.size - 2)]
+        let elementTypeSExp = wrapTypeForParser(elementType)
+        return "(array ${elementTypeSExp})"
+    }
+    
+    // Handle typeof queries early: typeof X -> treat as X
+    if (typeName.startsWith("typeof ")) {
+        let target = typeName["typeof ".size..]
+            .replace(" ", "").replace("\t", "").replace("\n", "").replace("\r", "")
+        return wrapTypeForParser(target)
+    }
+
+    // Handle function types (s: String) => void - check before generic types
+    if (typeName.contains("=>")) {
+        return convertFunctionToSExp(typeName)
+    }
+    
+    // Handle union types (e.g., string | number, string | Promise<string>)
+    if (typeName.contains("|")) {
+        return convertUnionToSExp(typeName)
+    }
+    
+    // If it contains angle brackets, it's a generic type - return as unsupported for now
+    if (typeName.contains("<") || typeName.contains(">")) {
+        return "(unsupported generic)"
+    }
+    
+    // Handle intersection types before special-character fallback
+    if (typeName.contains("&")) {
+        return convertIntersectionToSExp(typeName)
+    }
+    // If it contains forward slashes or other special characters, return as unsupported for now
+    if (typeName.contains("/") || typeName.contains("\\")) {
+        return "(unsupported special)"
+    }
+    
+    // If it's a basic type, wrap with parentheses
+    if (basicTypes.contains(typeName)) {
+        return "(${typeName})"
+    } else {
+        // For user-defined types, wrap with ref
+        return "(ref ${typeName})"
+    }
+}
+
+// Convert function type to S-expression (matching old TypeMap behavior)
+func convertFunctionToSExp(functionType: String): String {
+    println("DEBUG: convertFunctionToSExp called with: ${functionType}")
+    // Remove outer parentheses if present: ((s: String) => void) -> (s: String) => void
+    let tmp = functionType.replace("\r", "").replace("\n", "").replace("(", "").replace(")", "")
+    println("DEBUG: After removing parentheses: ${tmp}")
+    
+    // Split by => to get parameters and return type
+    let parts = tmp.split("=>")
+    println("DEBUG: Split parts: ${parts}")
+    if (parts.size != 2) {
+        println("DEBUG: Invalid function type format")
+        return "(unsupported function)"
+    }
+    
+    let paramPart = parts[0].replace(" ", "").replace("\t", "").replace("\n", "").replace("\r", "")
+    let returnType = parts[1].replace(" ", "").replace("\t", "").replace("\n", "").replace("\r", "")
+    
+    // Convert return type using old TypeMap logic
+    let returnTypeCJ = convertTypeToCJ(returnType)
+    
+    if (paramPart.isEmpty()) {
+        // No parameters: () => void
+        return "(function ${returnTypeCJ} ())"
+    } else {
+        // Parse parameters using old TypeMap logic
+        let params = parseFunctionParamsOldStyle(paramPart)
+        return "(function ${returnTypeCJ} ${params})"
+    }
+}
+
+// Convert type to Cangjie type (matching old TypeMap behavior)
+func convertTypeToCJ(typeName: String): String {
+    match (typeName) {
+        case "string" => "str"
+        case "number" => "f64"
+        case "void" => "unit"
+        case "boolean" => "bool"
+        case "bigint" => "BigInt"
+        case "any" => "any"
+        case _ => typeName
+    }
+}
+
+// Parse function parameters (matching old TypeMap behavior)
+func parseFunctionParamsOldStyle(paramStr: String): String {
+    let params = parseGenericParams(paramStr)
+    var result = ""
+    for (i in 0..params.size) {
+        let param = params[i]
+        if (param.isEmpty()) {
+            continue
+        }
+        let split = param.split(":")
+        if (split.size == 2) {
+            let paramName = split[0].replace("?", "")
+            let paramType = split[1]
+            let paramTypeCJ = convertTypeToCJ(paramType)
+            result = result + " (${paramName} ${paramTypeCJ})"
+        }
+    }
+    return result
+}
+
+// Parse function parameters: "s: String, n: number" -> "(s String) (n number)"
+func parseFunctionParams(paramStr: String): String {
+    let params = parseGenericParams(paramStr)
+    var result = ""
+    for (i in 0..params.size) {
+        let param = params[i]
+        if (param.isEmpty()) {
+            continue
+        }
+        let split = param.split(":")
+        if (split.size == 2) {
+            let paramName = split[0].replace("?", "")
+            let paramType = split[1]
+            let paramTypeSExp = wrapTypeForParser(paramType)
+            result = result + " (${paramName} ${paramTypeSExp})"
+        }
+    }
+    return result
+}
+
+// Convert union type to S-expression
+func convertUnionToSExp(unionType: String): String {
+    let arr = unionType.split("|")
+    let nonNullTypes: ArrayList<String> = ArrayList<String>()
+    
+    for (e in arr) {
+        let trimmed = e.replace(" ", "").replace("\t", "").replace("\n", "").replace("\r", "")
+        if (trimmed != "null" && trimmed != "undefined") {
+            nonNullTypes.add(trimmed)
+        }
+    }
+    
+    if (nonNullTypes.size == 1) {
+        // T|null or T|undefined -> Option<T>
+        let innerTypeSExp = wrapTypeForParser(nonNullTypes[0])
+        return "(ref Option ${innerTypeSExp})"
+    } else if (nonNullTypes.size == 2) {
+        // T1|T2 -> Union of two types
+        let type1SExp = wrapTypeForParser(nonNullTypes[0])
+        let type2SExp = wrapTypeForParser(nonNullTypes[1])
+        return "(union ${type1SExp} ${type2SExp})"
+    } else {
+        // More than 2 types - return as unsupported for now
+        return "(unsupported union)"
+    }
+}
+
+// Convert intersection type to S-expression
+func convertIntersectionToSExp(intersectionType: String): String {
+    let arr = intersectionType.split("&")
+    let parts: ArrayList<String> = ArrayList<String>()
+
+    for (e in arr) {
+        let trimmed = e.replace(" ", "").replace("\t", "").replace("\n", "").replace("\r", "")
+        if (!trimmed.isEmpty()) {
+            parts.add(trimmed)
+        }
+    }
+
+    if (parts.size == 0) {
+        return "(unsupported intersection)"
+    } else if (parts.size == 1) {
+        return wrapTypeForParser(parts[0])
+    } else if (parts.size == 2) {
+        let t1 = wrapTypeForParser(parts[0])
+        let t2 = wrapTypeForParser(parts[1])
+        return "(intersection ${t1} ${t2})"
+    } else {
+        // Reduce N-way intersection to nested binary intersections
+        var expr = wrapTypeForParser(parts[0])
+        for (i in 1..parts.size) {
+            let next = wrapTypeForParser(parts[i])
+            expr = "(intersection ${expr} ${next})"
+        }
+        return expr
+    }
+}
+
+// Parse generic parameters (similar to handleGeneric in old TypeMap)
+func parseGenericParams(lambda: String): Array<String> {
+    if (let None <- lambda.indexOf("<")) {
+        return lambda.split(",")
+    }
+    
+    let byteArr = lambda.toArray()
+    var leftBracketCount = 0
+    for (i in 0..byteArr.size) {
+        if (byteArr[i] == 60) { // '<' character
+            leftBracketCount = leftBracketCount + 1
+        } else if (byteArr[i] == 62) { // '>' character
+            leftBracketCount = leftBracketCount - 1
+        } else if (byteArr[i] == 44 && leftBracketCount == 0) { // ',' character
+            byteArr[i] = 10 // '\n' character
+        }
+    }
+    
+    let newStr = String.fromUtf8(byteArr)
+    let split = newStr.split("\n")
+    for (i in 0..split.size) {
+        split[i] = split[i].replace("\n", ",")
+    }
+    split
+}
+

@@ -79,7 +79,9 @@ public class TransMethod {
 
             if (isAsyncCallback(paraType)) {
                 hasAsyncCallback = true
-                callbackInnerType = TypeMap.typeMap(paraType[14..(paraType.size - 1)])
+                var t = TsType.fromSExp(wrapTypeForParser(paraType[14..(paraType.size - 1)]))
+
+                callbackInnerType = t.toCJType()
             }
             this.arkParaName.add(paraName)
             this.arkParaType.add(paraType)
@@ -89,7 +91,9 @@ public class TransMethod {
         }
         let arkR = methodType.returns
         this.arkRetType = arkR
-        this.cjRetType = TypeMap.typeMap(arkR)
+
+
+        this.cjRetType = convertToCJType(arkR)
         if (promiseNeedGen) {
             callbackInnerType = cjRetType
         }
@@ -481,17 +485,17 @@ public class TransMethod {
             var paraName = arkP[0] //arkts参数名
             var paraType = ""
             if (paramName.contains("=>")) {
-                paraType = TypeMap.typeMap(paramName[arkP[0].size + 1..paramName.size])
+                paraType = convertToCJType(paramName[arkP[0].size + 1..paramName.size])
             } else if (arkP.size > 2) {
                 var temp = ""
                 for (i in 1..arkP.size) {
                     temp = temp + ":" + arkP[i]
                 }
-                paraType = TypeMap.typeMap(temp)
+                paraType = convertToCJType(temp)
             } else if (arkP.size == 2) {
-                paraType = TypeMap.typeMap(arkP[1])
+                paraType = convertToCJType(arkP[1])
             } else {
-                paraType = TypeMap.typeMap("any")
+                paraType = convertToCJType("any")
             }
 
             if (paraName.contains("?")) {
@@ -626,7 +630,7 @@ public class TransMethod {
     // @deprecated
     func getSyncRetToken(retType: String): Tokens {
         let retValueToken = Tokens()
-        let cjType = TypeMap.typeMap(retType)
+        let cjType = convertToCJType(retType)
         let retToken = Token(TokenKind.IDENTIFIER, cjType)
         if (cjType == unit) {
             retValueToken.append(quote(ret.value = ))
@@ -652,7 +656,7 @@ public class TransMethod {
     }
 
     func getAsyncRetToken(retType: String, retTypeToken: Token, sync!: Bool = false): Tokens {
-        let cjType = TypeMap.typeMap(retType)
+        let cjType = convertToCJType(retType)
         if (interopTypes.contains(cjType)) {
             return quote()
         }
@@ -697,8 +701,8 @@ public class TransMethod {
     }
 
     func getCbRetToken(retType: String): Tokens {
-        let retTypeToken = Token(TokenKind.IDENTIFIER, TypeMap.typeMap(retType))
-        let cjType = TypeMap.typeMap(retType)
+        let retTypeToken = Token(TokenKind.IDENTIFIER, convertToCJType(retType))
+        let cjType = convertToCJType(retType)
         if (interopTypes.contains(cjType)) {
             return quote()
         }
@@ -710,7 +714,7 @@ public class TransMethod {
             }))
         } else if (isArray(cjType)) {
             let innerType = getArrayInnerType(cjType)
-            let innerToken = Token(TokenKind.IDENTIFIER, TypeMap.typeMap(innerType))
+            let innerToken = Token(TokenKind.IDENTIFIER, convertToCJType(innerType))
             retToken.append(
                 quote({
                 ctx, info =>
@@ -815,7 +819,7 @@ public class TransMethod {
         let callbackParams = Tokens()
         for (i in 0..callbackInnerTypes.size) {
             let argName = Token(TokenKind.IDENTIFIER, "arg" + i.toString())
-            let argTypeName = TypeMap.typeMap(callbackInnerTypes[i])
+            let argTypeName = convertToCJType(callbackInnerTypes[i])
             let argTypeToken = Token(TokenKind.IDENTIFIER, argTypeName)
             wrapperArgs.append(
                 match (gconfig.moduleMeta.symbols.get(argTypeName)) {
@@ -1152,7 +1156,7 @@ public class TransMethod {
             }
             let arkP = param.replace(" ", "").split(":")
             var paraName = arkP[0] //arkts参数名
-            let paraType = TypeMap.typeMap(arkP[1]) //参数分类
+            let paraType = convertToCJType(arkP[1]) //参数分类
             var optionalSymbol = ": "
             if (paraName.contains("?")) {
                 paraName = paraName.replace("?", "")
@@ -1162,4 +1166,10 @@ public class TransMethod {
         }
         "callback: (" + getTypeFromPromise(this.cjRetType) + ") -> Unit" + (args |> collectString<String>())
     }
+}
+
+// Helper function to replace TypeMap.typeMap with new type system
+func convertToCJType(typeString: String): String {
+
+    TsType.fromSExp(wrapTypeForParser(typeString)).toCJType()
 }
