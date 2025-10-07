@@ -3,6 +3,8 @@
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
+//
+//
 
 package hle.tool
 
@@ -117,6 +119,7 @@ public class TypeMap {
             for (i in 0..params.size) {
                 let param = params[i]
                 if (param.isEmpty()) {
+                    // if there is a 
                     continue
                 }
                 let split = param.split(":")
