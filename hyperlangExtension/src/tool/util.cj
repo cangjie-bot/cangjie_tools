@@ -243,30 +243,29 @@ public func getParamsFromUnionType(arkMethod: MethodType): ArrayList<ArrayList<S
     var resParams: ArrayList<ArrayList<String>> = ArrayList<ArrayList<String>>()
     for (param in arkMethod.params) {
         let names = param.replace(" ", "").split(":")
-        if (names.size != 2) {
-            continue
-        }
-        let unionNames = if (names[1].startsWith("{") || names[1].contains("Record")) {
-            [names[1]]
-        } else {
-            names[1].split("|")
-        }
-        if (resParams.size == 0) {
-            for (unionName in unionNames) {
-                resParams.add(ArrayList<String>([names[0] + ":" + unionName]))
+        if (names.size == 2) {
+            let unionNames = if (names[1].startsWith("{") || names[1].contains("Record")) {
+                [names[1]]
+            } else {
+                names[1].split("|")
             }
-            continue
-        }
-        resParams = resParams |>
-            flatMap {
-            it: ArrayList<String> => unionNames |>
-                 map {
-                name: String =>
-                let newArray = it.clone();
-                newArray.add(names[0] + ":" + name);
-                ArrayList<String>(newArray)
+            if (resParams.size == 0) {
+                for (unionName in unionNames) {
+                    resParams.add(ArrayList<String>([names[0] + ":" + unionName]))
+                }
+            } else {
+                resParams = resParams |>
+                    flatMap {
+                    it: ArrayList<String> => unionNames |>
+                        map {
+                        name: String =>
+                        let newArray = it.clone();
+                        newArray.add(names[0] + ":" + name);
+                        ArrayList<String>(newArray)
+                    }
+                } |> collectArrayList<ArrayList<String>>
             }
-        } |> collectArrayList<ArrayList<String>>
+        }
     }
     if (resParams.size == 0) {
         resParams.add(arkMethod.params)
@@ -309,11 +308,11 @@ public func splitUnionParams(params: ArrayList<TsParameter>): Array<ArrayList<Ts
 
 public func createUnionType(typeName: String, tokens: Tokens, unionTypeSet: ArrayList<String>): String {
     if (typeName.contains("|")) {
-        let unionTypeName = "Union_" + (typeName.replace(" ", "").split("|") |> map {it => TypeMap.typeMap(it)} |>
+        let unionTypeName = "Union_" + (typeName.replace(" ", "").split("|") |> map {it => TsType.fromSExp(wrapTypeForParser(it)).toCJType()} |>
             collectString<String>(delimiter: "_"))
         if (!unionTypeSet.contains(unionTypeName)) {
             tokens.append(getCmToken("public interface ${unionTypeName} {}"))
-            let subTypes = typeName.replace(" ", "").split("|").map {it => TypeMap.typeMap(it)}
+            let subTypes = typeName.replace(" ", "").split("|").map {it => TsType.fromSExp(wrapTypeForParser(it)).toCJType()}
             for (subType in subTypes) {
                 tokens.append(getCmToken("extend ${subType} <: ${unionTypeName} {}"))
             }

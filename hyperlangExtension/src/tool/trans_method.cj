@@ -79,7 +79,9 @@ public class TransMethod {
 
             if (isAsyncCallback(paraType)) {
                 hasAsyncCallback = true
-                callbackInnerType = TypeMap.typeMap(paraType[14..(paraType.size - 1)])
+                var t = TsType.fromSExp(wrapTypeForParser(paraType[14..(paraType.size - 1)]))
+
+                callbackInnerType = t.toCJType()
             }
             this.arkParaName.add(paraName)
             this.arkParaType.add(paraType)
@@ -89,7 +91,9 @@ public class TransMethod {
         }
         let arkR = methodType.returns
         this.arkRetType = arkR
-        this.cjRetType = TypeMap.typeMap(arkR)
+
+
+        this.cjRetType = convertToCJType(arkR)
         if (promiseNeedGen) {
             callbackInnerType = cjRetType
         }
@@ -280,14 +284,16 @@ public class TransMethod {
             Token(TokenKind.IDENTIFIER, "hmsGlobalApiCall")
         }
 
-        var staticConstructor = Token(TokenKind.IDENTIFIER, "")
-        if (this.isStatic) {
-            staticConstructor = Token(TokenKind.IDENTIFIER, "getClassConstructorObj(\"${moduleName}\", \"${this.memberClassName}\"), ")
+        let staticConstructor = if (this.isStatic) {
+            Token(TokenKind.IDENTIFIER, "getClassConstructorObj(\"${moduleName}\", \"${this.memberClassName}\"), ")
+        } else {
+            Token(TokenKind.IDENTIFIER, "")
         }
 
-        var cbToken = quote()
-        if (hasAsyncCallback) {
-            cbToken = handleAsyncCallBack() + nl
+        let cbToken = if (hasAsyncCallback) {
+            handleAsyncCallBack() + nl
+        } else {
+            quote()
         }
 
         let template: Tokens = quote(
@@ -397,11 +403,11 @@ public class TransMethod {
 
         let forth_param = getAsyncRetToken(this.cjRetType, retTypeToken)
 
-        var cbToken = quote()
-        if (hasAsyncCallback) {
-            cbToken = handleAsyncCallBack() + nl
+        let cbToken = if (hasAsyncCallback) {
+            handleAsyncCallBack() + nl
+        } else {
+            quote()
         }
-
         let staticConstructor = if (this.isStatic) {
             Token(TokenKind.IDENTIFIER, "getClassConstructorObj(\"${moduleName}\", \"${this.memberClassName}\"),")
         } else {
@@ -479,17 +485,17 @@ public class TransMethod {
             var paraName = arkP[0] //arkts参数名
             var paraType = ""
             if (paramName.contains("=>")) {
-                paraType = TypeMap.typeMap(paramName[arkP[0].size + 1..paramName.size])
+                paraType = convertToCJType(paramName[arkP[0].size + 1..paramName.size])
             } else if (arkP.size > 2) {
                 var temp = ""
                 for (i in 1..arkP.size) {
                     temp = temp + ":" + arkP[i]
                 }
-                paraType = TypeMap.typeMap(temp)
+                paraType = convertToCJType(temp)
             } else if (arkP.size == 2) {
-                paraType = TypeMap.typeMap(arkP[1])
+                paraType = convertToCJType(arkP[1])
             } else {
-                paraType = TypeMap.typeMap("any")
+                paraType = convertToCJType("any")
             }
 
             if (paraName.contains("?")) {
@@ -543,9 +549,10 @@ public class TransMethod {
         var paraName = arkP[0] //arkts参数名
 
         // If js does not have type, we used "any" before type check implemented
-        var paraType = arkP[1]
-        if (arkP.size < 2) {
-            paraType = "any"
+        let paraType = if (arkP.size < 2) {
+            "any"
+        } else {
+            arkP[1]
         }
 
         var optional = false
@@ -623,7 +630,7 @@ public class TransMethod {
     // @deprecated
     func getSyncRetToken(retType: String): Tokens {
         let retValueToken = Tokens()
-        let cjType = TypeMap.typeMap(retType)
+        let cjType = convertToCJType(retType)
         let retToken = Token(TokenKind.IDENTIFIER, cjType)
         if (cjType == unit) {
             retValueToken.append(quote(ret.value = ))
@@ -649,7 +656,7 @@ public class TransMethod {
     }
 
     func getAsyncRetToken(retType: String, retTypeToken: Token, sync!: Bool = false): Tokens {
-        let cjType = TypeMap.typeMap(retType)
+        let cjType = convertToCJType(retType)
         if (interopTypes.contains(cjType)) {
             return quote()
         }
@@ -694,8 +701,8 @@ public class TransMethod {
     }
 
     func getCbRetToken(retType: String): Tokens {
-        let retTypeToken = Token(TokenKind.IDENTIFIER, TypeMap.typeMap(retType))
-        let cjType = TypeMap.typeMap(retType)
+        let retTypeToken = Token(TokenKind.IDENTIFIER, convertToCJType(retType))
+        let cjType = convertToCJType(retType)
         if (interopTypes.contains(cjType)) {
             return quote()
         }
@@ -707,7 +714,7 @@ public class TransMethod {
             }))
         } else if (isArray(cjType)) {
             let innerType = getArrayInnerType(cjType)
-            let innerToken = Token(TokenKind.IDENTIFIER, TypeMap.typeMap(innerType))
+            let innerToken = Token(TokenKind.IDENTIFIER, convertToCJType(innerType))
             retToken.append(
                 quote({
                 ctx, info =>
@@ -747,28 +754,32 @@ public class TransMethod {
             paramToken.append(commaToken)
         }
         paramToken.append(getParamToken())
+        let ctxToken = quote(ctx)
 
-        let transparamToken = (parametersToJS(quote(ctx)) |> reduce {l, r => l + commaToken + r}).getOrDefault {
+        let transparamToken = (parametersToJS(ctxToken) |> reduce {l, r => l + commaToken + r}).getOrDefault {
             => quote()
         }
 
-        var transParam = quote({ctx => [$(transparamToken)]})
-        if (this.methodType.params.size == 0) {
-            transParam = quote(emptyArg)
+        let transParam = if (this.methodType.params.size == 0) {
+            quote(emptyArg)
+        } else {
+            quote({$(ctxToken) => [$(transparamToken)]})
         }
 
-        var apiToken = Token(TokenKind.IDENTIFIER, "hmsGlobalApiCallPromise")
-        if (gconfig.isOhos) {
-            apiToken = Token(TokenKind.IDENTIFIER, "ohosGlobalApiCallPromise")
+        let apiToken = if (gconfig.isOhos) {
+            Token(TokenKind.IDENTIFIER, "ohosGlobalApiCallPromise")
+        } else {
+            Token(TokenKind.IDENTIFIER, "hmsGlobalApiCallPromise")
         }
 
         let resolveRetToken = getAsyncRetToken(this.cjRetType, innerType)
+        let moduleName = gconfig.requireModuleName
 
-        var staticConstructor = Token(TokenKind.IDENTIFIER, "")
-        if (this.isStatic) {
-            staticConstructor = Token(TokenKind.IDENTIFIER, "getClassConstructorObj(\"${gconfig.requireModuleName}\", \"${this.memberClassName}\"),")
+        let staticConstructor = if (this.isStatic) {
+            Token(TokenKind.IDENTIFIER, "getClassConstructorObj(\"${moduleName}\", \"${this.memberClassName}\"),")
+        } else {
+            Token(TokenKind.IDENTIFIER, "")
         }
-
         let template = if (isMember) {
             if (this.isStatic) {
                 quote(
@@ -786,7 +797,7 @@ public class TransMethod {
         } else {
             quote(
                 $(prefix) func $(funcName)($(paramToken)): Unit {
-                    $(apiToken)<$(innerType)>($(staticConstructor) $(gconfig.requireModuleName), $(getArkTSFuncName()), callback, $(transParam)) $(resolveRetToken)
+                    $(apiToken)<$(innerType)>($(staticConstructor) $(moduleName), $(getArkTSFuncName()), callback, $(transParam)) $(resolveRetToken)
                 }
             )
         }
@@ -808,7 +819,7 @@ public class TransMethod {
         let callbackParams = Tokens()
         for (i in 0..callbackInnerTypes.size) {
             let argName = Token(TokenKind.IDENTIFIER, "arg" + i.toString())
-            let argTypeName = TypeMap.typeMap(callbackInnerTypes[i])
+            let argTypeName = convertToCJType(callbackInnerTypes[i])
             let argTypeToken = Token(TokenKind.IDENTIFIER, argTypeName)
             wrapperArgs.append(
                 match (gconfig.moduleMeta.symbols.get(argTypeName)) {
@@ -1145,7 +1156,7 @@ public class TransMethod {
             }
             let arkP = param.replace(" ", "").split(":")
             var paraName = arkP[0] //arkts参数名
-            let paraType = TypeMap.typeMap(arkP[1]) //参数分类
+            let paraType = convertToCJType(arkP[1]) //参数分类
             var optionalSymbol = ": "
             if (paraName.contains("?")) {
                 paraName = paraName.replace("?", "")
@@ -1155,4 +1166,10 @@ public class TransMethod {
         }
         "callback: (" + getTypeFromPromise(this.cjRetType) + ") -> Unit" + (args |> collectString<String>())
     }
+}
+
+// Helper function to replace TypeMap.typeMap with new type system
+func convertToCJType(typeString: String): String {
+
+    TsType.fromSExp(wrapTypeForParser(typeString)).toCJType()
 }
