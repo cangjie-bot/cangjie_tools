@@ -449,6 +449,7 @@ public class RunConfig {
     public var name: String = "main"
     public var buildArgs: String = ""
     public var runArgs: String = ""
+    public var newRunArgs: ArrayList<String> = ArrayList<String>()
     public var filePath: String = ""
     public var targetPath: String = ""
     public var originTargetPath: String = TARGET

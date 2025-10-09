@@ -23,6 +23,8 @@ Available options:
   --build-args <value>        the arguments to pass to the build process
   --skip-build                skip compile, only run the executable product
   --run-args <value>          the arguments to pass to the executable product
+  -- <value>                  the arguments to pass to the executable product
+                              all subsequent symbol groups will be treated as run-args!
   --target-dir <value>        specify target directory
   -g                          enable debug version
   -V, --verbose               enable verbose
@@ -72,8 +74,24 @@ Available options:
     }
 
     public override func handleCommand(): Bool {
-        let (argMap, unparseArgs) = getParseOption(this.arguments, "gV",
-            ["verbose", "skip-build", "name=", "build-args=", "run-args=", "target-dir=", "skip-script"])
+        let allArgs = this.arguments
+        var beforeRunArgs: ArrayList<String> = ArrayList<String>()
+        var afterRunArgs: ArrayList<String> = ArrayList<String>()
+        var isInRange: Bool = false
+        for (nowArg in allArgs) {
+            if (nowArg == "--") {
+                isInRange = true
+                continue    
+            }
+
+            if (!isInRange) {
+                beforeRunArgs.add(nowArg)
+            } else {
+                afterRunArgs.add(nowArg)
+            }
+        }
+        var standardArgList: ArrayList<String> = ArrayList<String>(["verbose", "skip-build", "name=", "build-args=", "run-args=", "target-dir=", "skip-script"])
+        let (argMap, unparseArgs) = getParseOption(beforeRunArgs.toArray() , "gV", standardArgList.toArray())
 
         if (!handleUnparseArgs(unparseArgs)) {
             return false
@@ -85,6 +103,7 @@ Available options:
         runConfig.skipBuild = getBoolOption(argMap, "--skip-build")
         runConfig.buildArgs = getArgValue(argMap, "--build-args")[0]
         runConfig.runArgs = getArgValue(argMap, "--run-args")[0]
+        runConfig.newRunArgs = afterRunArgs
         runConfig.globalConfig.isSkipScript = getBoolOption(argMap, "--skip-script")
         let (runName, nameFlag) = getArgValue(argMap, "--name")
         if (nameFlag) {
