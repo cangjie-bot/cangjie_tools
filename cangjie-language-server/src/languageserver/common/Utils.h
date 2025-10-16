@@ -112,16 +112,13 @@ template<>
 inline Range GetMacroRange<Cangjie::AST::MacroExpandDecl>(const Cangjie::AST::Node &node)
 {
     Range range;
-    auto *actualType = dynamic_cast<const Cangjie::AST::MacroExpandDecl*>(&node);
-    if (actualType != nullptr) {
+    if (auto *actualType = dynamic_cast<const Cangjie::AST::MacroExpandDecl*>(&node);) {
         auto start = actualType->GetIdentifierPos();
         if (!actualType->invocation.fullNameDotPos.empty()) {
             start = actualType->invocation.fullNameDotPos.back();
             start.column++;
         }
-        auto end = start;
-        end.column = start.column + static_cast<int>(CountUnicodeCharacters(actualType->identifier));
-        range = { start, end };
+        range = { start, { start.line, start.column + CountUnicodeCharacters(actualType->identifier) } };
     }
     return range;
 }
