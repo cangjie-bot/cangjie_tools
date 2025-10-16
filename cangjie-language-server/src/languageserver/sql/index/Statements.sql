@@ -471,7 +471,11 @@ SQL(InsertCrossSymbol,
     :StartLine,
     :StartColumn,
     :EndLine,
-    :EndColumn
+    :EndColumn,
+    :DeclareStartLine,
+    :DeclareStartColumn,
+    :DeclareEndLine,
+    :DeclareEndColumn
   )
 );
 
@@ -497,4 +501,8 @@ SQL(MultiInsertCrossSymbolsValue,
 
 SQL(SelectCrossSymbol,
  SELECT * FROM cross_symbols WHERE CJPackageName = :CJPackageName AND Name = :Name
+);
+
+SQL(SelectCrossSymbolByID,
+ SELECT * FROM cross_symbols WHERE SymbolID = :SymbolID
 );
