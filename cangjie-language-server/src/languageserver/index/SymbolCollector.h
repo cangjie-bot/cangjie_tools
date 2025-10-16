@@ -180,7 +180,7 @@ private:
         }
     }
 
-    inline SymbolID GetContextID()
+    SymbolID GetContextID()
     {
         SymbolID containerId = INVALID_SYMBOL_ID;
         CJC_ASSERT(!scopes.empty());

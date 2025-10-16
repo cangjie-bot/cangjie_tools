@@ -70,7 +70,7 @@ public:
     void GetLocalTime(const time_t *time, struct tm &localTime) const
     {
 #ifdef _WIN32
-        localtime_s(&localTime, time);
+        (void)localtime_s(&localTime, time);
 #else
         (void)localtime_r(time, &localTime);
 #endif
