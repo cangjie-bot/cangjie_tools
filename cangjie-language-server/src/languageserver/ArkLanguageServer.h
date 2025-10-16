@@ -96,6 +96,10 @@ private:
 
     void OnCrossLanguageGoToDefinition(const CrossLanguageJumpParams &params, nlohmann::json id);
 
+    void OnCrossLanguageRegister(const CrossLanguageJumpParams &params, nlohmann::json id);
+
+    void OnExportsName(const ExportsNameParams &params, nlohmann::json id);
+
     void OnSignatureHelp(const SignatureHelpParams &params, nlohmann::json id);
 
     void OnHover(const TextDocumentPositionParams &params, nlohmann::json onHoverId);
