@@ -245,6 +245,12 @@ void BackgroundIndexDB::Lookup(const LookupRequest &req,
     }
 }
 
+void BackgroundIndexDB::GetExportSID(IDArray array,
+    std::function<void(const CrossSymbol &)> callback) const
+{
+    db.GetCrossSymbolByID(array, callback);
+}
+
 void BackgroundIndexDB::Relations(const RelationsRequest &req,
     std::function<void(const Relation &)> callback) const
 {

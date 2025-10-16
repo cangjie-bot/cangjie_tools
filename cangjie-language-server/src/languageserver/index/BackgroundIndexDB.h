@@ -31,6 +31,8 @@ public:
     void Lookup(const LookupRequest &req,
         std::function<void(const Symbol &)> callback) const override;
 
+    void GetExportSID(IDArray array, std::function<void(const CrossSymbol &)> callback) const override;
+
     void Refs(const RefsRequest &req,
         std::function<void(const Ref &)> callback) const override;
 
