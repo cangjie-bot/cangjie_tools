@@ -316,6 +316,114 @@ void ArkServer::FindFileReferences(const std::string &file, const Callback<Value
     arkScheduler->RunWithAST("FileReferences", file, action);
 }
 
+void GetCurPkgUesage(Ptr<Decl> decl, const ArkAST &ast, ReferencesResult &result)
+{
+    if (!decl || !ast.file || !ast.file->curPackage) {
+        return;
+    }
+    auto user = FindDeclUsage(*decl, *ast.file->curPackage);
+    for (const auto &U : user) {
+        if (U->astKind == ASTKind::MEMBER_ACCESS) {
+            continue;
+        }
+        auto range = GetProperRange(U, ast.tokens);
+        Location loc = {URI::URIFromAbsolutePath(U->curFile->filePath).ToString(), range};
+        (void)result.References.emplace(loc);
+    }
+}
+
+void ArkServer::GetExportsName(
+    const std::string &file, const ExportsNameParams &params, const Callback<ValueOrError> &reply) const
+{
+    auto action = [params, file, reply = std::move(reply)](const InputsAndAST &) {
+        int fileId = CompilerCangjieProject::GetInstance()->GetFileID(file);
+        if (fileId < 0) {
+            ValueOrError value(ValueOrErrorCheck::VALUE, nullptr);
+            reply(value);
+            return;
+        }
+        Cangjie::Position pos =
+            Cangjie::Position{static_cast<unsigned int>(fileId), params.position.line, params.position.column};
+        ReferencesResult result;
+        if (inputAST.ast == nullptr) {
+            ValueOrError value(ValueOrErrorCheck::VALUE, nullptr);
+            reply(value);
+            return;
+        }
+        ArkAST &ast = *(intputAST.ast);
+        Logger &logger = Logger::Instance();
+        logger.LogMessage(MessageType::MSG_LOG, "FindReferencesImpl::FindReferences in.");
+
+        // adjust position from IDE to AST
+        pos = PosFromIDE2Char(pos);
+        PositionIDEToUTF8(ast.tokens, pos, *ast.file);
+
+        if (ast.IsFilterToken(pos)) {
+            return;
+        }
+        // get curFilePath
+        curFilePath = ast.file ? ast.file->filePath : "";
+        pos.fileID = ast.fileID;
+        std::vector<Symbol *> syms;
+        std::vector<Ptr<Cangjie::AST::Decl> > decls;
+        Ptr<Decl> oldDecl = ast.GetDeclByPosition(pos, syms, decls, {true, true});
+        if (oldDecl == nullptr) {
+            return;
+        }
+        if (syms[0] && IsResourcePos(ast, syms[0]->node, pos)) {
+            return;
+        }
+        DealMemberParam(curFilePath, syms, decls, oldDecl);
+        // generic param decl
+        if (oldDecl->astKind == ASTKind::GENERIC_PARAM_DECL) {
+            DealGenericParamDecl(ast, result, oldDecl, syms);
+            return;
+        }
+
+        if (!decls.empty()) {
+            // First verify if the downstream package status is stale
+            auto definedPkg = decls[0]->fullPackageName;
+            // Find all downstream packages
+            auto downPackages = CompilerCangjieProject::GetInstance()->GetDependencyGraph()->GetDependents(definedPkg);
+            // Check the status of all downstream packages
+            auto tasks = CompilerCangjieProject::GetInstance()->GetCjoManager()->CheckStatus(downPackages);
+            // Compile all downstream packages before searching for references
+            CompilerCangjieProject::GetInstance()->SubmitTasksToPool(tasks);
+        }
+
+        lsp::SymbolIndex *index = ark::CompilerCangjieProject::GetInstance()->GetIndex();
+        if (!index) {
+            return;
+        }
+        int curIdx = ast.GetCurToken(pos, 0, static_cast<int>(ast.tokens.size()) - 1);
+        ExportIDItem exportIdItem;
+        for (auto &decl : decls) {
+            if (decl->astKind == Cangjie::AST::ASTKind::PACKAGE_DECL) {
+                return;
+            }
+            auto id = GetSymbolId(*decl);
+            if (!IsGlobalOrMemberOrItsParam(*decl)) {
+                // For a local variable, maybe a function or a variable
+                GetCurPkgUesage(decl, ast, result);
+                continue;
+            }
+            if (id == lsp::INVALID_SYMBOL_ID) {
+                continue;
+            }
+            bool ret = CrossLanguageDefinition::GetExportsID(GetArrayFromID(id), exportIdItem);
+            if (ret) {
+                nlohmann::json jsonValue;
+                jsonValue["exportName"] = exportIdItem.exportName;
+                jsonValue["containerName"] = exportIdItem.containerName;
+                ValueOrError val(ValueOrErrorCheck::VALUE, jsonValue);
+                reply(val);
+            }
+            break;
+        }
+    };
+    arkScheduler->RunWithAST("GetExportsName", file, action);
+}
+
 void ArkServer::FindWorkspaceSymbols(const std::string &query, const Callback<ValueOrError> &reply) const
 {
     auto action = [query, reply = std::move(reply)](const InputsAndAST &) {
