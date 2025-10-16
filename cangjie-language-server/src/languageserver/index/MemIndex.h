@@ -91,6 +91,8 @@ public:
 
     virtual void Refs(const RefsRequest &req, std::function<void(const Ref &)> callback) const = 0;
 
+    virtual void GetExportSID(IDArray array, std::function<void(const CrossSymbol &)> callback) const = 0;
+
     virtual void Callees(const std::string &pkgName, const SymbolID &declId,
         std::function<void(const SymbolID &, const Ref &)> callback) const = 0;
 
@@ -137,6 +139,8 @@ public:
     void FuzzyFind(const FuzzyFindRequest &req, std::function<void(const Symbol &)> callback) const override;
 
     void Lookup(const LookupRequest &req, std::function<void(const Symbol &)> callback) const override;
+
+    void GetExportSID(IDArray array, std::function<void(const CrossSymbol &)> callback) const override;
 
     void Refs(const RefsRequest &req, std::function<void(const Ref &)> callback) const override;
 
