@@ -24,6 +24,10 @@ namespace ark {
 #define LIB_THIS THIS
 #undef THIS
 #endif
+
+
+
+    
 const std::unordered_set<TokenKind> CHECK_TOKEN_KIND = {TokenKind::IDENTIFIER, TokenKind::STRING_LITERAL,
                                                         TokenKind::MULTILINE_STRING, TokenKind::DOLLAR_IDENTIFIER,
                                                         TokenKind::INIT, TokenKind::SUPER, TokenKind::THIS,
