@@ -12,6 +12,22 @@
 #include "cangjie/AST/Symbol.h"
 
 namespace ark {
+struct RegisterItem{
+    Location definition;
+    Location declaration;
+    std::string registerName;
+    int registerType;
+};
+
+struct ExportIDItem{
+    std::string exportName;
+    std::string containerName;
+};
+
+struct RegisterCrossSymbolsResult {
+    std::list<RegisterItem> registerItems{};
+};
+
 struct CrossSymbolsResult {
     std::set<Location> locations{};
 };
