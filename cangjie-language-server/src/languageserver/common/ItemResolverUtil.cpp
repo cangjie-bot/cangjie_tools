@@ -1023,8 +1023,10 @@ void ItemResolverUtil::ResolveFuncTypeParamInsert(std::string &detail,
 }
 
 int ItemResolverUtil::ResolveFuncParamInsert(std::string &detail, const std::string myFilePath,
-    Ptr<Cangjie::AST::FuncParam> param, int numParm, Cangjie::SourceManager *sourceManager, bool isEnumConstruct)
+    std::pair<Ptr<FuncParam>, bool> paramAndFlag, int numParm, SourceManager *sourceManager)
 {
+    Ptr<FuncParam> param = paramAndFlag.first;
+    bool isEnumConstruct = paramAndFlag.second;
     std::string paramName = isEnumConstruct ? "": param->identifier.GetRawText();
     if (keyMap.find(paramName)!= keyMap.end()) {
         paramName = "`" + paramName + "`";
@@ -1309,8 +1311,8 @@ int ItemResolverUtil::BuildLambdaFuncPreParamInsert(const T &decl, Cangjie::Sour
             if (!firstParams) {
                 insertText += ", ";
             }
-            numParm = ResolveFuncParamInsert(insertText, myFilePath, param.get(),
-                numParm, sourceManager, isEnumConstruct);
+            numParm = ResolveFuncParamInsert(insertText, myFilePath, 
+                std::make_pair(param.get(), isEnumConstruct), numParm, sourceManager);
             firstParams = false;
             insertText += "}";
         }
@@ -1445,7 +1447,8 @@ void ItemResolverUtil::ResolveFuncLikeDeclInsert(std::string &detail, const T &d
             detail += ", ";
         }
         if (param) {
-            numParm = ResolveFuncParamInsert(detail, myFilePath, param.get(), numParm, sourceManager, isEnumConstruct);
+            numParm = ResolveFuncParamInsert(detail, myFilePath,
+                std::make_pair(param.get(), isEnumConstruct), numParm, sourceManager);
         }
         firstParams = false;
         detail += "}";

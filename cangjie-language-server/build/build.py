@@ -33,6 +33,7 @@ BUILD_TYPE_MAP = {
     "relwithdebinfo": "RelWithDebInfo"
 }
 
+
 class TARGET_SYSTEM_TYPE(Enum):
     NATIVE = "native"
     WINDOWS_X86_64 = "windows-x86_64"
@@ -49,10 +50,13 @@ JSON_GIT = "https://gitcode.com/openharmony/third_party_json.git"
 FLATBUFFER_GIT = "https://gitcode.com/openharmony/third_party_flatbuffers.git"
 SQLITE_GIT = "https://gitcode.com/openharmony/third_party_sqlite.git"
 
+
 def resolve_path(path):
     if os.path.isabs(path):
         return path
     return os.path.abspath(path)
+
+
 def download_json():
     cmd = ["git", "clone", "-b", "OpenHarmony-v6.0-Release", "--depth=1", JSON_GIT, "json-v3.11.3"]
     output = subprocess.Popen(cmd, cwd=THIRDPARTY_DIR, stdout=PIPE)
@@ -76,7 +80,7 @@ def generate_flat_header():
     flatbuffers_build_dir = os.path.join(flatbuffers_dir, "build")
     if not os.path.exists(flatbuffers_build_dir):
         os.makedirs(flatbuffers_build_dir)
-    compile_cmd = ["cmake", flatbuffers_dir, "-G", "Unix Makefiles", "-DFLATBUFFERS_BUILD_TESTS=OFF"]
+    compile_cmd = ["cmake", flatbuffers_dir, "-G", get_generator(), "-DFLATBUFFERS_BUILD_TESTS=OFF"]
     output = subprocess.Popen(compile_cmd, cwd=flatbuffers_build_dir, stdout=PIPE)
     for line in output.stdout:
         print(line.decode("ascii", "ignore").rstrip())
@@ -96,11 +100,13 @@ def generate_flat_header():
     new_header_path = os.path.join(flatbuffers_dir, "include", "index_generated.h")
     shutil.copy(header_path, new_header_path)
 
+
 def download_sqlite(args):
     cmd = ["git", "clone", "-b", "OpenHarmony-v6.0-Release", "--depth=1", SQLITE_GIT, "sqlite3"]
     output = subprocess.Popen(cmd, cwd=THIRDPARTY_DIR, stdout=PIPE)
     for line in output.stdout:
         print(line.decode("ascii", "ignore").rstrip())
+
 
 def build_sqlite_amalgamation():
     sqlite_dir = os.path.join(THIRDPARTY_DIR, "sqlite3")
@@ -119,6 +125,7 @@ def build_sqlite_amalgamation():
     shutil.copy(sqlite3_c_file, nwe_sqlite3_c_file)
     shutil.copy(sqlite3_h_file, nwe_sqlite3_h_file)
     shutil.copy(sqlite3ext_h_file, nwe_sqlite3ext_h_file)
+
 
 def prepare_cangjie(args):
     cangjie_sdk_path = resolve_path(os.getenv("CANGJIE_HOME"))
@@ -151,6 +158,7 @@ def prepare_cangjie(args):
             new_lib_path = os.path.join(CANGJIE_LIB_DIR, "libcangjie-lsp.dll.a")
             shutil.copy(cangjie_lib_path, new_lib_path)
 
+
 def prepare_build(args):
     prepare_cangjie(args)
     if not os.path.exists(THIRDPARTY_DIR):
@@ -164,17 +172,20 @@ def prepare_build(args):
         download_sqlite(args)
         build_sqlite_amalgamation()
 
+
 def get_generator():
     generator = "Unix Makefiles"
     if IS_WINDOWS:
         generator = "MinGW Makefiles"
     return generator
 
+
 def get_compiler_type():
     compiler_type = "Ninja"
     if IS_WINDOWS:
         compiler_type = "MINGW"
     return compiler_type
+
 
 def get_build_commands(args):
     result = [
@@ -185,6 +196,7 @@ def get_build_commands(args):
     if args.jobs > 0:
         result.extend(["-j", str(args.jobs)])
     return result
+
 
 def generate_cmake_commands(args):
     # cmake .. -G "MinGW Makefiles" -DCOMPILER_TYPE=MINGW -DCMAKE_BUILD_TYPE=Release
@@ -206,6 +218,7 @@ def generate_cmake_commands(args):
             "-DENABLE_TEST=ON"
         ])
     return result
+
 
 def build(args):
     print("start build")
@@ -229,6 +242,7 @@ def build(args):
         print(line.decode("ascii", "ignore").rstrip())
     print("end build")
 
+
 def redo_with_write(redo_func, path, err):
     # Is the error an access error?
     if not os.access(path, os.W_OK):
@@ -237,11 +251,13 @@ def redo_with_write(redo_func, path, err):
     else:
         raise
 
+
 def delete_folder(folder_path):
     try:
         shutil.rmtree(folder_path, onerror=redo_with_write)
     except Exception as e:
         print(f"delete {folder_path} failed: {str(e)}")
+
 
 def clean(args):
     """
@@ -269,6 +285,7 @@ def clean(args):
         delete_folder(LIB_DIR)
     print("end clean")
 
+
 def install(args):
     binary_path = os.path.join(HOME_DIR, "output", "bin")
     if not os.path.exists(binary_path):
@@ -287,6 +304,7 @@ def install(args):
     shutil.copytree(binary_path, install_path, dirs_exist_ok=True)
     print(f"target path '{install_path}' installed successfully.")
 
+
 def get_run_test_command(cangjie_sdk_path):
     env_file = "envsetup.sh"
     gtest_file = "gtest_LSPServer_test"
@@ -301,6 +319,7 @@ def get_run_test_command(cangjie_sdk_path):
     else:
         result.extend([env_path, "&&", test_path])
     return result
+
 
 def test(args):
     print("start run test")
@@ -320,6 +339,7 @@ def test(args):
         print("test failed with return code:", output.returncode)
         exit(1)
     print("end run test")
+
 
 def main():
     """build entry"""
@@ -371,6 +391,7 @@ def main():
 
     args = parser.parse_args()
     args.func(args)
+
 
 if __name__ == "__main__":
     os.environ["LANG"] = "C.UTF-8"
