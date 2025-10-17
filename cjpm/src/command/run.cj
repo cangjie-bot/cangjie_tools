@@ -23,6 +23,8 @@ Available options:
   --build-args <value>        the arguments to pass to the build process
   --skip-build                skip compile, only run the executable product
   --run-args <value>          the arguments to pass to the executable product
+  -- <value>                  the arguments to pass to the executable product
+                              all subsequent symbol groups will be treated as run-args!
   --target-dir <value>        specify target directory
   --enable-features <value>   explicitly specify comma-separated list of features to be enabled
   --no-feature-deduce         disables auto-enabling of features, deduced from other options, machine properties, etc.
@@ -85,9 +87,24 @@ Available options:
     }
 
     public override func handleCommand(): Bool {
-        let (argMap, unparseArgs) = getParseOption(this.arguments, "gV",
-            ["verbose", "skip-build", "name=", "build-args=", "run-args=", "target-dir=", "skip-script",
-                "enable-features=", "no-feature-deduce"])
+        let allArgs = this.arguments
+        var beforeRunArgs: ArrayList<String> = ArrayList<String>()
+        var afterRunArgs: ArrayList<String> = ArrayList<String>()
+        var isInRange: Bool = false
+        for (nowArg in allArgs) {
+            if (nowArg == "--") {
+                isInRange = true
+                continue    
+            }
+
+            if (!isInRange) {
+                beforeRunArgs.add(nowArg)
+            } else {
+                afterRunArgs.add(nowArg)
+            }
+        }
+        var standardArgList: ArrayList<String> = ArrayList<String>(["verbose", "skip-build", "name=", "build-args=", "run-args=", "target-dir=", "skip-script", "enable-features=", "no-feature-deduce"])
+        let (argMap, unparseArgs) = getParseOption(beforeRunArgs.toArray() , "gV", standardArgList.toArray())
 
         if (!handleUnparseArgs(unparseArgs)) {
             return false
@@ -106,6 +123,7 @@ Available options:
             return false
         }
         runConfig.enableFeatures = val
+        runConfig.newRunArgs = afterRunArgs
         runConfig.globalConfig.isSkipScript = getBoolOption(argMap, "--skip-script")
         runConfig.globalConfig.noFeatureDeduce = getBoolOption(argMap, "--no-feature-deduce")
         if (!state.isExperimental && runConfig.globalConfig.noFeatureDeduce) {
