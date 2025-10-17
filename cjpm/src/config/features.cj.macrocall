@@ -1,0 +1,963 @@
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+package cjpm.config
+
+import std.collection.*
+import std.deriving.*
+import stdx.log.getGlobalLogger
+import stdx.serialization.serialization.*
+import cjpm.util.{CliFailError, Result}
+
+private let logger = getGlobalLogger()
+
+// Struct which stores information about used 'cjc' binary
+// 
+// Use this structure instead of @When to implement platform depentent functionality
+public struct CjcInfo {
+    private static let versionPrefix = "Cangjie Compiler: "
+    private static let targetPrefix = "Target: "
+
+    private CjcInfo(
+        public let version: String,
+        public let target: Triple
+    ) {}
+
+    // specified in $PATH.
+    // Parser result of 'cjc -v' to figure out:
+    //    - Compiler version
+    //    - Target triple information: {arch}-{vendor}-{os}-{env}
+    static func findCjc(): CjcInfo {
+        let (flag, output, errlog) = execWithOutput(COMPILE_TOOL, ArrayList<String>(["-v"]))
+        if (!flag) {
+            throw CliFailError([errlog, "Error: failed to run 'cjc -v'"])
+        }
+        if (!output.contains(versionPrefix)) {
+            throw CliFailError(["Error: no target info in output of command 'cjc -v':", output])
+        }
+        if (!output.contains(targetPrefix)) {
+            throw CliFailError(["Error: no target info in output of command 'cjc -v':", output])
+        }
+
+        let version = output.split(versionPrefix)[1].trimAscii().split(' ', 1, removeEmpty: true)[0]
+        let targetString = output.split(targetPrefix)[1].trimAscii()
+        let target = match (Triple.fromString(targetString)) {
+            case Ok(triple) => triple
+            case Err(errmesg) => throw CliFailError([errmesg])
+        }
+        CjcInfo(version, target)
+    }
+}
+
+// Enum of known architectures specified in target triple
+/* ===== Emitted by MacroCall @Derive in features.cj:56:1 ===== */
+/* 56.1 */public enum Arch <: ToString {
+/* 56.2 */    | X64
+/* 56.3 */    | AARCH64
+/* 56.4 */    | Unknown(String)
+/* 56.5 */    
+/* 56.6 */    public func toString(): String {
+/* 56.7 */        match(this) {
+/* 56.8 */            case X64 => "x86_64"
+/* 56.9 */            case AARCH64 => "aarch64"
+/* 56.10 */            case Unknown(s) => s
+/* 56.11 */        }
+/* 56.12 */    }
+/* 56.13 */    static func fromString(arch: String): Arch {
+/* 56.14 */        match {
+/* 56.15 */            case arch == "x86_64" => X64
+/* 56.16 */            case arch == "aarch64" => AARCH64
+/* 56.17 */            case _ =>
+/* 56.18 */            logger.warn("Unknown architecture type: ${arch}")
+/* 56.19 */            Unknown(arch)
+/* 56.20 */        }
+/* 56.21 */    }
+/* 56.22 */}
+/* 56.23 */extend Arch <: Hashable {
+/* 56.24 */    public func hashCode(): Int64 {
+/* 56.25 */        var hasher = DefaultHasher()
+/* 56.26 */        match(this) {
+/* 56.27 */            case X64 => hasher.write(0)
+/* 56.28 */            case AARCH64 => hasher.write(1)
+/* 56.29 */            case Unknown(v0) => hasher.write(2)
+/* 56.30 */            hasher = hh(hasher, v0)
+/* 56.31 */        }
+/* 56.32 */        return hasher.finish()
+/* 56.33 */    }
+/* 56.34 */    private func hh < T >(hasher: DefaultHasher, item: T): DefaultHasher where T <: Hashable {
+/* 56.35 */        var hasher2 = hasher
+/* 56.36 */        hasher2.write(item.hashCode())
+/* 56.37 */        return hasher2
+/* 56.38 */    }
+/* 56.39 */    private func hh < T >(hasher: DefaultHasher, item: Int64): DefaultHasher {
+/* 56.40 */        var hasher2 = hasher
+/* 56.41 */        hasher2.write(item)
+/* 56.42 */        return hasher2
+/* 56.43 */    }
+/* 56.44 */    private func hh < T >(hasher: DefaultHasher, item: String): DefaultHasher {
+/* 56.45 */        var hasher2 = hasher
+/* 56.46 */        hasher2.write(item)
+/* 56.47 */        return hasher2
+/* 56.48 */    }
+/* 56.49 */}
+/* 56.50 */extend Arch <: Equatable < Arch > {
+/* 56.51 */    public operator func ==(other: Arch): Bool {
+/* 56.52 */        return match((this, other)) {
+/* 56.53 */            case(X64, X64) => true
+/* 56.54 */            case(AARCH64, AARCH64) => true
+/* 56.55 */            case(Unknown(left0), Unknown(right0)) => left0 == right0
+/* 56.56 */            case _ => false
+/* 56.57 */        }
+/* 56.58 */    }
+/* 56.59 */    public operator func !=(other: Arch): Bool {
+/* 56.60 */        !(this == other)
+/* 56.61 */    }
+/* 56.62 */}
+/* 56.63 */extend Arch {
+/* 56.64 */    private func derivingChecks_(): Unit {
+/* 56.65 */        func check_Unknown_0 < T_Unknown_0 >(_: String): Hashable where T_Unknown_0 <: Hashable {
+/* 56.66 */            throw Exception()
+/* 56.67 */        }
+/* 56.68 */        let _ = check_Unknown_0 < String >
+/* 56.69 */        derivingChecks2_()
+/* 56.70 */    }
+/* 56.71 */    private func derivingChecks2_(): Unit {
+/* 56.72 */        derivingChecks_()
+/* 56.73 */    }
+/* 56.74 */}
+/* 56.75 */
+/* 56.76 */extend Arch {
+/* 56.77 */    private func derivingChecks_(): Unit {
+/* 56.78 */        func check_Unknown_0 < T_Unknown_0 >(_: String): Equatable < String > where T_Unknown_0 <: Equatable < T_Unknown_0 > {
+/* 56.79 */            throw Exception()
+/* 56.80 */        }
+/* 56.81 */        let _ = check_Unknown_0 < String >
+/* 56.82 */        derivingChecks2_()
+/* 56.83 */    }
+/* 56.84 */    private func derivingChecks2_(): Unit {
+/* 56.85 */        derivingChecks_()
+/* 56.86 */    }
+/* 56.87 */}
+/* 56.88 */
+/* ===== End of the Emit ===== */
+
+// Enum of known environments specified in target triple
+/* ===== Emitted by MacroCall @Derive in features.cj:81:1 ===== */
+/* 81.1 */public enum Vendor <: ToString {
+/* 81.2 */    | APPLE
+/* 81.3 */    | UNKNOWN
+/* 81.4 */    
+/* 81.5 */    public func toString(): String {
+/* 81.6 */        match(this) {
+/* 81.7 */            case APPLE => "apple"
+/* 81.8 */            case UNKNOWN => "unknown"
+/* 81.9 */        }
+/* 81.10 */    }
+/* 81.11 */    
+/* 81.12 */    static func fromString(vendor: String): Vendor {
+/* 81.13 */        match {
+/* 81.14 */            case vendor == "apple" => APPLE
+/* 81.15 */            case _ => UNKNOWN
+/* 81.16 */        }
+/* 81.17 */    }
+/* 81.18 */}
+/* 81.19 */extend Vendor <: Hashable {
+/* 81.20 */    public func hashCode(): Int64 {
+/* 81.21 */        var hasher = DefaultHasher()
+/* 81.22 */        match(this) {
+/* 81.23 */            case APPLE => hasher.write(0)
+/* 81.24 */            case UNKNOWN => hasher.write(1)
+/* 81.25 */        }
+/* 81.26 */        return hasher.finish()
+/* 81.27 */    }
+/* 81.28 */    private func hh < T >(hasher: DefaultHasher, item: T): DefaultHasher where T <: Hashable {
+/* 81.29 */        var hasher2 = hasher
+/* 81.30 */        hasher2.write(item.hashCode())
+/* 81.31 */        return hasher2
+/* 81.32 */    }
+/* 81.33 */    private func hh < T >(hasher: DefaultHasher, item: Int64): DefaultHasher {
+/* 81.34 */        var hasher2 = hasher
+/* 81.35 */        hasher2.write(item)
+/* 81.36 */        return hasher2
+/* 81.37 */    }
+/* 81.38 */    private func hh < T >(hasher: DefaultHasher, item: String): DefaultHasher {
+/* 81.39 */        var hasher2 = hasher
+/* 81.40 */        hasher2.write(item)
+/* 81.41 */        return hasher2
+/* 81.42 */    }
+/* 81.43 */}
+/* 81.44 */extend Vendor <: Equatable < Vendor > {
+/* 81.45 */    public operator func ==(other: Vendor): Bool {
+/* 81.46 */        return match((this, other)) {
+/* 81.47 */            case(APPLE, APPLE) => true
+/* 81.48 */            case(UNKNOWN, UNKNOWN) => true
+/* 81.49 */            case _ => false
+/* 81.50 */        }
+/* 81.51 */    }
+/* 81.52 */    public operator func !=(other: Vendor): Bool {
+/* 81.53 */        !(this == other)
+/* 81.54 */    }
+/* 81.55 */}
+/* 81.56 */
+/* ===== End of the Emit ===== */
+
+// Enum of known operational systems specified in target triple
+/* ===== Emitted by MacroCall @Derive in features.cj:102:1 ===== */
+/* 102.1 */public enum OS <: ToString {
+/* 102.2 */    | LINUX
+/* 102.3 */    | DARWIN
+/* 102.4 */    | WINDOWS
+/* 102.5 */    | HM
+/* 102.6 */    | Unknown(String)
+/* 102.7 */    
+/* 102.8 */    public func toString(): String {
+/* 102.9 */        match(this) {
+/* 102.10 */            case LINUX => "linux"
+/* 102.11 */            case DARWIN => "darwin"
+/* 102.12 */            case WINDOWS => "w64"
+/* 102.13 */            case HM => "hm"
+/* 102.14 */            case Unknown(s) => s
+/* 102.15 */        }
+/* 102.16 */    }
+/* 102.17 */    
+/* 102.18 */    static func fromString(os: String): OS {
+/* 102.19 */        match {
+/* 102.20 */            case os == "linux" => LINUX
+/* 102.21 */            case os == "darwin" => DARWIN
+/* 102.22 */            case os == "windows" || os == "w64" => WINDOWS
+/* 102.23 */            case os == "hm" => HM
+/* 102.24 */            case _ =>
+/* 102.25 */            logger.warn("Unknown os type: ${os}")
+/* 102.26 */            Unknown(os)
+/* 102.27 */        }
+/* 102.28 */    }
+/* 102.29 */}
+/* 102.30 */extend OS <: Hashable {
+/* 102.31 */    public func hashCode(): Int64 {
+/* 102.32 */        var hasher = DefaultHasher()
+/* 102.33 */        match(this) {
+/* 102.34 */            case LINUX => hasher.write(0)
+/* 102.35 */            case DARWIN => hasher.write(1)
+/* 102.36 */            case WINDOWS => hasher.write(2)
+/* 102.37 */            case HM => hasher.write(3)
+/* 102.38 */            case Unknown(v0) => hasher.write(4)
+/* 102.39 */            hasher = hh(hasher, v0)
+/* 102.40 */        }
+/* 102.41 */        return hasher.finish()
+/* 102.42 */    }
+/* 102.43 */    private func hh < T >(hasher: DefaultHasher, item: T): DefaultHasher where T <: Hashable {
+/* 102.44 */        var hasher2 = hasher
+/* 102.45 */        hasher2.write(item.hashCode())
+/* 102.46 */        return hasher2
+/* 102.47 */    }
+/* 102.48 */    private func hh < T >(hasher: DefaultHasher, item: Int64): DefaultHasher {
+/* 102.49 */        var hasher2 = hasher
+/* 102.50 */        hasher2.write(item)
+/* 102.51 */        return hasher2
+/* 102.52 */    }
+/* 102.53 */    private func hh < T >(hasher: DefaultHasher, item: String): DefaultHasher {
+/* 102.54 */        var hasher2 = hasher
+/* 102.55 */        hasher2.write(item)
+/* 102.56 */        return hasher2
+/* 102.57 */    }
+/* 102.58 */}
+/* 102.59 */extend OS <: Equatable < OS > {
+/* 102.60 */    public operator func ==(other: OS): Bool {
+/* 102.61 */        return match((this, other)) {
+/* 102.62 */            case(LINUX, LINUX) => true
+/* 102.63 */            case(DARWIN, DARWIN) => true
+/* 102.64 */            case(WINDOWS, WINDOWS) => true
+/* 102.65 */            case(HM, HM) => true
+/* 102.66 */            case(Unknown(left0), Unknown(right0)) => left0 == right0
+/* 102.67 */            case _ => false
+/* 102.68 */        }
+/* 102.69 */    }
+/* 102.70 */    public operator func !=(other: OS): Bool {
+/* 102.71 */        !(this == other)
+/* 102.72 */    }
+/* 102.73 */}
+/* 102.74 */extend OS {
+/* 102.75 */    private func derivingChecks_(): Unit {
+/* 102.76 */        func check_Unknown_0 < T_Unknown_0 >(_: String): Hashable where T_Unknown_0 <: Hashable {
+/* 102.77 */            throw Exception()
+/* 102.78 */        }
+/* 102.79 */        let _ = check_Unknown_0 < String >
+/* 102.80 */        derivingChecks2_()
+/* 102.81 */    }
+/* 102.82 */    private func derivingChecks2_(): Unit {
+/* 102.83 */        derivingChecks_()
+/* 102.84 */    }
+/* 102.85 */}
+/* 102.86 */
+/* 102.87 */extend OS {
+/* 102.88 */    private func derivingChecks_(): Unit {
+/* 102.89 */        func check_Unknown_0 < T_Unknown_0 >(_: String): Equatable < String > where T_Unknown_0 <: Equatable < T_Unknown_0 > {
+/* 102.90 */            throw Exception()
+/* 102.91 */        }
+/* 102.92 */        let _ = check_Unknown_0 < String >
+/* 102.93 */        derivingChecks2_()
+/* 102.94 */    }
+/* 102.95 */    private func derivingChecks2_(): Unit {
+/* 102.96 */        derivingChecks_()
+/* 102.97 */    }
+/* 102.98 */}
+/* 102.99 */
+/* ===== End of the Emit ===== */
+
+// Enum of known environments specified in target triple
+/* ===== Emitted by MacroCall @Derive in features.cj:134:1 ===== */
+/* 134.1 */public enum Env <: ToString {
+/* 134.2 */    | HOS
+/* 134.3 */    | GNU
+/* 134.4 */    | ANDROID
+/* 134.5 */    | MINGW32
+/* 134.6 */    | OHOS
+/* 134.7 */    | NOT_AVAILABLE
+/* 134.8 */    | Unknown(String)
+/* 134.9 */    
+/* 134.10 */    public func toString(): String {
+/* 134.11 */        match(this) {
+/* 134.12 */            case HOS => "hos"
+/* 134.13 */            case GNU => "gnu"
+/* 134.14 */            case ANDROID => "android"
+/* 134.15 */            case MINGW32 => "mingw32"
+/* 134.16 */            case OHOS => "ohos"
+/* 134.17 */            case NOT_AVAILABLE => ""
+/* 134.18 */            case Unknown(s) => s
+/* 134.19 */        }
+/* 134.20 */    }
+/* 134.21 */    
+/* 134.22 */    static func fromString(env: String): Env {
+/* 134.23 */        match {
+/* 134.24 */            case env == "hos" => HOS
+/* 134.25 */            case env == "gnu" => GNU
+/* 134.26 */            case env == "android" => ANDROID
+/* 134.27 */            case env == "mingw32" => MINGW32
+/* 134.28 */            case env == "ohos" => OHOS
+/* 134.29 */            case _ =>
+/* 134.30 */            logger.warn("Unknown environment: ${env}")
+/* 134.31 */            Unknown(env)
+/* 134.32 */        }
+/* 134.33 */    }
+/* 134.34 */}
+/* 134.35 */extend Env <: Hashable {
+/* 134.36 */    public func hashCode(): Int64 {
+/* 134.37 */        var hasher = DefaultHasher()
+/* 134.38 */        match(this) {
+/* 134.39 */            case HOS => hasher.write(0)
+/* 134.40 */            case GNU => hasher.write(1)
+/* 134.41 */            case ANDROID => hasher.write(2)
+/* 134.42 */            case MINGW32 => hasher.write(3)
+/* 134.43 */            case OHOS => hasher.write(4)
+/* 134.44 */            case NOT_AVAILABLE => hasher.write(5)
+/* 134.45 */            case Unknown(v0) => hasher.write(6)
+/* 134.46 */            hasher = hh(hasher, v0)
+/* 134.47 */        }
+/* 134.48 */        return hasher.finish()
+/* 134.49 */    }
+/* 134.50 */    private func hh < T >(hasher: DefaultHasher, item: T): DefaultHasher where T <: Hashable {
+/* 134.51 */        var hasher2 = hasher
+/* 134.52 */        hasher2.write(item.hashCode())
+/* 134.53 */        return hasher2
+/* 134.54 */    }
+/* 134.55 */    private func hh < T >(hasher: DefaultHasher, item: Int64): DefaultHasher {
+/* 134.56 */        var hasher2 = hasher
+/* 134.57 */        hasher2.write(item)
+/* 134.58 */        return hasher2
+/* 134.59 */    }
+/* 134.60 */    private func hh < T >(hasher: DefaultHasher, item: String): DefaultHasher {
+/* 134.61 */        var hasher2 = hasher
+/* 134.62 */        hasher2.write(item)
+/* 134.63 */        return hasher2
+/* 134.64 */    }
+/* 134.65 */}
+/* 134.66 */extend Env <: Equatable < Env > {
+/* 134.67 */    public operator func ==(other: Env): Bool {
+/* 134.68 */        return match((this, other)) {
+/* 134.69 */            case(HOS, HOS) => true
+/* 134.70 */            case(GNU, GNU) => true
+/* 134.71 */            case(ANDROID, ANDROID) => true
+/* 134.72 */            case(MINGW32, MINGW32) => true
+/* 134.73 */            case(OHOS, OHOS) => true
+/* 134.74 */            case(NOT_AVAILABLE, NOT_AVAILABLE) => true
+/* 134.75 */            case(Unknown(left0), Unknown(right0)) => left0 == right0
+/* 134.76 */            case _ => false
+/* 134.77 */        }
+/* 134.78 */    }
+/* 134.79 */    public operator func !=(other: Env): Bool {
+/* 134.80 */        !(this == other)
+/* 134.81 */    }
+/* 134.82 */}
+/* 134.83 */extend Env {
+/* 134.84 */    private func derivingChecks_(): Unit {
+/* 134.85 */        func check_Unknown_0 < T_Unknown_0 >(_: String): Hashable where T_Unknown_0 <: Hashable {
+/* 134.86 */            throw Exception()
+/* 134.87 */        }
+/* 134.88 */        let _ = check_Unknown_0 < String >
+/* 134.89 */        derivingChecks2_()
+/* 134.90 */    }
+/* 134.91 */    private func derivingChecks2_(): Unit {
+/* 134.92 */        derivingChecks_()
+/* 134.93 */    }
+/* 134.94 */}
+/* 134.95 */
+/* 134.96 */extend Env {
+/* 134.97 */    private func derivingChecks_(): Unit {
+/* 134.98 */        func check_Unknown_0 < T_Unknown_0 >(_: String): Equatable < String > where T_Unknown_0 <: Equatable < T_Unknown_0 > {
+/* 134.99 */            throw Exception()
+/* 134.100 */        }
+/* 134.101 */        let _ = check_Unknown_0 < String >
+/* 134.102 */        derivingChecks2_()
+/* 134.103 */    }
+/* 134.104 */    private func derivingChecks2_(): Unit {
+/* 134.105 */        derivingChecks_()
+/* 134.106 */    }
+/* 134.107 */}
+/* 134.108 */
+/* ===== End of the Emit ===== */
+
+/* ===== Emitted by MacroCall @Derive in features.cj:170:1 ===== */
+/* 170.1 */public struct Triple <: ToString {
+/* 170.2 */    private Triple(
+/* 170.3 */    private let _stringValue: String,
+/* 170.4 */    public let arch!: Arch,
+/* 170.5 */    public let vendor!: Vendor = UNKNOWN,
+/* 170.6 */    public let os!: OS,
+/* 170.7 */    public let env!: Env
+/* 170.8 */    ) { }
+/* 170.9 */    
+/* 170.10 */    private init(
+/* 170.11 */    arch!: Arch,
+/* 170.12 */    vendor!: Vendor = UNKNOWN,
+/* 170.13 */    os!: OS,
+/* 170.14 */    env!: Env
+/* 170.15 */    ) {
+/* 170.16 */        this.arch = arch
+/* 170.17 */        this.vendor = vendor
+/* 170.18 */        this.os = os
+/* 170.19 */        this.env = env
+/* 170.20 */        this._stringValue = toStringFromTriple(arch, vendor, os, env)
+/* 170.21 */    }
+/* 170.22 */    
+/* 170.23 */    private static func toStringFromTriple(arch: Arch, vendor: Vendor, os: OS, env: Env): String {
+/* 170.24 */        if(vendor == Vendor.UNKNOWN && os == OS.WINDOWS) {
+/* 170.25 */            return "${arch}-${os}${if (env != Env.NOT_AVAILABLE) {"-${env}"} else {""}}"
+/* 170.26 */        } else {
+/* 170.27 */            return "${arch}-${vendor}-${os}${if (env != Env.NOT_AVAILABLE) {"-${env}"} else {""}}"
+/* 170.28 */        }
+/* 170.29 */    }
+/* 170.30 */    
+/* 170.31 */    public func toString(): String {
+/* 170.32 */        _stringValue
+/* 170.33 */    }
+/* 170.34 */    
+/* 170.35 */    public static func fromString(triple: String): Result < Triple, String > {
+/* 170.36 */        let data = triple.split("-")
+/* 170.37 */        if(data.size != 3 && data.size != 4) {
+/* 170.38 */            return Err(
+/* 170.39 */            "The target-triple must be of form {ARCH}-{VENDOR}-{SYSTEM}-{ENV} or {ARCH}-{SYSTEM}-{ENV}. Got: ${triple}"
+/* 170.40 */            )
+/* 170.41 */        }
+/* 170.42 */        if(data[1] == "apple" && data[2] == "darwin") {
+/* 170.43 */            return Ok(
+/* 170.44 */            Triple(
+/* 170.45 */            arch: Arch.fromString(data[0]),
+/* 170.46 */            vendor: Vendor.fromString(data[1]),
+/* 170.47 */            os: OS.fromString(data[2]),
+/* 170.48 */            env: Env.NOT_AVAILABLE
+/* 170.49 */            )
+/* 170.50 */            )
+/* 170.51 */        }
+/* 170.52 */        return Ok(
+/* 170.53 */        Triple(
+/* 170.54 */        arch: Arch.fromString(data[0]),
+/* 170.55 */        vendor: Vendor.UNKNOWN,
+/* 170.56 */        os: OS.fromString(data[data.size - 2]),
+/* 170.57 */        env: Env.fromString(data[data.size - 1])
+/* 170.58 */        )
+/* 170.59 */        )
+/* 170.60 */    }
+/* 170.61 */}
+/* 170.62 */extend Triple <: Hashable {
+/* 170.63 */    public func hashCode(): Int64 {
+/* 170.64 */        var hasher = DefaultHasher()
+/* 170.65 */        hasher = hh(hasher, this.arch)
+/* 170.66 */        hasher = hh(hasher, this.vendor)
+/* 170.67 */        hasher = hh(hasher, this.os)
+/* 170.68 */        hasher = hh(hasher, this.env)
+/* 170.69 */        return hasher.finish()
+/* 170.70 */    }
+/* 170.71 */    private func hh < T >(hasher: DefaultHasher, item: T): DefaultHasher where T <: Hashable {
+/* 170.72 */        var hasher2 = hasher
+/* 170.73 */        hasher2.write(item.hashCode())
+/* 170.74 */        return hasher2
+/* 170.75 */    }
+/* 170.76 */    private func hh < T >(hasher: DefaultHasher, item: Int64): DefaultHasher {
+/* 170.77 */        var hasher2 = hasher
+/* 170.78 */        hasher2.write(item)
+/* 170.79 */        return hasher2
+/* 170.80 */    }
+/* 170.81 */    private func hh < T >(hasher: DefaultHasher, item: String): DefaultHasher {
+/* 170.82 */        var hasher2 = hasher
+/* 170.83 */        hasher2.write(item)
+/* 170.84 */        return hasher2
+/* 170.85 */    }
+/* 170.86 */}
+/* 170.87 */extend Triple <: Equatable < Triple > {
+/* 170.88 */    public operator func ==(other: Triple): Bool {
+/* 170.89 */        return this.arch == other.arch && this.vendor == other.vendor && this.os == other.os && this.env == other.env
+/* 170.90 */    }
+/* 170.91 */    public operator func !=(other: Triple): Bool {
+/* 170.92 */        !(this == other)
+/* 170.93 */    }
+/* 170.94 */}
+/* 170.95 */extend Triple {
+/* 170.96 */    private func derivingChecks_(): Unit {
+/* 170.97 */        let _: Hashable = arch
+/* 170.98 */        let _: Hashable = vendor
+/* 170.99 */        let _: Hashable = os
+/* 170.100 */        let _: Hashable = env
+/* 170.101 */        derivingChecks2_()
+/* 170.102 */    }
+/* 170.103 */    private func derivingChecks2_(): Unit {
+/* 170.104 */        derivingChecks_()
+/* 170.105 */    }
+/* 170.106 */}
+/* 170.107 */
+/* 170.108 */extend Triple {
+/* 170.109 */    private func derivingChecks_(): Unit {
+/* 170.110 */        let _: Equatable < Arch >= arch
+/* 170.111 */        let _: Equatable < Vendor >= vendor
+/* 170.112 */        let _: Equatable < OS >= os
+/* 170.113 */        let _: Equatable < Env >= env
+/* 170.114 */        derivingChecks2_()
+/* 170.115 */    }
+/* 170.116 */    private func derivingChecks2_(): Unit {
+/* 170.117 */        derivingChecks_()
+/* 170.118 */    }
+/* 170.119 */}
+/* 170.120 */
+/* ===== End of the Emit ===== */
+
+private let osToFeatureMap: HashMap<OS, Feature> = HashMap(
+    [
+        (OS.LINUX, Feature.OS_LINUX),
+        (OS.DARWIN, Feature.OS_DARWIN),
+        (OS.WINDOWS, Feature.OS_WINDOWS),
+        (OS.HM, Feature.OS_HM)
+    ]
+)
+private let envToFeatureMap: HashMap<Env, Feature> = HashMap(
+    [
+        (Env.HOS, Feature.ENV_HOS),
+        (Env.GNU, Feature.ENV_GNU),
+        (Env.ANDROID, Feature.ENV_ANDROID),
+        (Env.MINGW32, Feature.ENV_MINGW32),
+        (Env.OHOS, Feature.ENV_OHOS)
+    ]
+)
+private let archToFeatureMap: HashMap<Arch, Feature> = HashMap(
+    [(Arch.X64, Feature.ARCH_X64), (Arch.AARCH64, Feature.ARCH_AARCH64)])
+private let stringToFeatureMap: HashMap<String, Feature> = HashMap(
+    [
+        ("feature.os.posix", OS_POSIX),
+        ("feature.os.epoll", OS_EPOLL),
+        ("feature.os.kqueue", OS_KQUEUE),
+        ("feature.os.linux", OS_LINUX),
+        ("feature.os.windows", OS_WINDOWS),
+        ("feature.os.darwin", OS_DARWIN),
+        ("feature.os.hm", OS_HM),
+        ("feature.arch.big", ARCH_BIG),
+        ("feature.arch.little", ARCH_LITTLE),
+        ("feature.arch.x64", ARCH_X64),
+        ("feature.arch.aarch64", ARCH_AARCH64),
+        ("feature.arch.sse1", ARCH_SSE1),
+        ("feature.arch.sse2", ARCH_SSE2),
+        ("feature.arch.sse3", ARCH_SSE3),
+        ("feature.arch.sse4.1", ARCH_SSE4_1),
+        ("feature.arch.sse4.2", ARCH_SSE4_2),
+        ("feature.arch.avx1", ARCH_AVX1),
+        ("feature.arch.avx2", ARCH_AVX2),
+        ("feature.arch.avx512", ARCH_AVX512),
+        ("feature.arch.neon", ARCH_NEON),
+        ("feature.env.ohos", ENV_OHOS),
+        ("feature.env.gnu", ENV_GNU),
+        ("feature.env.mingw32", ENV_MINGW32),
+        ("feature.env.hos", ENV_HOS),
+        ("feature.env.android", ENV_ANDROID)
+    ]
+)
+
+/* ===== Emitted by MacroCall @Derive in features.cj:282:1 ===== */
+/* 282.1 */public enum Feature <: ToString & Serializable < Feature > {
+/* 282.2 */    | OS_POSIX
+/* 282.3 */    | OS_EPOLL
+/* 282.4 */    | OS_KQUEUE
+/* 282.5 */    | OS_WINDOWS
+/* 282.6 */    | OS_LINUX
+/* 282.7 */    | OS_HM
+/* 282.8 */    | OS_DARWIN
+/* 282.9 */    | ARCH_BIG
+/* 282.10 */    | ARCH_LITTLE
+/* 282.11 */    | ARCH_X64
+/* 282.12 */    | ARCH_AARCH64
+/* 282.13 */    | ARCH_SSE1
+/* 282.14 */    | ARCH_SSE2
+/* 282.15 */    | ARCH_SSE3
+/* 282.16 */    | ARCH_SSE4_1
+/* 282.17 */    | ARCH_SSE4_2
+/* 282.18 */    | ARCH_AVX1
+/* 282.19 */    | ARCH_AVX2
+/* 282.20 */    | ARCH_AVX512
+/* 282.21 */    | ARCH_NEON
+/* 282.22 */    | ENV_OHOS
+/* 282.23 */    | ENV_GNU
+/* 282.24 */    | ENV_MINGW32
+/* 282.25 */    | ENV_HOS
+/* 282.26 */    | ENV_ANDROID
+/* 282.27 */    | CJ_VERSION(String)
+/* 282.28 */    
+/* 282.29 */    public func toString(): String {
+/* 282.30 */        match(this) {
+/* 282.31 */            case OS_POSIX => "feature.os.posix"
+/* 282.32 */            case OS_EPOLL => "feature.os.epoll"
+/* 282.33 */            case OS_KQUEUE => "feature.os.kqueue"
+/* 282.34 */            case OS_WINDOWS => "feature.os.windows"
+/* 282.35 */            case OS_LINUX => "feature.os.linux"
+/* 282.36 */            case OS_HM => "feature.os.hm"
+/* 282.37 */            case OS_DARWIN => "feature.os.darwin"
+/* 282.38 */            case ARCH_BIG => "feature.arch.big"
+/* 282.39 */            case ARCH_LITTLE => "feature.arch.little"
+/* 282.40 */            case ARCH_X64 => "feature.arch.x64"
+/* 282.41 */            case ARCH_AARCH64 => "feature.arch.aarch64"
+/* 282.42 */            case ARCH_SSE1 => "feature.arch.sse1"
+/* 282.43 */            case ARCH_SSE2 => "feature.arch.sse2"
+/* 282.44 */            case ARCH_SSE3 => "feature.arch.sse3"
+/* 282.45 */            case ARCH_SSE4_1 => "feature.arch.sse4.1"
+/* 282.46 */            case ARCH_SSE4_2 => "feature.arch.sse4.2"
+/* 282.47 */            case ARCH_AVX1 => "feature.arch.avx1"
+/* 282.48 */            case ARCH_AVX2 => "feature.arch.avx2"
+/* 282.49 */            case ARCH_AVX512 => "feature.arch.avx512"
+/* 282.50 */            case ARCH_NEON => "feature.arch.neon"
+/* 282.51 */            case ENV_OHOS => "feature.env.ohos"
+/* 282.52 */            case ENV_GNU => "feature.env.gnu"
+/* 282.53 */            case ENV_MINGW32 => "feature.env.mingw32"
+/* 282.54 */            case ENV_HOS => "feature.env.hos"
+/* 282.55 */            case ENV_ANDROID => "feature.env.android"
+/* 282.56 */            case CJ_VERSION(s) => "feature.cj.v${s}"
+/* 282.57 */        }
+/* 282.58 */    }
+/* 282.59 */    
+/* 282.60 */    public static func fromStringOp(s: String):?Feature {
+/* 282.61 */        if(let Some(res) <- stringToFeatureMap.get(s)) {
+/* 282.62 */            return res
+/* 282.63 */        }
+/* 282.64 */        
+/* 282.65 */        let res = s.split("feature.cj.v", 2)
+/* 282.66 */        if(res.size == 2) {
+/* 282.67 */            return CJ_VERSION(res[1])
+/* 282.68 */        }
+/* 282.69 */        return None
+/* 282.70 */    }
+/* 282.71 */    public static func fromString(s: String): Feature {
+/* 282.72 */        return fromStringOp(s)??throw CliFailError("provided string \"${s}\" did not match with any of the features")
+/* 282.73 */    }
+/* 282.74 */    
+/* 282.75 */    public func serialize(): DataModel {
+/* 282.76 */        return DataModelString(this.toString())
+/* 282.77 */    }
+/* 282.78 */    
+/* 282.79 */    public static func deserialize(dm: DataModel): Feature {
+/* 282.80 */        if(let Some(sdm) <-(dm as DataModelString)) {
+/* 282.81 */            return fromString(sdm.getValue())
+/* 282.82 */        }
+/* 282.83 */        throw CliFailError("tried to deserialize Feature not from the DataModelString")
+/* 282.84 */    }
+/* 282.85 */}
+/* 282.86 */extend Feature <: Hashable {
+/* 282.87 */    public func hashCode(): Int64 {
+/* 282.88 */        var hasher = DefaultHasher()
+/* 282.89 */        match(this) {
+/* 282.90 */            case OS_POSIX => hasher.write(0)
+/* 282.91 */            case OS_EPOLL => hasher.write(1)
+/* 282.92 */            case OS_KQUEUE => hasher.write(2)
+/* 282.93 */            case OS_WINDOWS => hasher.write(3)
+/* 282.94 */            case OS_LINUX => hasher.write(4)
+/* 282.95 */            case OS_HM => hasher.write(5)
+/* 282.96 */            case OS_DARWIN => hasher.write(6)
+/* 282.97 */            case ARCH_BIG => hasher.write(7)
+/* 282.98 */            case ARCH_LITTLE => hasher.write(8)
+/* 282.99 */            case ARCH_X64 => hasher.write(9)
+/* 282.100 */            case ARCH_AARCH64 => hasher.write(10)
+/* 282.101 */            case ARCH_SSE1 => hasher.write(11)
+/* 282.102 */            case ARCH_SSE2 => hasher.write(12)
+/* 282.103 */            case ARCH_SSE3 => hasher.write(13)
+/* 282.104 */            case ARCH_SSE4_1 => hasher.write(14)
+/* 282.105 */            case ARCH_SSE4_2 => hasher.write(15)
+/* 282.106 */            case ARCH_AVX1 => hasher.write(16)
+/* 282.107 */            case ARCH_AVX2 => hasher.write(17)
+/* 282.108 */            case ARCH_AVX512 => hasher.write(18)
+/* 282.109 */            case ARCH_NEON => hasher.write(19)
+/* 282.110 */            case ENV_OHOS => hasher.write(20)
+/* 282.111 */            case ENV_GNU => hasher.write(21)
+/* 282.112 */            case ENV_MINGW32 => hasher.write(22)
+/* 282.113 */            case ENV_HOS => hasher.write(23)
+/* 282.114 */            case ENV_ANDROID => hasher.write(24)
+/* 282.115 */            case CJ_VERSION(v0) => hasher.write(25)
+/* 282.116 */            hasher = hh(hasher, v0)
+/* 282.117 */        }
+/* 282.118 */        return hasher.finish()
+/* 282.119 */    }
+/* 282.120 */    private func hh < T >(hasher: DefaultHasher, item: T): DefaultHasher where T <: Hashable {
+/* 282.121 */        var hasher2 = hasher
+/* 282.122 */        hasher2.write(item.hashCode())
+/* 282.123 */        return hasher2
+/* 282.124 */    }
+/* 282.125 */    private func hh < T >(hasher: DefaultHasher, item: Int64): DefaultHasher {
+/* 282.126 */        var hasher2 = hasher
+/* 282.127 */        hasher2.write(item)
+/* 282.128 */        return hasher2
+/* 282.129 */    }
+/* 282.130 */    private func hh < T >(hasher: DefaultHasher, item: String): DefaultHasher {
+/* 282.131 */        var hasher2 = hasher
+/* 282.132 */        hasher2.write(item)
+/* 282.133 */        return hasher2
+/* 282.134 */    }
+/* 282.135 */}
+/* 282.136 */extend Feature <: Equatable < Feature > {
+/* 282.137 */    public operator func ==(other: Feature): Bool {
+/* 282.138 */        return match((this, other)) {
+/* 282.139 */            case(OS_POSIX, OS_POSIX) => true
+/* 282.140 */            case(OS_EPOLL, OS_EPOLL) => true
+/* 282.141 */            case(OS_KQUEUE, OS_KQUEUE) => true
+/* 282.142 */            case(OS_WINDOWS, OS_WINDOWS) => true
+/* 282.143 */            case(OS_LINUX, OS_LINUX) => true
+/* 282.144 */            case(OS_HM, OS_HM) => true
+/* 282.145 */            case(OS_DARWIN, OS_DARWIN) => true
+/* 282.146 */            case(ARCH_BIG, ARCH_BIG) => true
+/* 282.147 */            case(ARCH_LITTLE, ARCH_LITTLE) => true
+/* 282.148 */            case(ARCH_X64, ARCH_X64) => true
+/* 282.149 */            case(ARCH_AARCH64, ARCH_AARCH64) => true
+/* 282.150 */            case(ARCH_SSE1, ARCH_SSE1) => true
+/* 282.151 */            case(ARCH_SSE2, ARCH_SSE2) => true
+/* 282.152 */            case(ARCH_SSE3, ARCH_SSE3) => true
+/* 282.153 */            case(ARCH_SSE4_1, ARCH_SSE4_1) => true
+/* 282.154 */            case(ARCH_SSE4_2, ARCH_SSE4_2) => true
+/* 282.155 */            case(ARCH_AVX1, ARCH_AVX1) => true
+/* 282.156 */            case(ARCH_AVX2, ARCH_AVX2) => true
+/* 282.157 */            case(ARCH_AVX512, ARCH_AVX512) => true
+/* 282.158 */            case(ARCH_NEON, ARCH_NEON) => true
+/* 282.159 */            case(ENV_OHOS, ENV_OHOS) => true
+/* 282.160 */            case(ENV_GNU, ENV_GNU) => true
+/* 282.161 */            case(ENV_MINGW32, ENV_MINGW32) => true
+/* 282.162 */            case(ENV_HOS, ENV_HOS) => true
+/* 282.163 */            case(ENV_ANDROID, ENV_ANDROID) => true
+/* 282.164 */            case(CJ_VERSION(left0), CJ_VERSION(right0)) => left0 == right0
+/* 282.165 */            case _ => false
+/* 282.166 */        }
+/* 282.167 */    }
+/* 282.168 */    public operator func !=(other: Feature): Bool {
+/* 282.169 */        !(this == other)
+/* 282.170 */    }
+/* 282.171 */}
+/* 282.172 */extend Feature {
+/* 282.173 */    private func derivingChecks_(): Unit {
+/* 282.174 */        func check_CJ_VERSION_0 < T_CJ_VERSION_0 >(_: String): Hashable where T_CJ_VERSION_0 <: Hashable {
+/* 282.175 */            throw Exception()
+/* 282.176 */        }
+/* 282.177 */        let _ = check_CJ_VERSION_0 < String >
+/* 282.178 */        derivingChecks2_()
+/* 282.179 */    }
+/* 282.180 */    private func derivingChecks2_(): Unit {
+/* 282.181 */        derivingChecks_()
+/* 282.182 */    }
+/* 282.183 */}
+/* 282.184 */
+/* 282.185 */extend Feature {
+/* 282.186 */    private func derivingChecks_(): Unit {
+/* 282.187 */        func check_CJ_VERSION_0 < T_CJ_VERSION_0 >(_: String): Equatable < String > where T_CJ_VERSION_0 <: Equatable < T_CJ_VERSION_0 > {
+/* 282.188 */            throw Exception()
+/* 282.189 */        }
+/* 282.190 */        let _ = check_CJ_VERSION_0 < String >
+/* 282.191 */        derivingChecks2_()
+/* 282.192 */    }
+/* 282.193 */    private func derivingChecks2_(): Unit {
+/* 282.194 */        derivingChecks_()
+/* 282.195 */    }
+/* 282.196 */}
+/* 282.197 */
+/* ===== End of the Emit ===== */
+
+// Struct which basically a Node in feature dependence graph which features are causing enable of a starting one
+struct FeatureGroup {
+    FeatureGroup(
+        // Feature which must be added in feature list in case of match
+        public let enable: Array<Feature>,
+        // If at least one of the features is enabled, then the feature above should be provided
+        public let enabled_by: Array<Feature>
+    ) {}
+}
+
+private let PREDEFINED_FEATURE_GROUPS: Array<FeatureGroup> = [
+    FeatureGroup(
+        [OS_POSIX], // enable
+        [OS_LINUX, OS_DARWIN] // enabled by
+    ),
+    FeatureGroup(
+        [OS_EPOLL], // enable
+        [OS_LINUX] // enabled by
+    ),
+    FeatureGroup(
+        [OS_KQUEUE], // enable
+        [OS_DARWIN] // enabled by
+    ),
+    FeatureGroup(
+        [ARCH_NEON], // enable
+        [ARCH_AARCH64] // enabled by
+    ),
+
+    // x86-64 is guaranteed to have SSE1, SSE2 instruction sets
+    FeatureGroup(
+        [ARCH_SSE1, ARCH_SSE2], // enable
+        [ARCH_X64] // enabled by
+    ),
+    FeatureGroup(
+        [ARCH_SSE1], // enable
+        [ARCH_SSE2] // enabled by
+    ),
+    FeatureGroup(
+        [ARCH_SSE1], // enable
+        [ARCH_SSE2] // enabled by
+    ),
+    FeatureGroup(
+        [ARCH_SSE2], // enable
+        [ARCH_SSE3] // enabled by
+    ),
+    FeatureGroup(
+        [ARCH_SSE3], // enable
+        [ARCH_SSE4_1] // enabled by
+    ),
+    FeatureGroup(
+        [ARCH_SSE4_1], // enable
+        [ARCH_SSE4_2] // enabled by
+    ),
+    FeatureGroup(
+        [ARCH_SSE4_2], // enable
+        [ARCH_AVX1] // enabled by
+    ),
+    FeatureGroup(
+        [ARCH_SSE4_2], // enable
+        [ARCH_AVX1] // enabled by
+    ),
+    FeatureGroup(
+        [ARCH_AVX1], // enable
+        [ARCH_AVX2] // enabled by
+    ),
+    FeatureGroup(
+        [ARCH_AVX2], // enable
+        [ARCH_AVX512] // enabled by
+    )
+]
+
+private class FeatureGraph {
+    private let graph: HashMap<Feature, ArrayList<Feature>> = HashMap()
+
+    FeatureGraph(groups: Iterable<FeatureGroup>) {
+        groups |>
+            forEach {
+            it: FeatureGroup => for (i in it.enabled_by) {
+                if (!this.graph.contains(i)) {
+                    this.graph.add(i, ArrayList())
+                }
+                for (j in it.enable) {
+                    this.graph.get(i)?.add(j)
+                }
+            }
+        }
+    }
+
+    // Looks for features that might be enable from already enabled feature set
+    // Updates the same ArrayList
+    func findDependantFeatures(initFeatures: Array<Feature>): ArrayList<Feature> {
+        let visited: HashSet<Feature> = HashSet()
+        let features = ArrayList(initFeatures)
+
+        for (s in features) {
+            visited.add(s)
+        }
+
+        var i = 0
+        while (i < features.size) {
+            let curr = features[i]
+            if (let Some(front) <- graph.get(curr)) {
+                for (it in front where !visited.contains(it)) {
+                    visited.add(curr)
+                    features.add(it)
+                }
+            }
+            i++
+        }
+        visited |> collectArrayList
+    }
+}
+
+private let FEATURE_GRAPH: FeatureGraph = FeatureGraph(PREDEFINED_FEATURE_GROUPS)
+
+public struct FeatureDeducer {
+    private let _features: Array<Feature>
+    private let _enabled: Bool
+
+    public init(it: Iterable<Feature>, enabled!: Bool = true) {
+        _features = it |> collectArray
+        _enabled = enabled
+    }
+
+    public func deduceTargetFeatures(target: Triple): FeatureDeducer {
+        if (!this._enabled) {
+            return this
+        }
+
+        let features = ArrayList<Feature>()
+        if (let Some(arch) <- archToFeatureMap.get(target.arch)) {
+            features.add(arch)
+        } else {
+            println("Warn: Unknown `arch` feature specified in target is ignored: ${target}")
+        }
+        // No vendor specific feature yet, ignoring it
+        if (let Some(os) <- osToFeatureMap.get(target.os)) {
+            features.add(os)
+        } else {
+            println("Warn: Unknown `os` feature specified in target is ignored: ${target}")
+        }
+        if (target.env != NOT_AVAILABLE) {
+            if (let Some(env) <- envToFeatureMap.get(target.env)) {
+                features.add(env)
+            } else {
+                println("Warn: Unknown `env` feature specified in target is ignored: ${target}")
+            }
+        }
+        return FeatureDeducer(this._features |> concat(features), enabled: this._enabled)
+    }
+
+    public func addFeature(feature: Feature): FeatureDeducer {
+        return FeatureDeducer(this._features |> concat([feature]), enabled: this._enabled)
+    }
+
+    public func addFeature(features: Iterable<Feature>): FeatureDeducer {
+        return FeatureDeducer(this._features |> concat(features), enabled: this._enabled)
+    }
+
+    public func deduceDependantFeatures(): FeatureDeducer {
+        if (!this._enabled) {
+            return this
+        }
+        return FeatureDeducer(FEATURE_GRAPH.findDependantFeatures(this._features), enabled: this._enabled)
+    }
+
+    public func collect(): ArrayList<Feature> {
+        (_features |> collectHashSet) |> collectArrayList
+    }
+}

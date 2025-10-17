@@ -1,0 +1,209 @@
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+package cjpm.util
+
+import std.collection.{ArrayList, collectString, map}
+import std.deriving.Derive
+import stdx.serialization.serialization.*
+
+// Checks whether full-qualified name of the package represents some subpackage
+// 
+// According to Cangjie Language grammar, package name cannot contain
+// backtick (`) character, making parsing straightforward. Thus if we meet dot (.)
+// not being enclosed in backticks - it should be subpackage.
+// 
+// @param fqname  CORRECT full-qualified name of package
+// 
+// @return true  - subpackage
+//         false - root package
+// 
+public func isSubpackage(fqname: String): Bool {
+    var quoted = false
+    for (character in fqname.runes()) {
+        match {
+            case character == r'`' => quoted = !quoted
+            case character == r'.' && !quoted => return true
+            case _ => ()
+        }
+    }
+    return false
+}
+
+public enum Result<T, E> {
+    | Ok(T)
+    | Err(E)
+}
+
+// Structure which represents full-qualified package name parsed from the String literal
+// 
+// If struct is tried to be constructed from incorrect one (missing backticks '`' when necessary)
+// Will attempt to place them in some way for package name to be valid
+/* ===== Emitted by MacroCall @Derive in util.cj:45:1 ===== */
+/* 45.1 */public struct PackageFqName <: ToString & Serializable < PackageFqName > {
+/* 45.2 */    public let value: String
+/* 45.3 */    
+/* 45.4 */    public init(value: String) {
+/* 45.5 */        this.value = parse(unparse(value))
+/* 45.6 */    }
+/* 45.7 */    
+/* 45.8 */    private static func unparse(fqname: String): Array < String > {
+/* 45.9 */        var quoted = false
+/* 45.10 */        let substr = ArrayList < Rune >()
+/* 45.11 */        let result = ArrayList < String >()
+/* 45.12 */        
+/* 45.13 */        for(character in fqname.runes()) {
+/* 45.14 */            match {
+/* 45.15 */                case character == r'`' =>
+/* 45.16 */                quoted = ! quoted
+/* 45.17 */                if(! quoted) {
+/* 45.18 */                    result.add(String(substr))
+/* 45.19 */                    substr.clear()
+/* 45.20 */                }
+/* 45.21 */                case character == r'.' && ! quoted =>
+/* 45.22 */                result.add(String(substr))
+/* 45.23 */                substr.clear()
+/* 45.24 */                case _ => substr.add(character)
+/* 45.25 */            }
+/* 45.26 */        }
+/* 45.27 */        
+/* 45.28 */        if(! substr.isEmpty() && ! quoted) {
+/* 45.29 */            result.add(String(substr))
+/* 45.30 */            substr.clear()
+/* 45.31 */        }
+/* 45.32 */        return result.toArray()
+/* 45.33 */    }
+/* 45.34 */    
+/* 45.35 */    private static func parse(packages: Array < String >): String {
+/* 45.36 */        packages |>
+/* 45.37 */        map {
+/* 45.38 */            pkg: String =>
+/* 45.39 */            let flag: Bool = pkg.contains("-") || pkg.contains(" ") || pkg.contains(".")
+/* 45.40 */            if(flag) {
+/* 45.41 */                "`${pkg}`"
+/* 45.42 */            } else {
+/* 45.43 */                "${pkg}"
+/* 45.44 */            }
+/* 45.45 */        } |> collectString(delimiter: ".")
+/* 45.46 */    }
+/* 45.47 */    
+/* 45.48 */    public prop packages: Array < String > {
+/* 45.49 */        get() {
+/* 45.50 */            unparse(value)
+/* 45.51 */        }
+/* 45.52 */    }
+/* 45.53 */    
+/* 45.54 */    public func toString(): String {
+/* 45.55 */        return value
+/* 45.56 */    }
+/* 45.57 */    
+/* 45.58 */    public func serialize(): DataModel {
+/* 45.59 */        DataModelString(value)
+/* 45.60 */    }
+/* 45.61 */    
+/* 45.62 */    public static func deserialize(dm: DataModel): PackageFqName {
+/* 45.63 */        return match(dm) {
+/* 45.64 */            case dmstr: DataModelString => PackageFqName(dmstr.getValue())
+/* 45.65 */            case _ => throw DataModelException("this data is not DataModelString")
+/* 45.66 */        }
+/* 45.67 */    }
+/* 45.68 */}
+/* 45.69 */extend PackageFqName <: Hashable {
+/* 45.70 */    public func hashCode(): Int64 {
+/* 45.71 */        var hasher = DefaultHasher()
+/* 45.72 */        hasher = hh(hasher, this.value)
+/* 45.73 */        return hasher.finish()
+/* 45.74 */    }
+/* 45.75 */    private func hh < T >(hasher: DefaultHasher, item: T): DefaultHasher where T <: Hashable {
+/* 45.76 */        var hasher2 = hasher
+/* 45.77 */        hasher2.write(item.hashCode())
+/* 45.78 */        return hasher2
+/* 45.79 */    }
+/* 45.80 */    private func hh < T >(hasher: DefaultHasher, item: Int64): DefaultHasher {
+/* 45.81 */        var hasher2 = hasher
+/* 45.82 */        hasher2.write(item)
+/* 45.83 */        return hasher2
+/* 45.84 */    }
+/* 45.85 */    private func hh < T >(hasher: DefaultHasher, item: String): DefaultHasher {
+/* 45.86 */        var hasher2 = hasher
+/* 45.87 */        hasher2.write(item)
+/* 45.88 */        return hasher2
+/* 45.89 */    }
+/* 45.90 */}
+/* 45.91 */extend PackageFqName <: Equatable < PackageFqName > {
+/* 45.92 */    public operator func ==(other: PackageFqName): Bool {
+/* 45.93 */        return this.value == other.value
+/* 45.94 */    }
+/* 45.95 */    public operator func !=(other: PackageFqName): Bool {
+/* 45.96 */        !(this == other)
+/* 45.97 */    }
+/* 45.98 */}
+/* 45.99 */extend PackageFqName {
+/* 45.100 */    private func derivingChecks_(): Unit {
+/* 45.101 */        let _: Hashable = value
+/* 45.102 */        derivingChecks2_()
+/* 45.103 */    }
+/* 45.104 */    private func derivingChecks2_(): Unit {
+/* 45.105 */        derivingChecks_()
+/* 45.106 */    }
+/* 45.107 */}
+/* 45.108 */
+/* 45.109 */extend PackageFqName {
+/* 45.110 */    private func derivingChecks_(): Unit {
+/* 45.111 */        let _: Equatable < String >= value
+/* 45.112 */        derivingChecks2_()
+/* 45.113 */    }
+/* 45.114 */    private func derivingChecks2_(): Unit {
+/* 45.115 */        derivingChecks_()
+/* 45.116 */    }
+/* 45.117 */}
+/* 45.118 */
+/* ===== End of the Emit ===== */
+
+// Support struct which helps to identify whether value of type T is a default or was modified
+public struct WithDefault<T> {
+    private var _value: OptionDefault<T>
+
+    public WithDefault(default: T) {
+        _value = Default(default)
+    }
+
+    public prop isSet: Bool {
+        get() {
+            match (_value) {
+                case Set(_) => true
+                case _ => false
+            }
+        }
+    }
+
+    public prop isDefault: Bool {
+        get() {
+            match (_value) {
+                case Default(_) => true
+                case _ => false
+            }
+        }
+    }
+
+    public prop value: T {
+        get() {
+            match (_value) {
+                case Set(x) => x
+                case Default(x) => x
+            }
+        }
+    }
+
+    public mut func modify(value: T) {
+        _value = Set(value)
+    }
+}
+
+private enum OptionDefault<T> {
+    | Set(T)
+    | Default(T)
+}
