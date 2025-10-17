@@ -440,7 +440,7 @@ std::string ItemResolverUtil::FetchTypeString(const Cangjie::AST::Type &type)
             return GetString(ty);
         },
         [](const InterfaceTy &ty) {
-            return GetGenericString(ty);
+            return GetString(ty);
         },
         [](const EnumTy &ty) {
             return GetGenericString(ty);
