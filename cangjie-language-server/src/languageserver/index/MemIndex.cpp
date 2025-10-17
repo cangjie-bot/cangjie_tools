@@ -370,5 +370,7 @@ void MemIndex::FindCrossSymbolByName(const std::string &packageName, const std::
         }
     }
 }
+void MemIndex::GetExportSID(IDArray array, std::function<void(const CrossSymbol &)> callback) const {
+}
 } // namespace lsp
 } // namespace ark
