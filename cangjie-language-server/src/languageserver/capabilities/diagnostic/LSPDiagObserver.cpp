@@ -53,9 +53,9 @@ void SetDiagMessage(Cangjie::Diagnostic &diagnostic, DiagnosticToken &diagToken)
 void LSPDiagObserver::HandleDiagnose(Cangjie::Diagnostic &diagnostic)
 {
     // LSP client can't process negative
-    if (!diagnostic.IsValid() || diagnostic.rKind == DiagKindRefactor::package_multiple_package_declarations ||
+    if (!diagnostic.IsValid() || diagnostic.rKind == DiagKindRefactor::package_multiple_package_declarations ||	
         diagnostic.rKind == DiagKindRefactor::package_unsupport_save) {
-        return;
+        return;	
     }
 
     // Blocks crashes caused by binary mismatches in Release
