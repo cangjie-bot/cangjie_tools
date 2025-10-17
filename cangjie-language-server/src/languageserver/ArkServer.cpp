@@ -316,6 +316,31 @@ void ArkServer::FindFileReferences(const std::string &file, const Callback<Value
     arkScheduler->RunWithAST("FileReferences", file, action);
 }
 
+void ArkServer::ApplyFileRefactor(const std::string &file,
+    const std::string &selectedElement,
+    const std::string &target,
+    bool &isTest,
+    const Callback<ValueOrError> &reply) const
+{
+    auto action = [file, target, isTest, reply = reply](const InputsAndAST &inputAST) {
+        if (inputAST.ast == nullptr) {
+            ValueOrError value(ValueOrErrorCheck::VALUE, nullptr);
+            reply(value);
+            return;
+        }
+        FileRefactorRespParams result;
+        FileMove::FileMoveRefactor(inputAST.ast, result, file, selectedElement, target);
+        nlohmann::json jsonValue;
+        if (!isTest) {
+            ToJSON(result, jsonValue);
+        }
+        ValueOrError value(ValueOrErrorCheck::VALUE, jsonValue);
+        reply(value);
+    };
+
+    arkScheduler->RunWithAST("FileRefactor", file, action);
+}
+
 void ArkServer::FindWorkspaceSymbols(const std::string &query, const Callback<ValueOrError> &reply) const
 {
     auto action = [query, reply = std::move(reply)](const InputsAndAST &) {

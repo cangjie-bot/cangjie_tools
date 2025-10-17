@@ -52,6 +52,17 @@ void MemIndex::Lookup(const LookupRequest &req, std::function<void(const Symbol 
     }
 }
 
+void MemIndex::FindPkgSyms(const PkgSymsRequest &req, std::function<void(const Symbol &)> callback) const
+{
+    auto it = pkgSymsMap.find(req.fullPkgName);
+    if(it == pkgSymsMap.end()) {
+        return;
+    }
+    for(const auto &sym : it->second) {
+        callback(sym);
+    }
+}
+
 void MemIndex::Refs(const RefsRequest &req, std::function<void(const Ref &)> callback) const
 {
     for (const auto &id : req.ids) {
@@ -66,6 +77,28 @@ void MemIndex::Refs(const RefsRequest &req, std::function<void(const Ref &)> cal
                 }
                 callback(sym);
             }
+        }
+    }
+}
+
+void MemIndex::FileRefs(const FileRefsRequest &req,
+    std::function<void(const Ref &ref, const SymbolID symId)> callback) const
+{
+    Trace::Log("---------FileRefs::11------------");
+    auto it = pkgRefsMap.find(req.fullPkgName);
+    if (it == pkgRefsMap.end())
+    {
+        return;
+    }
+    Trace::Log("---------FileRefs::22------------");
+    auto pkgRefs = it->second;
+    for (const auto &refs : pkgRefs) {
+        for (const auto &ref : refs.second) {
+            if (!static_cast<int>(req.filter & ref.kind) || ref.location.begin.fileID != req.fileID) {
+                continue;
+            }
+            Trace::Log("---------FileRefs::33------------");
+            callback(ref, refs.first);
         }
     }
 }
