@@ -36,7 +36,7 @@
 
 namespace ark {
 const unsigned int TEST_LRU_SIZE = 8;
-const unsigned int LRU_SIZE = 1;
+const unsigned int LRU_SIZE = 3;
 
 class CompilerCangjieProject;
 
@@ -471,6 +471,8 @@ public:
     std::unique_ptr<LSPCompilerInstance> GetCIForDotComplete(const std::string &filePath, Position pos,
                                                              std::string &contents);
     void StoreAllPackagesCache();
+
+    void EmitDiagsOfFile(const std::string &filepath);
 
 private:
     CompilerCangjieProject(Callbacks *cb, lsp::IndexDatabase *arkIndexDB);

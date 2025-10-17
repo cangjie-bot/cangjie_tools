@@ -113,6 +113,30 @@ public:
         return deleteKey;
     }
 
+    void SetIfExists(const std::string &key, std::unique_ptr<Cangjie::LSPCompilerInstance> &value)
+    {
+        std::unique_lock<std::shared_mutex> lock(mtx);
+        auto it = lruHashMap.find(key);
+        if (it != lruHashMap.end()) {
+            // Because deleting the compiler instance is time-consuming
+            // we release the pointer here and delete it asynchronously later to avoid the time cost.
+            auto ci = it->second->second.release();
+            it->second->second = std::move(value);
+            lruList.splice(lruList.begin(), lruList, it->second);
+            std::thread deleteCI([ci]() {
+                delete ci;
+            });
+            deleteCI.detach();
+#ifdef __linux__
+            (void) malloc_trim(0);
+#elif __APPLE__
+            (void) malloc_zone_pressure_relief(malloc_default_zone(), 0);
+#endif
+            return true;
+        }
+        return false;
+    }
+
     void SetForFullCompiler(const std::string &key, std::unique_ptr<Cangjie::LSPCompilerInstance> &value)
     {
         std::unique_lock<std::shared_mutex> lock(mtx);

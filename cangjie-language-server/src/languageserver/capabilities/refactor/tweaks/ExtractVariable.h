@@ -7,7 +7,7 @@
 #ifndef CANGJIE_LSP_EXTRACTVARIABLE_H
 #define CANGJIE_LSP_EXTRACTVARIABLE_H
 
-#include "../../../json-rpc/Protocol.h"
+#include "../../../../json-rpc/Protocol.h"
 #include "../Tweak.h"
 
 namespace ark {

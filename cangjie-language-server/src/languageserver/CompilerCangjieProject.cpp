@@ -6,6 +6,7 @@
 
 #include "CompilerCangjieProject.h"
 #include <memory>
+#include <mutex>
 #include <string>
 #include "CjoManager.h"
 #include "common/Utils.h"
@@ -247,17 +248,21 @@ void CompilerCangjieProject::IncrementCompile(const std::string &filePath, const
         cjoManager->UpdateDownstreamPackages(fullPkgName, graph);
     }
 
-    // 4. build symbol index
-    BuildIndex(ci);
     auto ret = InitCache(ci, fullPkgName, true);
     if (!ret) {
         Trace::Elog("InitCache Failed");
     }
-    // 5. set LRUCache
-    pLRUCache->Set(fullPkgName, ci);
+
+    // pre emit diags, not wait for building index
     if (cycles.second) {
         ReportCircularDeps(cycles.first);
     }
+    EmitDiagsOfFile(filePath);
+
+    // 4. build symbol index
+    BuildIndex(ci);
+    // 5. set LRUCache
+    pLRUCache->Set(fullPkgName, ci);
     Trace::Log("Finish incremental compilation for package: ", fullPkgName);
 }
 
@@ -369,7 +374,7 @@ void CompilerCangjieProject::SubmitTasksToPool(const std::unordered_set<std::str
             if (!ret) {
                 Trace::Elog("InitCache Failed");
             }
-            pLRUCache->Set(package, ci);
+            pLRUCache->SetIfExists(package, ci);
             thrdPool->TaskCompleted(taskId);
             Trace::Log("finish execute task", package);
         };
@@ -797,11 +802,6 @@ bool CompilerCangjieProject::InitCache(const std::unique_ptr<LSPCompilerInstance
             dirPath = Normalize(pkg->files[0]->filePath);
         }
 
-        {
-            std::unique_lock lock(fileCacheMtx);
-            this->packageInstanceCache[dirPath] = std::move(pkgInstance);
-        }
-
         for (auto &file : pkg->files) {
             auto filePath = file->filePath;
             // filePath maybe a dir not a file
@@ -826,7 +826,7 @@ bool CompilerCangjieProject::InitCache(const std::unique_ptr<LSPCompilerInstance
                 }
             }
             std::pair<std::string, std::string> paths = {filePath, contents};
-            auto arkAST = std::make_unique<ArkAST>(paths, file.get(), lspCI->diag, packageInstanceCache[dirPath].get(),
+            auto arkAST = std::make_unique<ArkAST>(paths, file.get(), lspCI->diag, pkgInstance.get(),
                                                    &lspCI->GetSourceManager());
             std::string absName = FileStore::NormalizePath(filePath);
             int fileId = lspCI->GetSourceManager().GetFileID(absName);
@@ -836,6 +836,11 @@ bool CompilerCangjieProject::InitCache(const std::unique_ptr<LSPCompilerInstance
             {
                 std::unique_lock<std::recursive_mutex> lock(fileCacheMtx);
                 this->fileCache[absName] = std::move(arkAST);
+            }
+            {
+                // make old pkgInstance released behind ArkAST
+                std::unique_lock lock(fileCacheMtx);
+                this->packageInstanceCache[dirPath] = std::move(pkgInstance);
             }
         }
     }
@@ -1267,7 +1272,12 @@ bool CompilerCangjieProject::Compiler(const std::string &moduleUri,
         lsp::CjdIndexer::InitInstance(callback, stdCjdPathOption, ohosCjdPathOption, cjdCachePathOption);
     }
     FullCompilation();
-    lsp::CjdIndexer::DeleteInstance();
+    auto taskId = GenTaskId("delete_cjd_indexer");
+    auto deleteTask = [this, taskId]() {
+        thrdPool->TaskCompleted(taskId);
+        lsp::CjdIndexer::DeleteInstance();
+    };
+    thrdPool->AddTask(taskId, {}, deleteTask);
     lsp::IndexDatabase::ReleaseMemory();
     Logger::Instance().CleanKernelLog(std::this_thread::get_id());
     // init fileCache packageInstance
@@ -1418,6 +1428,12 @@ void CompilerCangjieProject::ReportCircularDeps(const std::vector<std::vector<st
             }
         }
     }
+}
+
+void CompilerCangjieProject::EmitDiagsOfFile(const std::string &filepath)
+{
+    std::vector<DiagnosticToken> diagnostics = callback->GetDiagsOfCurFile(filepath);
+    callback->ReadyForDiagnostics(filepath, callback->GetVersionByFile(filepath), diagnostics);
 }
 
 void CompilerCangjieProject::TarjanForSCC(SCCParam &sccParam, std::stack<std::string> &st, size_t &index,
