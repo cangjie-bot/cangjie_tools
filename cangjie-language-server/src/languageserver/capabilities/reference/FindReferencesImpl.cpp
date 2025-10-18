@@ -32,6 +32,26 @@ void FindReferencesImpl::GetCurPkgUesage(Ptr<Decl> decl, const ArkAST &ast, Refe
     }
 }
 
+std::unordered_set<std::string> FindReferencesImpl::GetSelectedUesScopeNames(Ptr<Decl> decl,
+    const ArkAST *ast, Range &range)
+{
+    std::unordered_set<std::string> scopeNames;
+    if (!decl || !ast.file || !ast.file->curPackage) {
+        return scopeNames;
+    }
+    auto user = FindDeclUsage(*decl, *ast.file->curPackage);
+    for (const auto &U : user) {
+        if (U->astKind == ASTKind::MEMBER_ACCESS) {
+            continue;
+        }
+        auto refRange = GetProperRange(U, ast.tokens);
+        if (refRange.start >= range.start && refRange.end <= range.end) {
+            scopeNames.insert(U->scopeName);
+        }
+    }
+    return scopeNames;
+}
+
 void FindReferencesImpl::FindReferences(const ArkAST &ast, ReferencesResult &result, Position pos)
 {
     Logger &logger = Logger::Instance();
