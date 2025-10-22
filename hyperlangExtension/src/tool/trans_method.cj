@@ -994,7 +994,7 @@ public class TransMethod {
                 $(prefix) init($(paramToken)) {
                     arkts_object = checkThreadAndCall<JSObject>(getMainContext()) {
                         __ctx =>
-                            let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).asClass(__ctx)
+                            let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).toJSValue().asClass(__ctx)
                             clazz.new($(args)).asObject()
                     }
                 })
@@ -1004,7 +1004,7 @@ public class TransMethod {
                     arkts_object = checkThreadAndCall<JSObject>(getMainContext()) {
                         __ctx =>
                             let module = getJSModule(__ctx, $(moduleName), $(modulePrefix))
-                            let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).asClass(__ctx)
+                            let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).toJSValue().asClass(__ctx)
                             clazz.new($(args)).asObject()
                     }
                 })
@@ -1022,7 +1022,7 @@ public class TransMethod {
             public init() {
                 arkts_object = checkThreadAndCall<JSObject>(getMainContext()) {
                     __ctx =>
-                        let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).asClass(__ctx)
+                        let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).toJSValue().asClass(__ctx)
                         clazz.new().asObject()
                 }
             }))
