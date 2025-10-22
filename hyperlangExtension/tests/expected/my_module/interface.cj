@@ -433,14 +433,14 @@ public open class BasePlugin {
     public init(d12: JSValue/* FIXME: `Biz_Type` */) {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_interface", "BasePlugin").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_interface", "BasePlugin").toJSValue().asClass(__ctx)
             clazz.new(d12.toJSValue(__ctx)).asObject()
         }
     }
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_interface", "BasePlugin").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_interface", "BasePlugin").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -595,7 +595,7 @@ public class DefaultPluginContainer <: PluginContainer {
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_interface", "DefaultPluginContainer").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_interface", "DefaultPluginContainer").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
