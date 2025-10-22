@@ -345,6 +345,84 @@ public func createUnionType(typeName: String, tokens: Tokens, unionTypeSet: Arra
     return ""
 }
 
+// Detect the index of a parameter that is an array of a union type (excluding null/undefined).
+// Return None if not found.
+public func detectUnionArrayParam(m: MethodType): ?Int64 {
+    for (i in 0..m.parameters.size) {
+        let p = m.parameters[i]
+        match (p.ty) {
+            case TsArray(elem) => match (elem) {
+                case TsUnion(list) =>
+                    let nonNull = ArrayList<TsType>()
+                    for (e in list) {
+                        match (e) {
+                            case TsNull | TsUndefined => ()
+                            case _ => nonNull.add(e)
+                        }
+                    }
+                    if (nonNull.size > 1) {
+                        return Some(i)
+                    }
+                case _ => ()
+            }
+            case _ => ()
+        }
+    }
+    None
+}
+
+public func genArgsEnumNameForGlobal(cns: NameSpace, m: MethodType): String {
+    let nsPrefix = if (cns.spacePath.isEmpty()) { "" } else { "${cns.spacePath}_" }
+    "${nsPrefix}${m.name}_arg_Types"
+}
+
+public func genArgsEnumTokens(enumName: String): Tokens {
+    let token = Tokens()
+    let nameToken = Token(TokenKind.IDENTIFIER, enumName)
+    token.append(quote(public enum $(nameToken) {) + nl)
+    token.append(quote(| INT64(Int64)) + nl)
+    token.append(quote(| DOUBLE(Float64)) + nl)
+    token.append(quote(| STRING(String)) + nl)
+    token.append(quote(| BOOL(Bool)) + nl)
+    token.append(quote(| JSVALUE(JSValue)) + nl + nl)
+
+    token.append(quote(protected static func fromJSValue(context: JSContext, input: JSValue): $(nameToken) {) + nl)
+    token.append(quote(return if (input.isString()) {) + nl)
+    token.append(quote(    STRING(String.fromJSValue(context, input))) + nl)
+    token.append(quote(} else if (input.isNumber()){) + nl)
+    token.append(quote(    DOUBLE(Float64.fromJSValue(context, input))) + nl)
+    token.append(quote(} else if (input.isBoolean()) {) + nl)
+    token.append(quote(    BOOL(Bool.fromJSValue(context, input))) + nl)
+    token.append(quote(} else {) + nl)
+    token.append(quote(    JSVALUE(input)) + nl)
+    token.append(quote(}) + nl)
+    token.append(quote(}) + nl + nl)
+
+    token.append(quote(protected func toJSValue(context: JSContext): JSValue {) + nl)
+    token.append(quote(match (this) {) + nl)
+    token.append(quote(case INT64(n) => n.toJSValue(context)) + nl)
+    token.append(quote(case DOUBLE(n) => n.toJSValue(context)) + nl)
+    token.append(quote(case STRING(n) => n.toJSValue(context)) + nl)
+    token.append(quote(case BOOL(n) => n.toJSValue(context)) + nl)
+    token.append(quote(case JSVALUE(n) => n) + nl)
+    token.append(quote(}) + nl)
+    token.append(quote(}) + nl + nl)
+
+    token.append(quote(public func toString(): String {) + nl)
+    token.append(quote(match (this) {) + nl)
+    token.append(quote(case INT64(n) => n.toString()) + nl)
+    token.append(quote(case DOUBLE(n) => n.toString()) + nl)
+    token.append(quote(case STRING(n) => n.toString()) + nl)
+    token.append(quote(case BOOL(n) => n.toString()) + nl)
+    token.append(quote(case _ => "") + nl)
+    token.append(quote(}) + nl)
+    token.append(quote(}) + nl)
+    // close enum
+    token.append(quote(}) + nl)
+    token.append(nl)
+    token
+}
+
 public func genFunction(): Tokens {
     var ret = Tokens()
     ret.append(

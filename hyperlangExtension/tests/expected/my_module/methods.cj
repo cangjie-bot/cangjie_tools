@@ -1065,14 +1065,12 @@ public func getFavoriteNumber < T >(t: T): T {
 public func test(callback: AsyncCallback < Unit >): Unit {
     hmsGlobalApiCallPromise < Unit >( "my_module_methods", "test", callback, emptyArg)
 }
-
 /**
 	 * @brief test1(name:string): Promise<void>
 	 */
 public func test1(callback: AsyncCallback < Unit >, name: String): Unit {
     hmsGlobalApiCallPromise < Unit >( "my_module_methods", "test1", callback, { ctx =>[name.toJSValue(ctx)] })
 }
-
 /**
 	 * @brief testUnion1(t: string | undefined): undefined | String
 	 */

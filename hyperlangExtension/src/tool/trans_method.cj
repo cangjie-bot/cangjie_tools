@@ -298,13 +298,185 @@ public class TransMethod {
             }
         )
         result.append(template)
-
+        result.append(nl)
+        
         checkAPIAndCommentOut(result, comment)
     }
 
     //生成成员函数
     public func generateMemberFunc(): Tokens {
         generateAsyncMemberFunc()
+    }
+
+    // Generate an overload where the param at `index` becomes Array<EnumName>
+    // and each element is converted via val.toJSValue(ctx).
+    public func generateMemberFuncWithUnionArray(enumName: String, index: Int64): Tokens {
+        let result = Tokens()
+        result.append(mergeCommentToken(comment, origFuncSignature))
+
+        let funcName: Token = Token(TokenKind.IDENTIFIER, checkCangjieKeyword(cjName))
+        let prefix: ArrayList<Modifier> = cjModifiers |> map {mdf => Modifier(Token(TokenKind.IDENTIFIER, mdf))} |>
+            collectArrayList
+
+        let ctxToken = quote(ctx)
+
+        // Build parameter list while overriding the target parameter type
+        let paramToken = Tokens()
+        for (i in 0..this.methodType.parameters.size) {
+            let p = this.methodType.parameters[i]
+            let pName = Token(TokenKind.IDENTIFIER, checkCangjieKeyword(p.name))
+            if (i == index) {
+                let enumToken = Token(TokenKind.IDENTIFIER, "Array<${enumName}>")
+                if (p.optional) {
+                    paramToken.append(quote($(pName)!: Option<$(enumToken)> = None))
+                } else {
+                    paramToken.append(quote($(pName): $(enumToken)))
+                }
+            } else {
+                let pType = p.ty.toCJTypeTokens()
+                if (p.optional) {
+                    paramToken.append(quote($(pName)!: Option<$(pType)> = None))
+                } else {
+                    paramToken.append(quote($(pName): $(pType)))
+                }
+            }
+            if (i < this.methodType.parameters.size - 1) {
+                paramToken.append(commaToken)
+            }
+        }
+
+        // Build JS args with override for the enum array parameter
+        let enumNameToken = Token(TokenKind.IDENTIFIER, enumName)
+        let transparamToken = Tokens()
+        for (i in 0..this.methodType.parameters.size) {
+            let p = this.methodType.parameters[i]
+            let pName = Token(TokenKind.IDENTIFIER, checkCangjieKeyword(p.name))
+            if (i == index) {
+                let transform = quote(toJSArray<$(enumNameToken)>($(ctxToken), $(pName), { $(ctxToken): JSContext, val: $(enumNameToken) => val.toJSValue($(ctxToken)) }))
+                transparamToken.append(transform)
+            } else {
+                transparamToken.append(p.ty.toJSValue(gconfig, quote($(pName)), ctxToken, isOptional: p.optional))
+            }
+            if (i < this.methodType.parameters.size - 1) {
+                transparamToken.append(commaToken)
+            }
+        }
+
+        let retTypeToken = Token(TokenKind.IDENTIFIER, this.cjRetType)
+
+        let third_param = Tokens()
+        if (this.methodType.parameters.size == 0) {
+            third_param.append(quote(emptyArg))
+        } else {
+            third_param.append(quote({$(ctxToken) => [$(transparamToken)]}))
+        }
+
+        let forth_param = getAsyncRetToken(this.cjRetType, retTypeToken)
+
+        let moduleName = gconfig.requireModuleName
+        let staticConstructor = if (this.isStatic) {
+            Token(TokenKind.IDENTIFIER, "getClassConstructorObj(\"${moduleName}\", \"${this.memberClassName}\"),")
+        } else {
+            Token(TokenKind.IDENTIFIER, "")
+        }
+        // static member func can be regarded as global func
+        let memberToken = if (this.isStatic) {
+            Token(TokenKind.IDENTIFIER, "")
+        } else {
+            Token(TokenKind.IDENTIFIER, "arkts_object,")
+        }
+
+        let template: Tokens = quote(
+            $(prefix) func $(funcName)($(paramToken)):$(retTypeToken) {
+                jsObjApiCall<$(retTypeToken)>($(staticConstructor)$(memberToken)$(getArkTSFuncName()), $(third_param)) $(forth_param)
+            }
+        )
+        result.append(template)
+        result.append(nl)
+
+        checkAPIAndCommentOut(result, comment)
+    }
+
+    // Generate a global/static function overload where the param at `index` becomes Array<EnumName>
+    // and each element is converted via val.toJSValue(ctx).
+    public func generateFuncWithUnionArray(enumName: String, index: Int64): Tokens {
+        let result = Tokens()
+        result.append(mergeCommentToken(comment, origFuncSignature))
+
+        let funcName: Token = Token(TokenKind.IDENTIFIER, checkCangjieKeyword(cjName))
+        let prefix: ArrayList<Modifier> = cjModifiers |> map {mdf => Modifier(Token(TokenKind.IDENTIFIER, mdf))} |>
+            collectArrayList
+
+        let ctxToken = quote(ctx)
+        let typeParameters = getTypeParametersToken()
+
+        // Build parameter list while overriding the target parameter type
+        let paramToken = Tokens()
+        for (i in 0..this.methodType.parameters.size) {
+            let p = this.methodType.parameters[i]
+            let pName = Token(TokenKind.IDENTIFIER, checkCangjieKeyword(p.name))
+            if (i == index) {
+                let enumToken = Token(TokenKind.IDENTIFIER, "Array<${enumName}>")
+                if (p.optional) {
+                    paramToken.append(quote($(pName)!: Option<$(enumToken)> = None))
+                } else {
+                    paramToken.append(quote($(pName): $(enumToken)))
+                }
+            } else {
+                let pType = p.ty.toCJTypeTokens()
+                if (p.optional) {
+                    paramToken.append(quote($(pName)!: Option<$(pType)> = None))
+                } else {
+                    paramToken.append(quote($(pName): $(pType)))
+                }
+            }
+            if (i < this.methodType.parameters.size - 1) {
+                paramToken.append(commaToken)
+            }
+        }
+
+        // Build JS args with override for the enum array parameter
+        let enumNameToken = Token(TokenKind.IDENTIFIER, enumName)
+        let transparamToken = Tokens()
+        for (i in 0..this.methodType.parameters.size) {
+            let p = this.methodType.parameters[i]
+            let pName = Token(TokenKind.IDENTIFIER, checkCangjieKeyword(p.name))
+            if (i == index) {
+                let transform = quote(toJSArray<$(enumNameToken)>($(ctxToken), $(pName), { $(ctxToken): JSContext, val: $(enumNameToken) => val.toJSValue($(ctxToken)) }))
+                transparamToken.append(transform)
+            } else {
+                transparamToken.append(p.ty.toJSValue(gconfig, quote($(pName)), ctxToken, isOptional: p.optional))
+            }
+            if (i < this.methodType.parameters.size - 1) {
+                transparamToken.append(commaToken)
+            }
+        }
+
+        let retTypeToken = Token(TokenKind.IDENTIFIER, this.cjRetType)
+        let moduleName = gconfig.requireModuleName
+
+        let third_param = Tokens()
+        if (this.methodType.parameters.size == 0) {
+            third_param.append(quote(emptyArg))
+        } else {
+            third_param.append(quote({$(ctxToken) => [$(transparamToken)]}))
+        }
+        let forth_param = getAsyncRetToken(this.cjRetType, retTypeToken)
+
+        let apiToken = if (gconfig.isOhos) {
+            Token(TokenKind.IDENTIFIER, "ohosGlobalApiCall")
+        } else {
+            Token(TokenKind.IDENTIFIER, "hmsGlobalApiCall")
+        }
+
+        let template: Tokens = quote(
+            $(prefix) func $(funcName)$(typeParameters)($(paramToken)):$(retTypeToken) {
+                $(apiToken)<$(retTypeToken)>($(moduleName), $(getArkTSFuncName()), $(third_param))$(forth_param)
+            }
+        )
+        result.append(template)
+
+        checkAPIAndCommentOut(result, comment)
     }
 
     // @deprecated

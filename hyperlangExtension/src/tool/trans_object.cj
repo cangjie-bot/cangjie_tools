@@ -183,12 +183,30 @@ public class TransObject {
             for (param in params) {
                 arkMethod.parameters = param
                 let tm = TransMethod(arkMethod, arkName, gconfig)
-                if (arkMethod.isConstructor) {
-                    genConstructor(tm, arkMethod, constructorToken)
-                } else if (arkMethod.isStatic()) {
-                    methodToken.append(tm.generateFunc())
+                // Detect union-array parameter like: (number|string|boolean|null|undefined)[]
+                let uaIndex = detectUnionArrayParam(arkMethod)
+                if (let Some(idx) <- uaIndex) {
+                    let enumName = genArgsEnumName(arkName, arkMethod.name)
+                    if (!unionTypeSet.contains(enumName)) {
+                        this.tokens.append(genArgsEnumTokens(enumName))
+                        unionTypeSet.add(enumName)
+                    }
+                    // Only generate the union-array version
+                    if (arkMethod.isConstructor) {
+                        genConstructor(tm, arkMethod, constructorToken)
+                    } else if (arkMethod.isStatic()) {
+                        methodToken.append(tm.generateFuncWithUnionArray(enumName, idx))
+                    } else {
+                        methodToken.append(tm.generateMemberFuncWithUnionArray(enumName, idx))
+                    }
                 } else {
-                    methodToken.append(tm.generateMemberFunc())
+                    if (arkMethod.isConstructor) {
+                        genConstructor(tm, arkMethod, constructorToken)
+                    } else if (arkMethod.isStatic()) {
+                        methodToken.append(tm.generateFunc())
+                    } else {
+                        methodToken.append(tm.generateMemberFunc())
+                    }
                 }
                 if (arkMethod.name == "") {
                     isPublicType = true
@@ -198,6 +216,14 @@ public class TransObject {
         }
         return isPublicType
     }
+
+    // detectUnionArrayParam is provided by util (hle.tool.util)
+
+    private func genArgsEnumName(className: String, methodName: String): String {
+        "${className}_${methodName}_arg_Types"
+    }
+
+    // genArgsEnumTokens is provided by util (hle.tool.util)
 
     func genMethodOfClass(property: Tokens, constructorToken: Tokens, methodToken: Tokens, paramToken: Tokens,
         templateClassNameToken: Token) {
