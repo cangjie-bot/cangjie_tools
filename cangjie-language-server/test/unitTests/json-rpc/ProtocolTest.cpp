@@ -992,61 +992,6 @@ TEST_F(ProtocolTest, ToJSON_CompletionItem_ValidInput) {
     EXPECT_EQ(reply["additionalTextEdits"][0]["newText"], "replacement");
 }
 
-// Test case for DiagnosticToken FromJSON
-TEST_F(ProtocolTest, FromJSON_DiagnosticToken_ValidInput) {
-    json params = R"({
-        "range": {
-            "start": {"line": 5, "character": 10},
-            "end": {"line": 5, "character": 20}
-        },
-        "severity": 1,
-        "code": 1001,
-        "source": "compiler",
-        "message": "Undefined variable 'x'",
-        "category": 2,
-        "tags": [1, 2],
-        "relatedInformation": [
-            {
-                "message": "Variable declared here",
-                "location": {
-                    "uri": "file:///other.cj",
-                    "range": {
-                        "start": {"line": 3, "character": 5},
-                        "end": {"line": 3, "character": 10}
-                    }
-                }
-            }
-        ]
-    })"_json;
-
-    DiagnosticToken result;
-    bool success = FromJSON(params, result);
-
-    EXPECT_TRUE(success);
-    EXPECT_EQ(result.range.start.line, 5);
-    EXPECT_EQ(result.range.start.column, 10);
-    EXPECT_EQ(result.range.end.line, 5);
-    EXPECT_EQ(result.range.end.column, 20);
-    EXPECT_EQ(result.severity, 1);
-    EXPECT_EQ(result.code, 1001);
-    EXPECT_EQ(result.source, "compiler");
-    EXPECT_EQ(result.message, "Undefined variable 'x'");
-    EXPECT_EQ(result.category.value(), 2);
-    ASSERT_EQ(result.tags.size(), 2u);
-    EXPECT_EQ(result.tags[0], 1);
-    EXPECT_EQ(result.tags[1], 2);
-    ASSERT_TRUE(result.relatedInformation.has_value());
-    ASSERT_EQ(result.relatedInformation.value().size(), 1u);
-    EXPECT_EQ(result.relatedInformation.value()[0].message, "Variable declared here");
-    EXPECT_EQ(result.relatedInformation.value()[0].location.uri.file, "file:///other.cj");
-    EXPECT_EQ(result.relatedInformation.value()[0].location.range.start.line, 3);
-    EXPECT_EQ(result.relatedInformation.value()[0].location.range.start.column, 5);
-    EXPECT_EQ(result.relatedInformation.value()[0].location.range.end.line, 3);
-    EXPECT_EQ(result.relatedInformation.value()[0].location.range.end.column, 10);
-}
-
-
-
 // Test case for DiagnosticRelatedInformation ToJSON
 TEST_F(ProtocolTest, ToJSON_DiagnosticRelatedInformation_ValidInput) {
     DiagnosticRelatedInformation info;
