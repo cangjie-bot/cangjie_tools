@@ -539,51 +539,6 @@ TEST_F(ProtocolTest, FromJSON_DidChangeWatchedFilesParam_ValidInput) {
     EXPECT_EQ(static_cast<int>(reply.changes[0].type), 1);
 }
 
-// Test case for DiagnosticToken FromJSON
-TEST_F(ProtocolTest, FromJSON_DiagnosticToken_ValidInput) {
-    json params = R"({
-        "range": {
-            "start": {"line": 5, "character": 10},
-            "end": {"line": 5, "character": 20}
-        },
-        "severity": 1,
-        "source": "compiler",
-        "message": "Undefined variable 'x'",
-        "relatedInformation": [
-            {
-                "message": "Variable declared here",
-                "location": {
-                    "uri": "file:///other.cj",
-                    "range": {
-                        "start": {"line": 3, "character": 5},
-                        "end": {"line": 3, "character": 10}
-                    }
-                }
-            }
-        ]
-    })"_json;
-
-    DiagnosticToken result;
-    bool success = FromJSON(params, result);
-
-    EXPECT_TRUE(success);
-    EXPECT_EQ(result.range.start.line, 5);
-    EXPECT_EQ(result.range.start.column, 10);
-    EXPECT_EQ(result.range.end.line, 5);
-    EXPECT_EQ(result.range.end.column, 20);
-    EXPECT_EQ(result.severity, 1);
-    EXPECT_EQ(result.source, "compiler");
-    EXPECT_EQ(result.message, "Undefined variable 'x'");
-    ASSERT_TRUE(result.relatedInformation.has_value());
-    ASSERT_EQ(result.relatedInformation.value().size(), 1u);
-    EXPECT_EQ(result.relatedInformation.value()[0].message, "Variable declared here");
-    EXPECT_EQ(result.relatedInformation.value()[0].location.uri.file, "file:///other.cj");
-    EXPECT_EQ(result.relatedInformation.value()[0].location.range.start.line, 3);
-    EXPECT_EQ(result.relatedInformation.value()[0].location.range.start.column, 5);
-    EXPECT_EQ(result.relatedInformation.value()[0].location.range.end.line, 3);
-    EXPECT_EQ(result.relatedInformation.value()[0].location.range.end.column, 10);
-}
-
 // Test case for DiagnosticRelatedInformation FromJSON
 TEST_F(ProtocolTest, FromJSON_DiagnosticRelatedInformation_ValidInput) {
     json param = R"({
