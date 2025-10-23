@@ -5,7 +5,8 @@
 # See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 set(UNIT_TESTS_SRC
-        json-rpc/ProtocolTest.cpp
+        json-rpc/ProtocolTest001.cpp
+        json-rpc/ProtocolTest002.cpp
 )
 
 include_directories(
