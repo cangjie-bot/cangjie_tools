@@ -10,7 +10,7 @@
 using json = nlohmann::json;
 using namespace ark;
 
-class JsonSerializationTest : public ::testing::Test {
+class ProtocolTest : public ::testing::Test {
 protected:
     void SetUp() override {
         // Reset global state before each test
@@ -19,7 +19,7 @@ protected:
 };
 
 // Test case for DidOpenTextDocumentParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_DidOpenTextDocumentParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_DidOpenTextDocumentParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj",
@@ -39,7 +39,7 @@ TEST_F(JsonSerializationTest, FromJSON_DidOpenTextDocumentParams_ValidInput) {
     EXPECT_EQ(reply.textDocument.text, "fn main() {}");
 }
 
-TEST_F(JsonSerializationTest, FromJSON_DidOpenTextDocumentParams_MissingFields) {
+TEST_F(ProtocolTest, FromJSON_DidOpenTextDocumentParams_MissingFields) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj",
@@ -55,7 +55,7 @@ TEST_F(JsonSerializationTest, FromJSON_DidOpenTextDocumentParams_MissingFields) 
 
 
 // Test case for TextDocumentPositionParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_TextDocumentPositionParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_TextDocumentPositionParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -75,7 +75,7 @@ TEST_F(JsonSerializationTest, FromJSON_TextDocumentPositionParams_ValidInput) {
     EXPECT_EQ(reply.position.column, 5);
 }
 
-TEST_F(JsonSerializationTest, FromJSON_TextDocumentPositionParams_InvalidStructure) {
+TEST_F(ProtocolTest, FromJSON_TextDocumentPositionParams_InvalidStructure) {
     json params = R"({
         "textDocument": "invalid",
         "position": {
@@ -91,7 +91,7 @@ TEST_F(JsonSerializationTest, FromJSON_TextDocumentPositionParams_InvalidStructu
 }
 
 // Test case for CrossLanguageJumpParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_CrossLanguageJumpParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_CrossLanguageJumpParams_ValidInput) {
     json params = R"({
         "packageName": "com.example",
         "name": "MyClass",
@@ -109,7 +109,7 @@ TEST_F(JsonSerializationTest, FromJSON_CrossLanguageJumpParams_ValidInput) {
     EXPECT_TRUE(reply.isCombined);
 }
 
-TEST_F(JsonSerializationTest, FromJSON_CrossLanguageJumpParams_OptionalFieldsMissing) {
+TEST_F(ProtocolTest, FromJSON_CrossLanguageJumpParams_OptionalFieldsMissing) {
     json params = R"({
         "packageName": "com.example",
         "name": "MyClass"
@@ -126,7 +126,7 @@ TEST_F(JsonSerializationTest, FromJSON_CrossLanguageJumpParams_OptionalFieldsMis
 }
 
 // Test case for OverrideMethodsParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_OverrideMethodsParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_OverrideMethodsParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -149,7 +149,7 @@ TEST_F(JsonSerializationTest, FromJSON_OverrideMethodsParams_ValidInput) {
 }
 
 // Test case for ExportsNameParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_ExportsNameParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_ExportsNameParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -171,7 +171,7 @@ TEST_F(JsonSerializationTest, FromJSON_ExportsNameParams_ValidInput) {
     EXPECT_EQ(reply.packageName, "com.example");
 }
 
-TEST_F(JsonSerializationTest, FromJSON_SignatureHelpContext_InvalidTriggerKind) {
+TEST_F(ProtocolTest, FromJSON_SignatureHelpContext_InvalidTriggerKind) {
     json params = R"({
         "triggerKind": -1
     })"_json;
@@ -183,7 +183,7 @@ TEST_F(JsonSerializationTest, FromJSON_SignatureHelpContext_InvalidTriggerKind) 
 }
 
 // Test case for SignatureHelpParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_SignatureHelpParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_SignatureHelpParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -207,7 +207,7 @@ TEST_F(JsonSerializationTest, FromJSON_SignatureHelpParams_ValidInput) {
 }
 
 // Test case for InitializeParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_InitializeParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_InitializeParams_ValidInput) {
     json params = R"({
         "rootUri": "file:///workspace",
         "capabilities": {
@@ -240,7 +240,7 @@ TEST_F(JsonSerializationTest, FromJSON_InitializeParams_ValidInput) {
 }
 
 // Test case for DidCloseTextDocumentParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_DidCloseTextDocumentParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_DidCloseTextDocumentParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -255,7 +255,7 @@ TEST_F(JsonSerializationTest, FromJSON_DidCloseTextDocumentParams_ValidInput) {
 }
 
 // Test case for TrackCompletionParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_TrackCompletionParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_TrackCompletionParams_ValidInput) {
     json params = R"({
         "label": "myFunction"
     })"_json;
@@ -267,7 +267,7 @@ TEST_F(JsonSerializationTest, FromJSON_TrackCompletionParams_ValidInput) {
     EXPECT_EQ(reply.label, "myFunction");
 }
 
-TEST_F(JsonSerializationTest, FromJSON_TrackCompletionParams_MissingLabel) {
+TEST_F(ProtocolTest, FromJSON_TrackCompletionParams_MissingLabel) {
     json params = R"({
         "otherField": "value"
     })"_json;
@@ -279,7 +279,7 @@ TEST_F(JsonSerializationTest, FromJSON_TrackCompletionParams_MissingLabel) {
 }
 
 // Test case for CompletionContext FromJSON
-TEST_F(JsonSerializationTest, FromJSON_CompletionContext_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_CompletionContext_ValidInput) {
     json params = R"({
         "triggerKind": 2,
         "triggerCharacter": "."
@@ -294,7 +294,7 @@ TEST_F(JsonSerializationTest, FromJSON_CompletionContext_ValidInput) {
 }
 
 // Test case for CompletionParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_CompletionParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_CompletionParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -319,7 +319,7 @@ TEST_F(JsonSerializationTest, FromJSON_CompletionParams_ValidInput) {
 }
 
 // Test case for SemanticTokensParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_SemanticTokensParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_SemanticTokensParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -334,7 +334,7 @@ TEST_F(JsonSerializationTest, FromJSON_SemanticTokensParams_ValidInput) {
 }
 
 // Test case for DidChangeTextDocumentParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_DidChangeTextDocumentParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_DidChangeTextDocumentParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj",
@@ -368,7 +368,7 @@ TEST_F(JsonSerializationTest, FromJSON_DidChangeTextDocumentParams_ValidInput) {
 }
 
 // Test case for RenameParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_RenameParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_RenameParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -391,7 +391,7 @@ TEST_F(JsonSerializationTest, FromJSON_RenameParams_ValidInput) {
 }
 
 // Test case for TextDocumentIdentifier FromJSON
-TEST_F(JsonSerializationTest, FromJSON_TextDocumentIdentifier_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_TextDocumentIdentifier_ValidInput) {
     json params = R"({
         "uri": "file:///test.cj"
     })"_json;
@@ -404,7 +404,7 @@ TEST_F(JsonSerializationTest, FromJSON_TextDocumentIdentifier_ValidInput) {
 }
 
 // Test case for TextDocumentParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_TextDocumentParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_TextDocumentParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -419,7 +419,7 @@ TEST_F(JsonSerializationTest, FromJSON_TextDocumentParams_ValidInput) {
 }
 
 // Test case for TypeHierarchyItem FromJSON
-TEST_F(JsonSerializationTest, FromJSON_TypeHierarchyItem_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_TypeHierarchyItem_ValidInput) {
     json params = R"({
         "item": {
             "name": "MyClass",
@@ -462,7 +462,7 @@ TEST_F(JsonSerializationTest, FromJSON_TypeHierarchyItem_ValidInput) {
 }
 
 // Test case for CallHierarchyItem FromJSON
-TEST_F(JsonSerializationTest, FromJSON_CallHierarchyItem_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_CallHierarchyItem_ValidInput) {
     json params = R"({
         "item": {
             "name": "myMethod",
@@ -505,7 +505,7 @@ TEST_F(JsonSerializationTest, FromJSON_CallHierarchyItem_ValidInput) {
 }
 
 // Test case for DocumentLinkParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_DocumentLinkParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_DocumentLinkParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -520,7 +520,7 @@ TEST_F(JsonSerializationTest, FromJSON_DocumentLinkParams_ValidInput) {
 }
 
 // Test case for DidChangeWatchedFilesParam FromJSON
-TEST_F(JsonSerializationTest, FromJSON_DidChangeWatchedFilesParam_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_DidChangeWatchedFilesParam_ValidInput) {
     json params = R"({
         "changes": [
             {
@@ -540,7 +540,7 @@ TEST_F(JsonSerializationTest, FromJSON_DidChangeWatchedFilesParam_ValidInput) {
 }
 
 // Test case for DiagnosticToken FromJSON
-TEST_F(JsonSerializationTest, FromJSON_DiagnosticToken_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_DiagnosticToken_ValidInput) {
     json params = R"({
         "range": {
             "start": {"line": 5, "character": 10},
@@ -585,7 +585,7 @@ TEST_F(JsonSerializationTest, FromJSON_DiagnosticToken_ValidInput) {
 }
 
 // Test case for DiagnosticRelatedInformation FromJSON
-TEST_F(JsonSerializationTest, FromJSON_DiagnosticRelatedInformation_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_DiagnosticRelatedInformation_ValidInput) {
     json param = R"({
         "message": "Defined here",
         "location": {
@@ -610,7 +610,7 @@ TEST_F(JsonSerializationTest, FromJSON_DiagnosticRelatedInformation_ValidInput) 
 }
 
 // Test case for DocumentSymbolParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_DocumentSymbolParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_DocumentSymbolParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -625,7 +625,7 @@ TEST_F(JsonSerializationTest, FromJSON_DocumentSymbolParams_ValidInput) {
 }
 
 // Test case for CodeActionContext FromJSON
-TEST_F(JsonSerializationTest, FromJSON_CodeActionContext_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_CodeActionContext_ValidInput) {
     json params = R"({
         "diagnostics": [
             {
@@ -653,7 +653,7 @@ TEST_F(JsonSerializationTest, FromJSON_CodeActionContext_ValidInput) {
 }
 
 // Test case for CodeActionParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_CodeActionParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_CodeActionParams_ValidInput) {
     json params = R"({
         "textDocument": {
             "uri": "file:///test.cj"
@@ -679,7 +679,7 @@ TEST_F(JsonSerializationTest, FromJSON_CodeActionParams_ValidInput) {
 }
 
 // Test case for TweakArgs FromJSON
-TEST_F(JsonSerializationTest, FromJSON_TweakArgs_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_TweakArgs_ValidInput) {
     json params = R"({
         "file": "file:///test.cj",
         "selection": {
@@ -707,7 +707,7 @@ TEST_F(JsonSerializationTest, FromJSON_TweakArgs_ValidInput) {
 }
 
 // Test case for ExecuteCommandParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_ExecuteCommandParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_ExecuteCommandParams_ValidInput) {
     json params = R"({
         "command": "cjLsp.applyTweak",
         "arguments": [
@@ -731,7 +731,7 @@ TEST_F(JsonSerializationTest, FromJSON_ExecuteCommandParams_ValidInput) {
 }
 
 // Test case for FileRefactorReqParams FromJSON
-TEST_F(JsonSerializationTest, FromJSON_FileRefactorReqParams_ValidInput) {
+TEST_F(ProtocolTest, FromJSON_FileRefactorReqParams_ValidInput) {
     json params = R"({
         "file": {
             "uri": "file:///old/path.cj"
@@ -757,7 +757,7 @@ TEST_F(JsonSerializationTest, FromJSON_FileRefactorReqParams_ValidInput) {
 // For brevity, only one example is shown below:
 
 // Test case for BreakpointLocation ToJSON
-TEST_F(JsonSerializationTest, ToJSON_BreakpointLocation_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_BreakpointLocation_ValidInput) {
     BreakpointLocation params;
     params.uri = "file:///test.cj";
     params.range.start.line = 5;
@@ -777,7 +777,7 @@ TEST_F(JsonSerializationTest, ToJSON_BreakpointLocation_ValidInput) {
 }
 
 // Test case for ExecutableRange ToJSON
-TEST_F(JsonSerializationTest, ToJSON_ExecutableRange_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_ExecutableRange_ValidInput) {
     ExecutableRange params;
     params.uri = "file:///test.cj";
     params.projectName = "MyProject";
@@ -805,7 +805,7 @@ TEST_F(JsonSerializationTest, ToJSON_ExecutableRange_ValidInput) {
 }
 
 // Test case for CodeLens ToJSON
-TEST_F(JsonSerializationTest, ToJSON_CodeLens_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_CodeLens_ValidInput) {
     CodeLens params;
     params.range.start.line = 5;
     params.range.start.column = 10;
@@ -838,7 +838,7 @@ TEST_F(JsonSerializationTest, ToJSON_CodeLens_ValidInput) {
 }
 
 // Test case for Command ToJSON
-TEST_F(JsonSerializationTest, ToJSON_Command_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_Command_ValidInput) {
     Command params;
     params.title = "Apply Fix";
     params.command = "apply.fix";
@@ -878,7 +878,7 @@ TEST_F(JsonSerializationTest, ToJSON_Command_ValidInput) {
 }
 
 // Test case for TypeHierarchyItem ToJSON
-TEST_F(JsonSerializationTest, ToJSON_TypeHierarchyItem_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_TypeHierarchyItem_ValidInput) {
     TypeHierarchyItem iter;
     iter.name = "MyClass";
     iter.kind = SymbolKind::CLASS;
@@ -916,7 +916,7 @@ TEST_F(JsonSerializationTest, ToJSON_TypeHierarchyItem_ValidInput) {
 }
 
 // Test case for CallHierarchyItem ToJSON
-TEST_F(JsonSerializationTest, ToJSON_CallHierarchyItem_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_CallHierarchyItem_ValidInput) {
     CallHierarchyItem iter;
     iter.name = "myMethod";
     iter.kind = SymbolKind::FUNCTION;
@@ -954,7 +954,7 @@ TEST_F(JsonSerializationTest, ToJSON_CallHierarchyItem_ValidInput) {
 }
 
 // Test case for CompletionItem ToJSON
-TEST_F(JsonSerializationTest, ToJSON_CompletionItem_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_CompletionItem_ValidInput) {
     CompletionItem iter;
     iter.label = "myFunction";
     iter.kind = CompletionItemKind::CIK_FUNCTION;
@@ -992,122 +992,63 @@ TEST_F(JsonSerializationTest, ToJSON_CompletionItem_ValidInput) {
     EXPECT_EQ(reply["additionalTextEdits"][0]["newText"], "replacement");
 }
 
-// Test case for DiagnosticToken ToJSON
-TEST_F(JsonSerializationTest, ToJSON_DiagnosticToken_ValidInput) {
-    DiagnosticToken iter;
-    iter.range.start.line = 5;
-    iter.range.start.column = 10;
-    iter.range.end.line = 5;
-    iter.range.end.column = 20;
-    iter.severity = 1;
-    iter.code = 1001;
-    iter.source = "compiler";
-    iter.message = "Undefined variable 'x'";
-    iter.category = 2;
+// Test case for DiagnosticToken FromJSON
+TEST_F(ProtocolTest, FromJSON_DiagnosticToken_ValidInput) {
+    json params = R"({
+        "range": {
+            "start": {"line": 5, "character": 10},
+            "end": {"line": 5, "character": 20}
+        },
+        "severity": 1,
+        "code": 1001,
+        "source": "compiler",
+        "message": "Undefined variable 'x'",
+        "category": 2,
+        "tags": [1, 2],
+        "relatedInformation": [
+            {
+                "message": "Variable declared here",
+                "location": {
+                    "uri": "file:///other.cj",
+                    "range": {
+                        "start": {"line": 3, "character": 5},
+                        "end": {"line": 3, "character": 10}
+                    }
+                }
+            }
+        ]
+    })"_json;
 
-    // Add tags
-    iter.tags.push_back(1);
-    iter.tags.push_back(2);
+    DiagnosticToken result;
+    bool success = FromJSON(params, result);
 
-    // Add related information
-    DiagnosticRelatedInformation info;
-    info.message = "Variable declared here";
-    info.location.uri.file = "file:///other.cj";
-    info.location.range.start.line = 3;
-    info.location.range.start.column = 5;
-    info.location.range.end.line = 3;
-    info.location.range.end.column = 10;
-    iter.relatedInformation = std::vector<DiagnosticRelatedInformation>{info};
-
-    // Add code actions
-    CodeAction action;
-    action.title = "Create variable";
-    action.kind = CodeAction::QUICKFIX_KIND;
-    action.isPreferred = true;
-
-    DiagnosticToken diagInAction;
-    diagInAction.range.start.line = 5;
-    diagInAction.range.start.column = 10;
-    diagInAction.range.end.line = 5;
-    diagInAction.range.end.column = 20;
-    diagInAction.severity = 1;
-    diagInAction.source = "compiler";
-    diagInAction.message = "Undefined variable 'x'";
-    action.diagnostics = std::vector<DiagnosticToken>{diagInAction};
-
-    WorkspaceEdit edit;
-    TextEdit textEdit;
-    textEdit.range.start.line = 0;
-    textEdit.range.start.column = 0;
-    textEdit.range.end.line = 0;
-    textEdit.range.end.column = 0;
-    textEdit.newText = "var x;\n";
-    edit.changes["file:///test.cj"] = std::vector<TextEdit>{textEdit};
-    action.edit = edit;
-
-    iter.codeActions = std::vector<CodeAction>{action};
-
-    // Add diag fix
-    DiagFix fix;
-    fix.isAutoImport = true;
-    iter.diaFix = fix;
-
-    json reply;
-    bool result = ToJSON(iter, reply);
-
-    EXPECT_TRUE(result);
-    EXPECT_EQ(reply["range"]["start"]["line"], 5);
-    EXPECT_EQ(reply["range"]["start"]["character"], 10);
-    EXPECT_EQ(reply["range"]["end"]["line"], 5);
-    EXPECT_EQ(reply["range"]["end"]["character"], 20);
-    EXPECT_EQ(reply["severity"], 1);
-    EXPECT_EQ(reply["code"], 1001);
-    EXPECT_EQ(reply["source"], "compiler");
-    EXPECT_EQ(reply["message"], "Undefined variable 'x'");
-    EXPECT_EQ(reply["category"], 2);
-
-    // Check tags
-    ASSERT_TRUE(reply.contains("tags"));
-    ASSERT_EQ(reply["tags"].size(), 2u);
-    EXPECT_EQ(reply["tags"][0], 1);
-    EXPECT_EQ(reply["tags"][1], 2);
-
-    // Check related information
-    ASSERT_TRUE(reply.contains("relatedInformation"));
-    ASSERT_EQ(reply["relatedInformation"].size(), 1u);
-    EXPECT_EQ(reply["relatedInformation"][0]["message"], "Variable declared here");
-    EXPECT_EQ(reply["relatedInformation"][0]["location"]["uri"], "file:///other.cj");
-    EXPECT_EQ(reply["relatedInformation"][0]["location"]["range"]["start"]["line"], 3);
-    EXPECT_EQ(reply["relatedInformation"][0]["location"]["range"]["start"]["character"], 5);
-    EXPECT_EQ(reply["relatedInformation"][0]["location"]["range"]["end"]["line"], 3);
-    EXPECT_EQ(reply["relatedInformation"][0]["location"]["range"]["end"]["character"], 10);
-
-    // Check code actions
-    ASSERT_TRUE(reply.contains("codeActions"));
-    ASSERT_EQ(reply["codeActions"].size(), 1u);
-    EXPECT_EQ(reply["codeActions"][0]["title"], "Create variable");
-    EXPECT_EQ(reply["codeActions"][0]["kind"], CodeAction::QUICKFIX_KIND);
-    EXPECT_TRUE(reply["codeActions"][0]["isPreferred"]);
-
-    // Check diagnostics in code action
-    ASSERT_TRUE(reply["codeActions"][0].contains("diagnostics"));
-    ASSERT_EQ(reply["codeActions"][0]["diagnostics"].size(), 1u);
-    EXPECT_EQ(reply["codeActions"][0]["diagnostics"][0]["message"], "Undefined variable 'x'");
-
-    // Check edit in code action
-    ASSERT_TRUE(reply["codeActions"][0].contains("edit"));
-    ASSERT_TRUE(reply["codeActions"][0]["edit"].contains("changes"));
-    ASSERT_TRUE(reply["codeActions"][0]["edit"]["changes"].contains("file:///test.cj"));
-    EXPECT_EQ(reply["codeActions"][0]["edit"]["changes"]["file:///test.cj"][0]["newText"], "var x;\n");
-
-    // Check diag fix
-    ASSERT_TRUE(reply.contains("diaFix"));
-    EXPECT_TRUE(reply["diaFix"]["isAutoImport"]);
+    EXPECT_TRUE(success);
+    EXPECT_EQ(result.range.start.line, 5);
+    EXPECT_EQ(result.range.start.column, 10);
+    EXPECT_EQ(result.range.end.line, 5);
+    EXPECT_EQ(result.range.end.column, 20);
+    EXPECT_EQ(result.severity, 1);
+    EXPECT_EQ(result.code, 1001);
+    EXPECT_EQ(result.source, "compiler");
+    EXPECT_EQ(result.message, "Undefined variable 'x'");
+    EXPECT_EQ(result.category.value(), 2);
+    ASSERT_EQ(result.tags.size(), 2u);
+    EXPECT_EQ(result.tags[0], 1);
+    EXPECT_EQ(result.tags[1], 2);
+    ASSERT_TRUE(result.relatedInformation.has_value());
+    ASSERT_EQ(result.relatedInformation.value().size(), 1u);
+    EXPECT_EQ(result.relatedInformation.value()[0].message, "Variable declared here");
+    EXPECT_EQ(result.relatedInformation.value()[0].location.uri.file, "file:///other.cj");
+    EXPECT_EQ(result.relatedInformation.value()[0].location.range.start.line, 3);
+    EXPECT_EQ(result.relatedInformation.value()[0].location.range.start.column, 5);
+    EXPECT_EQ(result.relatedInformation.value()[0].location.range.end.line, 3);
+    EXPECT_EQ(result.relatedInformation.value()[0].location.range.end.column, 10);
 }
 
 
+
 // Test case for DiagnosticRelatedInformation ToJSON
-TEST_F(JsonSerializationTest, ToJSON_DiagnosticRelatedInformation_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_DiagnosticRelatedInformation_ValidInput) {
     DiagnosticRelatedInformation info;
     info.message = "Defined here";
     info.location.uri.file = "file:///definition.cj";
@@ -1129,7 +1070,7 @@ TEST_F(JsonSerializationTest, ToJSON_DiagnosticRelatedInformation_ValidInput) {
 }
 
 // Test case for PublishDiagnosticsParams ToJSON
-TEST_F(JsonSerializationTest, ToJSON_PublishDiagnosticsParams_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_PublishDiagnosticsParams_ValidInput) {
     PublishDiagnosticsParams params;
     params.uri.file = "file:///test.cj";
     params.version = 1;
@@ -1156,7 +1097,7 @@ TEST_F(JsonSerializationTest, ToJSON_PublishDiagnosticsParams_ValidInput) {
 }
 
 // Test case for WorkspaceEdit ToJSON
-TEST_F(JsonSerializationTest, ToJSON_WorkspaceEdit_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_WorkspaceEdit_ValidInput) {
     WorkspaceEdit params;
 
     TextEdit edit;
@@ -1179,7 +1120,7 @@ TEST_F(JsonSerializationTest, ToJSON_WorkspaceEdit_ValidInput) {
 }
 
 // Test case for TextDocumentEdit ToJSON
-TEST_F(JsonSerializationTest, ToJSON_TextDocumentEdit_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_TextDocumentEdit_ValidInput) {
     TextDocumentEdit params;
     params.textDocument.uri.file = "file:///test.cj";
     params.textDocument.version = 1;
@@ -1203,7 +1144,7 @@ TEST_F(JsonSerializationTest, ToJSON_TextDocumentEdit_ValidInput) {
 }
 
 // Test case for DocumentSymbol ToJSON
-TEST_F(JsonSerializationTest, ToJSON_DocumentSymbol_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_DocumentSymbol_ValidInput) {
     DocumentSymbol item;
     item.name = "MyClass";
     item.kind = SymbolKind::CLASS;
@@ -1251,7 +1192,7 @@ TEST_F(JsonSerializationTest, ToJSON_DocumentSymbol_ValidInput) {
 }
 
 // Test case for CallHierarchyOutgoingCall ToJSON
-TEST_F(JsonSerializationTest, ToJSON_CallHierarchyOutgoingCall_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_CallHierarchyOutgoingCall_ValidInput) {
     CallHierarchyOutgoingCall iter;
 
     CallHierarchyItem toItem;
@@ -1288,7 +1229,7 @@ TEST_F(JsonSerializationTest, ToJSON_CallHierarchyOutgoingCall_ValidInput) {
 }
 
 // Test case for CallHierarchyIncomingCall ToJSON
-TEST_F(JsonSerializationTest, ToJSON_CallHierarchyIncomingCall_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_CallHierarchyIncomingCall_ValidInput) {
     CallHierarchyIncomingCall iter;
 
     CallHierarchyItem fromItem;
@@ -1329,7 +1270,7 @@ TEST_F(JsonSerializationTest, ToJSON_CallHierarchyIncomingCall_ValidInput) {
 }
 
 // Test case for CodeAction ToJSON
-TEST_F(JsonSerializationTest, ToJSON_CodeAction_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_CodeAction_ValidInput) {
     CodeAction params;
     params.title = "Fix import";
     params.kind = CodeAction::QUICKFIX_KIND;
@@ -1377,7 +1318,7 @@ TEST_F(JsonSerializationTest, ToJSON_CodeAction_ValidInput) {
 }
 
 // Test case for ApplyWorkspaceEditParams ToJSON
-TEST_F(JsonSerializationTest, ToJSON_ApplyWorkspaceEditParams_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_ApplyWorkspaceEditParams_ValidInput) {
     ApplyWorkspaceEditParams params;
 
     TextEdit edit;
@@ -1398,7 +1339,7 @@ TEST_F(JsonSerializationTest, ToJSON_ApplyWorkspaceEditParams_ValidInput) {
 }
 
 // Test case for FileRefactorRespParams ToJSON
-TEST_F(JsonSerializationTest, ToJSON_FileRefactorRespParams_ValidInput) {
+TEST_F(ProtocolTest, ToJSON_FileRefactorRespParams_ValidInput) {
     FileRefactorRespParams item;
 
     FileRefactorChange change;
