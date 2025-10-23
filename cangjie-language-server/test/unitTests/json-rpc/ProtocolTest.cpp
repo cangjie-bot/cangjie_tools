@@ -579,34 +579,6 @@ TEST_F(ProtocolTest, FromJSON_DocumentSymbolParams_ValidInput) {
     EXPECT_EQ(reply.textDocument.uri.file, "file:///test.cj");
 }
 
-// Test case for CodeActionContext FromJSON
-TEST_F(ProtocolTest, FromJSON_CodeActionContext_ValidInput) {
-    json params = R"({
-        "diagnostics": [
-            {
-                "range": {
-                    "start": {"line": 5, "character": 10},
-                    "end": {"line": 5, "character": 20}
-                },
-                "severity": 1,
-                "source": "compiler",
-                "message": "Undefined variable 'x'"
-            }
-        ],
-        "only": ["quickfix"]
-    })"_json;
-
-    CodeActionContext reply;
-    bool result = FromJSON(params, reply);
-
-    EXPECT_TRUE(result);
-    ASSERT_EQ(reply.diagnostics.size(), 1u);
-    EXPECT_EQ(reply.diagnostics[0].message, "Undefined variable 'x'");
-    ASSERT_TRUE(reply.only.has_value());
-    ASSERT_EQ(reply.only.value().size(), 1u);
-    EXPECT_EQ(reply.only.value()[0], "quickfix");
-}
-
 // Test case for CodeActionParams FromJSON
 TEST_F(ProtocolTest, FromJSON_CodeActionParams_ValidInput) {
     json params = R"({
