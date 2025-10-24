@@ -5,12 +5,14 @@
 # See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 set(UNIT_TESTS_SRC
-        json-rpc/ProtocolTest001.cpp
-        json-rpc/ProtocolTest002.cpp
+        json-rpc/ProtocolTest.cpp
+        languageserver/capabilities/fileRefactor/FileMoveTest.cpp
+        languageserver/capabilities/fileRefactor/FileRefactorTest.cpp
 )
 
 include_directories(
         ../../src/json-rpc
+        ../../src/languageserver/capabilities/fileRefactor
 )
 
 add_library(UnitTests OBJECT ${UNIT_TESTS_SRC})
