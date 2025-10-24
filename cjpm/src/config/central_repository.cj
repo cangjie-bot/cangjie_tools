@@ -14,8 +14,6 @@ import stdx.serialization.serialization.*
 import cjpm.toml.*
 import cjpm.toml.Decoder as DecoderToml
 
-
-// used for central repository
 public class RepositoryInfo <: Serializable<RepositoryInfo> {
     public RepositoryInfo(
         public var path!: String = "",
@@ -44,7 +42,6 @@ public class RepositoryInfo <: Serializable<RepositoryInfo> {
     }
 }
 
-// used for central repository
 public class SettingsConfig <: Serializable<SettingsConfig> {
     public var repository: HashMap<String, RepositoryInfo> = HashMap<String, RepositoryInfo>()
     public var isValid: Bool = true
@@ -77,7 +74,6 @@ public class SettingsConfig <: Serializable<SettingsConfig> {
     }
 }
 
-// used for central repository
 public func readConfigToml(file: Path): SettingsConfig {
     var res = SettingsConfig()
     try {
@@ -113,7 +109,6 @@ public func readConfigToml(file: Path): SettingsConfig {
     return res
 }
 
-// used for central repository
 public func loadConfigInfo(): SettingsConfig {
     // Read the configuration file based on priority.
     if (fileExists(Path(DIR_CURRENT).join("cjpm-config.toml"))) {
@@ -143,7 +138,6 @@ public func loadConfigInfo(): SettingsConfig {
     return res
 }
 
-// used for central repository, Compare two verified version
 func versionCompare(v1: String, v2: String): Bool {
     let vArr1: Array<String> = v1.split(".")
     let vArr2: Array<String> = v2.split(".")
@@ -158,4 +152,27 @@ func versionCompare(v1: String, v2: String): Bool {
         return true
     }
     return false
+}
+
+public func verifyDependencyField(dep: DepInfo, name: String, path: String): Bool {
+    let isPathDep = dep.path.isSome()
+    let isGitDep = dep.git.isSome()
+    let isRepoDep = dep.version.isSome()
+
+    if (!isPathDep && !isGitDep && !isRepoDep) {
+        eprintln("Error: one of 'git' or 'path' or 'version' fields must exist " +
+            "in dependency ${name} in ${Path(path).join(CONFIG_FILE_NAME).toString()}")
+        return false
+    }
+    if ((isPathDep && isGitDep) || (isPathDep && isRepoDep) || (isGitDep && isRepoDep)) {
+        eprintln("Error: only one of 'git' or 'path' or 'version' fields can exist " +
+            "in dependency ${name} in ${Path(path).join(CONFIG_FILE_NAME).toString()}")
+        return false
+    }
+
+    if (let Some(version) <- dep.version) {
+        return centralVersionCheck(name, version, Path(path).join(CONFIG_FILE_NAME).toString())
+    }
+
+    return true
 }

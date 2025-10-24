@@ -22,6 +22,8 @@ const OUTPUT_TYPE = "output-type"
 const SRC_DIR = "src-dir"
 const TARGET_DIR = "target-dir"
 const PACKAGE_CONFIGURATION = "package-configuration"
+const BUNDLE_INCLUDE = "include"
+const BUNDLE_EXCLUDE = "exclude"
 
 public class Package <: Serializable<Package> {
     public var cjcVersion: String = ""
@@ -38,9 +40,20 @@ public class Package <: Serializable<Package> {
     public var packageConfiguration: HashMap<String, PackageConfiguration> = HashMap<String, PackageConfiguration>()
     public var targetDir: String = ""
     public var srcDir: WithDefault<String> = WithDefault(DIR_SRC)
+    public var includeRules: Array<String> = Array<String>()
+    public var excludeRules: Array<String> = Array<String>()
     public var validPkgMap: Array<PackageInfo> = Array<PackageInfo>()
     public var actualSources: CMPSource = CMPSource.empty
     public var sourceSetTree: SourceSetsConfiguration = SourceSetsConfiguration()
+
+    // configuration for bundle
+    public var authors: Array<String> = Array<String>()
+    public var repositroy: String = ""
+    public var homepage: String = ""
+    public var documentation: String = ""
+    public var tag: Array<String> = Array<String>()
+    public var category: Array<String> = Array<String>()
+    public var license: Array<String> = Array<String>()
 
     public func serialize(): DataModel {
         return serializePackage(this)
@@ -91,6 +104,15 @@ func deserializePackage(dm: DataModel): Package {
     result.linkOption = String.deserialize((dms.get(LINK_OPTION) as DataModelString) ?? DataModelString(""))
     result.packageConfiguration = HashMap<String, PackageConfiguration>.deserialize(
         (dms.get(PACKAGE_CONFIGURATION) as DataModelStruct) ?? DataModelStruct())
+    result.includeRules = Array<String>.deserialize((dms.get(BUNDLE_INCLUDE) as DataModelSeq) ?? DataModelSeq())
+    result.excludeRules = Array<String>.deserialize((dms.get(BUNDLE_EXCLUDE) as DataModelSeq) ?? DataModelSeq())
+    result.authors = Array<String>.deserialize((dms.get(META_AUTHORS) as DataModelSeq) ?? DataModelSeq())
+    result.repositroy = String.deserialize((dms.get(META_REPOSITORY) as DataModelString) ?? DataModelString(""))
+    result.homepage = String.deserialize((dms.get(META_HOMEPAGE) as DataModelString) ?? DataModelString(""))
+    result.documentation = String.deserialize((dms.get(META_DOCUMENTATION) as DataModelString) ?? DataModelString(""))
+    result.tag = Array<String>.deserialize((dms.get(META_TAG) as DataModelSeq) ?? DataModelSeq())
+    result.category = Array<String>.deserialize((dms.get(META_CATEGORY) as DataModelSeq) ?? DataModelSeq())
+    result.license = Array<String>.deserialize((dms.get(META_LICENSE) as DataModelSeq) ?? DataModelSeq())
     return result
 }
 

@@ -155,6 +155,10 @@ func crossCompileCheck(target: String): (Bool, Bool) {
     return (false, false)
 }
 
+public func lackConfigInfo(): Bool {
+    !FINAL_CJPM_CONFIG_INFO.isValid
+}
+
 @When[os != "macOS"]
 public func lackCjc(): Bool {
     targetConfigName = getTargetConfigName() ?? return true

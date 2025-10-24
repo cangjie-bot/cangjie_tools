@@ -23,6 +23,8 @@ public class CommandFactory {
             case "check" => CheckCommand(args)
             case "run" => RunCommand(args)
             case "tree" => TreeCommand(args)
+            case "bundle" => BundleCommand(args)
+            case "publish" => PublishCommand(args)
             case "install" => InstallCommand(args)
             case "uninstall" => UninstallCommand(args)
             case _ => CpmCommand(args)
