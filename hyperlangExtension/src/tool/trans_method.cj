@@ -38,6 +38,8 @@ public class TransMethod {
     var isPromise = false
     var promiseNeedGen = false
     var gconfig: GlobalConfig
+    var hasMultipleParentConstructors = false
+    var parentConstructors = ArrayList<MethodType>()
 
     //根据单个arkts的函数描述，默认地构造一个cj的描述
     public init(methodType: MethodType, memberClassName: String, gconfig: GlobalConfig) {
@@ -810,26 +812,82 @@ public class TransMethod {
         let args = paramListToJS(this.methodType.params, gconfig, ctxName: "__ctx")
         let quotedClass = quote($(className))
 
+        // Generate FIXME hint if parent has multiple constructors
+        let superHintTokens = if (hasMultipleParentConstructors) {
+            var tokens = Tokens()
+            tokens.append(Token(TokenKind.COMMENT, "// FIXME: Parent class has multiple constructors:"))
+            tokens.append(nl)
+            for (constructor in parentConstructors) {
+                var hint = "//   - init("
+                for (i in 0..constructor.params.size) {
+                    if (i > 0) {
+                        hint += ", "
+                    }
+                    hint += constructor.params[i]
+                }
+                hint += ")"
+                tokens.append(Token(TokenKind.COMMENT, hint))
+                tokens.append(nl)
+            }
+            // Add hint for the empty constructor that will be generated
+            if (parentConstructors.size > 0 && parentConstructors[0].parameters.size > 0) {
+                tokens.append(Token(TokenKind.COMMENT, "//   - init()"))
+                tokens.append(nl)
+            }
+            tokens.append(Token(TokenKind.COMMENT, "// Please confirm which one to use."))
+            tokens.append(nl)
+            tokens.append(quote(        super(/* TODO */);))
+            tokens.append(nl)
+            tokens
+        } else {
+            Tokens()
+        }
+
         result.append(
             if (gconfig.is3rd) {
-                quote(
-                $(prefix) init($(paramToken)) {
-                    arkts_object = checkThreadAndCall<JSObject>(getMainContext()) {
-                        __ctx =>
-                            let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).toJSValue().asClass(__ctx)
-                            clazz.new($(args)).asObject()
-                    }
-                })
+                if (superHintTokens.size > 0) {
+                    quote(
+                    $(prefix) init($(paramToken)) {
+                        $(superHintTokens)
+                        arkts_object = checkThreadAndCall<JSObject>(getMainContext()) {
+                            __ctx =>
+                                let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).toJSValue().asClass(__ctx)
+                                clazz.new($(args)).asObject()
+                        }
+                    })
+                } else {
+                    quote(
+                    $(prefix) init($(paramToken)) {
+                        arkts_object = checkThreadAndCall<JSObject>(getMainContext()) {
+                            __ctx =>
+                                let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).toJSValue().asClass(__ctx)
+                                clazz.new($(args)).asObject()
+                        }
+                    })
+                }
             } else {
-                quote(
-                $(prefix) init($(paramToken)) {
-                    arkts_object = checkThreadAndCall<JSObject>(getMainContext()) {
-                        __ctx =>
-                            let module = getJSModule(__ctx, $(moduleName), $(modulePrefix))
-                            let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).toJSValue().asClass(__ctx)
-                            clazz.new($(args)).asObject()
-                    }
-                })
+                if (superHintTokens.size > 0) {
+                    quote(
+                    $(prefix) init($(paramToken)) {
+                        $(superHintTokens)
+                        arkts_object = checkThreadAndCall<JSObject>(getMainContext()) {
+                            __ctx =>
+                                let module = getJSModule(__ctx, $(moduleName), $(modulePrefix))
+                                let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).toJSValue().asClass(__ctx)
+                                clazz.new($(args)).asObject()
+                        }
+                    })
+                } else {
+                    quote(
+                    $(prefix) init($(paramToken)) {
+                        arkts_object = checkThreadAndCall<JSObject>(getMainContext()) {
+                            __ctx =>
+                                let module = getJSModule(__ctx, $(moduleName), $(modulePrefix))
+                                let clazz = getClassConstructorObj($(moduleName), $(quotedClass)).toJSValue().asClass(__ctx)
+                                clazz.new($(args)).asObject()
+                        }
+                    })
+                }
             })
         result
     }
@@ -849,5 +907,10 @@ public class TransMethod {
                 }
             }))
         result
+    }
+    
+    public func setParentConstructors(constructors: ArrayList<MethodType>, hasMultiple: Bool) {
+        this.parentConstructors = constructors
+        this.hasMultipleParentConstructors = hasMultiple
     }
 }
