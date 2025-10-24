@@ -26,3 +26,41 @@ export declare class d10 {
     static getInstance(): d10;
     putSync(key: string, value: number | string | boolean | Array<number> | Array<string> | Array<boolean>): d10;
 }
+
+export declare class TDDiagBuilder {
+    static readonly PLATFORM_OA = 0;
+    static readonly PLATFORM_PRO = 3;
+    appId: string;
+    appKey: string;
+    appVersion: string;
+    platform: number;
+    loggerAdapter: LoggerAdapter | null | undefined;
+    logUploadListener?: LogUploadListener;
+    initiativeUploadWhiteListTags?: Array<string>;
+    xgTrafficQuota: number;
+    platform: string | null;
+    crashListener: ICrashListener | null;
+    constructor();
+}
+
+export declare class d10 {
+    private constructor();
+    static getInstance(): d10;
+    putSync(key: string, value: number | string | boolean | Array<number> | Array<string> | Array<boolean>): d10;
+}
+
+export declare abstract class BasePlugin {
+    constructor(a1: string);
+}
+
+export declare class AnaPlugin extends BasePlugin {
+    constructor(a2?: string);
+}
+
+export declare class EmptyClass {
+    constructor();
+}
+
+export declare class EmptyClass2 extends EmptyClass {
+    constructor();
+}
