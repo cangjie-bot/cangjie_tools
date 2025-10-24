@@ -14,11 +14,8 @@ using namespace ark;
 class ProtocolTest002 : public ::testing::Test {
 protected:
     void SetUp() override {
-        // Setup code if needed
-    }
-
-    void TearDown() override {
-        // Cleanup code if needed
+        // Reset global state before each test
+        MessageHeaderEndOfLine::SetIsDeveco(false);
     }
 };
 
@@ -208,18 +205,18 @@ TEST_F(ProtocolTest002, FromJSON_SignatureHelpContext_Valid) {
 
 // Tests for SignatureHelpParams
 TEST_F(ProtocolTest002, FromJSON_SignatureHelpParams_Valid) {
-    json params = R"({
+    json params = {
         {"textDocument", {
             {"uri", "file:///test.cj"}
         }},
         {"position", {
-            {"line", 5,
+            {"line", 5},
             {"character", 10}
         }},
         {"context", {
             {"triggerKind", 1}
         }}
-    })"_json;
+    };
 
     SignatureHelpParams reply;
     EXPECT_TRUE(FromJSON(params, reply));
@@ -242,12 +239,16 @@ TEST_F(ProtocolTest002, FromJSON_InitializeParams_Valid) {
                 {"hover", {}},
                 {"documentLink", {}}
             }}
+        }},
+        {"initializationOptions", {
+            {"cangjieRootUri", "file:///custom_root"}
         }}
     };
 
     InitializeParams reply;
     EXPECT_TRUE(FromJSON(params, reply));
-    EXPECT_EQ(reply.rootUri.file, "file:///projects/test");
+    EXPECT_EQ(reply.rootUri.file, "file:///custom_root");
+    EXPECT_TRUE(MessageHeaderEndOfLine::GetIsDeveco());
     EXPECT_TRUE(reply.capabilities.textDocumentClientCapabilities.documentHighlightClientCapabilities);
     EXPECT_TRUE(reply.capabilities.textDocumentClientCapabilities.typeHierarchyCapabilities);
     EXPECT_TRUE(reply.capabilities.textDocumentClientCapabilities.diagnosticVersionSupport);
@@ -282,13 +283,13 @@ TEST_F(ProtocolTest002, FromJSON_TrackCompletionParams_Valid) {
 // Tests for CompletionContext
 TEST_F(ProtocolTest002, FromJSON_CompletionContext_Valid) {
     json params = {
-        {"triggerKind", 1},
+        {"triggerKind", 2},
         {"triggerCharacter", "."}
     };
 
     CompletionContext reply;
     EXPECT_TRUE(FromJSON(params, reply));
-    EXPECT_EQ(reply.triggerKind, CompletionTriggerKind::TRIGGER_CHAR);
+    EXPECT_EQ(static_cast<int>(reply.triggerKind), 2);
     EXPECT_EQ(reply.triggerCharacter, ".");
 }
 
@@ -312,7 +313,7 @@ TEST_F(ProtocolTest002, FromJSON_CompletionParams_Valid) {
     EXPECT_EQ(reply.textDocument.uri.file, "file:///test.cj");
     EXPECT_EQ(reply.position.line, 10);
     EXPECT_EQ(reply.position.column, 5);
-    EXPECT_EQ(reply.context.triggerKind, CompletionTriggerKind::TRIGGER_CHAR);
+    EXPECT_EQ(static_cast<int>(reply.context.triggerKind), 1);
 }
 
 // Tests for SemanticTokensParams
@@ -406,7 +407,7 @@ TEST_F(ProtocolTest002, FromJSON_DidChangeWatchedFilesParam_Valid) {
     EXPECT_TRUE(FromJSON(params, reply));
     ASSERT_EQ(reply.changes.size(), 1);
     EXPECT_EQ(reply.changes[0].textDocument.uri.file, "file:///test.cj");
-    EXPECT_EQ(reply.changes[0].type, FileChangeType::CHANGED);
+    EXPECT_EQ(static_cast<int>(reply.changes[0].type), 1);
 }
 
 // Tests for DocumentLinkParams
@@ -440,8 +441,8 @@ TEST_F(ProtocolTest002, FromJSON_CodeActionContext_Valid) {
     json params = {
         {"diagnostics", {{
             {"range", {
-                {"start", {"line", 0, "character", 0}},
-                {"end", {"line", 0, "character", 5}}
+                {"start", {{"line", 0}, {"character", 0}}},
+                {"end", {{"line", 0}, {"character", 5}}}
             }},
             {"severity", 1},
             {"source", "cangjie"},
@@ -466,8 +467,8 @@ TEST_F(ProtocolTest002, FromJSON_CodeActionParams_Valid) {
             {"uri", "file:///test.cj"}
         }},
         {"range", {
-            {"start", {"line", 0, "character", 0}},
-            {"end", {"line", 0, "character", 5}}
+            {"start", {{"line", 0}, {"character", 0}}},
+            {"end", {{"line", 0}, {"character", 5}}}
         }},
         {"context", {
             {"diagnostics", json::array()}
@@ -488,8 +489,8 @@ TEST_F(ProtocolTest002, FromJSON_TweakArgs_Valid) {
     json params = {
         {"file", "file:///test.cj"},
         {"selection", {
-            {"start", {"line", 0, "character", 0}},
-            {"end", {"line", 0, "character", 5}}
+            {"start", {{"line", 0}, {"character", 0}}},
+            {"end", {{"line", 0}, {"character", 5}}}
         }},
         {"tweakID", "test-tweak"}
     };
@@ -544,8 +545,10 @@ TEST_F(ProtocolTest002, FromJSON_FileRefactorReqParams_Valid) {
 TEST_F(ProtocolTest002, ToJSON_BreakpointLocation_Valid) {
     BreakpointLocation params;
     params.uri = "file:///test.cj";
-    params.range.start = {0, 0, 0};
-    params.range.end = {0, 5, 0};
+    params.range.start.line = 0;
+    params.range.start.column = 0;
+    params.range.end.line = 0;
+    params.range.end.column = 5;
 
     json reply;
     EXPECT_TRUE(ToJSON(params, reply));
@@ -563,8 +566,10 @@ TEST_F(ProtocolTest002, ToJSON_ExecutableRange_Valid) {
     params.packageName = "test.package";
     params.className = "TestClass";
     params.functionName = "testFunction";
-    params.range.start = {0, 0, 0};
-    params.range.end = {0, 5, 0};
+    params.range.start.line = 0;
+    params.range.start.column = 0;
+    params.range.end.line = 0;
+    params.range.end.column = 5;
 
     json reply;
     EXPECT_TRUE(ToJSON(params, reply));
@@ -587,8 +592,14 @@ TEST_F(ProtocolTest002, ToJSON_Command_Valid) {
     ExecutableRange arg;
     arg.uri = "file:///test.cj";
     arg.tweakId = "test-tweak";
-    arg.range.start = {0, 0, 0};
-    arg.range.end = {0, 5, 0};
+    arg.range.start.line = 0;
+    arg.range.start.column = 0;
+    arg.range.end.line = 0;
+    arg.range.end.column = 5;
+    arg.projectName = "TestProject";
+    arg.packageName = "test.package";
+    arg.className = "TestClass";
+    arg.functionName = "testFunction";
     params.arguments.insert(arg);
 
     json reply;
@@ -598,6 +609,10 @@ TEST_F(ProtocolTest002, ToJSON_Command_Valid) {
     ASSERT_EQ(reply["arguments"].size(), 1);
     EXPECT_EQ(reply["arguments"][0]["tweakID"], "test-tweak");
     EXPECT_EQ(reply["arguments"][0]["file"], "file:///test.cj");
+    EXPECT_EQ(reply["arguments"][0]["projectName"], "TestProject");
+    EXPECT_EQ(reply["arguments"][0]["packageName"], "test.package");
+    EXPECT_EQ(reply["arguments"][0]["className"], "TestClass");
+    EXPECT_EQ(reply["arguments"][0]["functionName"], "testFunction");
 }
 
 TEST_F(ProtocolTest002, ToJSON_TypeHierarchyItem_Valid) {
@@ -605,10 +620,14 @@ TEST_F(ProtocolTest002, ToJSON_TypeHierarchyItem_Valid) {
     item.name = "TestClass";
     item.kind = SymbolKind::CLASS;
     item.uri.file = "file:///test.cj";
-    item.range.start = {0, 0, 0};
-    item.range.end = {10, 0, 0};
-    item.selectionRange.start = {0, 6, 0};
-    item.selectionRange.end = {0, 15, 0};
+    item.range.start.line = 0;
+    item.range.start.column = 0;
+    item.range.end.line = 10;
+    item.range.end.column = 0;
+    item.selectionRange.start.line = 0;
+    item.selectionRange.start.column = 6;
+    item.selectionRange.end.line = 0;
+    item.selectionRange.end.column = 15;
     item.isKernel = false;
     item.isChildOrSuper = true;
     item.symbolId = 12345;
@@ -626,10 +645,14 @@ TEST_F(ProtocolTest002, ToJSON_CallHierarchyItem_Valid) {
     item.name = "testFunction";
     item.kind = SymbolKind::FUNCTION;
     item.uri.file = "file:///test.cj";
-    item.range.start = {0, 0, 0};
-    item.range.end = {5, 0, 0};
-    item.selectionRange.start = {0, 4, 0};
-    item.selectionRange.end = {0, 15, 0};
+    item.range.start.line = 0;
+    item.range.start.column = 0;
+    item.range.end.line = 5;
+    item.range.end.column = 0;
+    item.selectionRange.start.line = 0;
+    item.selectionRange.start.column = 4;
+    item.selectionRange.end.line = 0;
+    item.selectionRange.end.column = 15;
     item.detail = "function detail";
     item.isKernel = false;
     item.symbolId = 54321;
@@ -670,8 +693,10 @@ TEST_F(ProtocolTest002, ToJSON_CompletionItem_Valid) {
 
 TEST_F(ProtocolTest002, ToJSON_DiagnosticToken_Valid) {
     DiagnosticToken token;
-    token.range.start = {0, 0, 0};
-    token.range.end = {0, 5, 0};
+    token.range.start.line = 0;
+    token.range.start.column = 0;
+    token.range.end.line = 0;
+    token.range.end.column = 5;
     token.severity = 1;
     token.code = 1001;
     token.source = "cangjie";
@@ -680,8 +705,10 @@ TEST_F(ProtocolTest002, ToJSON_DiagnosticToken_Valid) {
 
     DiagnosticRelatedInformation relatedInfo;
     relatedInfo.location.uri.file = "file:///related.cj";
-    relatedInfo.location.range.start = {1, 0, 0};
-    relatedInfo.location.range.end = {1, 5, 0};
+    relatedInfo.location.range.start.line = 1;
+    relatedInfo.location.range.start.column = 0;
+    relatedInfo.location.range.end.line = 1;
+    relatedInfo.location.range.end.column = 5;
     relatedInfo.message = "Related information";
     token.relatedInformation = std::vector<DiagnosticRelatedInformation>{relatedInfo};
 
@@ -708,8 +735,10 @@ TEST_F(ProtocolTest002, ToJSON_PublishDiagnosticsParams_Valid) {
     params.version = 1;
 
     DiagnosticToken token;
-    token.range.start = {0, 0, 0};
-    token.range.end = {0, 5, 0};
+    token.range.start.line = 0;
+    token.range.start.column = 0;
+    token.range.end.line = 0;
+    token.range.end.column = 5;
     token.severity = 1;
     token.code = 1001;
     token.source = "cangjie";
@@ -728,8 +757,10 @@ TEST_F(ProtocolTest002, ToJSON_WorkspaceEdit_Valid) {
     WorkspaceEdit params;
 
     TextEdit edit;
-    edit.range.start = {0, 0, 0};
-    edit.range.end = {0, 5, 0};
+    edit.range.start.line = 0;
+    edit.range.start.column = 0;
+    edit.range.end.line = 0;
+    edit.range.end.column = 5;
     edit.newText = "new text";
 
     params.changes["file:///test.cj"] = std::vector<TextEdit>{edit};
@@ -746,19 +777,27 @@ TEST_F(ProtocolTest002, ToJSON_DocumentSymbol_Valid) {
     symbol.name = "TestSymbol";
     symbol.detail = "symbol detail";
     symbol.kind = SymbolKind::FUNCTION;
-    symbol.range.start = {0, 0, 0};
-    symbol.range.end = {5, 0, 0};
-    symbol.selectionRange.start = {0, 4, 0};
-    symbol.selectionRange.end = {0, 15, 0};
+    symbol.range.start.line = 0;
+    symbol.range.start.column = 0;
+    symbol.range.end.line = 5;
+    symbol.range.end.column = 0;
+    symbol.selectionRange.start.line = 0;
+    symbol.selectionRange.start.column = 4;
+    symbol.selectionRange.end.line = 0;
+    symbol.selectionRange.end.column = 15;
 
     DocumentSymbol child;
     child.name = "ChildSymbol";
     child.detail = "child detail";
     child.kind = SymbolKind::VARIABLE;
-    child.range.start = {1, 0, 0};
-    child.range.end = {1, 10, 0};
-    child.selectionRange.start = {1, 4, 0};
-    child.selectionRange.end = {1, 10, 0};
+    child.range.start.line = 1;
+    child.range.start.column = 0;
+    child.range.end.line = 1;
+    child.range.end.column = 10;
+    child.selectionRange.start.line = 1;
+    child.selectionRange.start.column = 4;
+    child.selectionRange.end.line = 1;
+    child.selectionRange.end.column = 10;
     symbol.children.push_back(child);
 
     json result;
@@ -778,8 +817,10 @@ TEST_F(ProtocolTest002, ToJSON_CodeAction_Valid) {
     action.isPreferred = true;
 
     DiagnosticToken diag;
-    diag.range.start = {0, 0, 0};
-    diag.range.end = {0, 5, 0};
+    diag.range.start.line = 0;
+    diag.range.start.column = 0;
+    diag.range.end.line = 0;
+    diag.range.end.column = 5;
     diag.severity = 1;
     diag.source = "cangjie";
     diag.message = "Test diagnostic";
@@ -787,8 +828,10 @@ TEST_F(ProtocolTest002, ToJSON_CodeAction_Valid) {
 
     WorkspaceEdit edit;
     TextEdit textEdit;
-    textEdit.range.start = {0, 0, 0};
-    textEdit.range.end = {0, 5, 0};
+    textEdit.range.start.line = 0;
+    textEdit.range.start.column = 0;
+    textEdit.range.end.line = 0;
+    textEdit.range.end.column = 5;
     textEdit.newText = "fixed text";
     edit.changes["file:///test.cj"] = std::vector<TextEdit>{textEdit};
     action.edit = edit;
@@ -807,14 +850,20 @@ TEST_F(ProtocolTest002, ToJSON_CallHierarchyOutgoingCall_Valid) {
     outgoing.to.name = "calledFunction";
     outgoing.to.kind = SymbolKind::FUNCTION;
     outgoing.to.uri.file = "file:///callee.cj";
-    outgoing.to.range.start = {0, 0, 0};
-    outgoing.to.range.end = {5, 0, 0};
-    outgoing.to.selectionRange.start = {0, 4, 0};
-    outgoing.to.selectionRange.end = {0, 15, 0};
+    outgoing.to.range.start.line = 0;
+    outgoing.to.range.start.column = 0;
+    outgoing.to.range.end.line = 5;
+    outgoing.to.range.end.column = 0;
+    outgoing.to.selectionRange.start.line = 0;
+    outgoing.to.selectionRange.start.column = 4;
+    outgoing.to.selectionRange.end.line = 0;
+    outgoing.to.selectionRange.end.column = 15;
 
     Range fromRange;
-    fromRange.start = {10, 5, 0};
-    fromRange.end = {10, 10, 0};
+    fromRange.start.line = 10;
+    fromRange.start.column = 5;
+    fromRange.end.line = 10;
+    fromRange.end.column = 10;
     outgoing.fromRanges.push_back(fromRange);
 
     json reply;
@@ -832,14 +881,20 @@ TEST_F(ProtocolTest002, ToJSON_CallHierarchyIncomingCall_Valid) {
     incoming.from.name = "callerFunction";
     incoming.from.kind = SymbolKind::FUNCTION;
     incoming.from.uri.file = "file:///caller.cj";
-    incoming.from.range.start = {0, 0, 0};
-    incoming.from.range.end = {5, 0, 0};
-    incoming.from.selectionRange.start = {0, 4, 0};
-    incoming.from.selectionRange.end = {0, 15, 0};
+    incoming.from.range.start.line = 0;
+    incoming.from.range.start.column = 0;
+    incoming.from.range.end.line = 5;
+    incoming.from.range.end.column = 0;
+    incoming.from.selectionRange.start.line = 0;
+    incoming.from.selectionRange.start.column = 4;
+    incoming.from.selectionRange.end.line = 0;
+    incoming.from.selectionRange.end.column = 15;
 
     Range fromRange;
-    fromRange.start = {10, 5, 0};
-    fromRange.end = {10, 10, 0};
+    fromRange.start.line = 10;
+    fromRange.start.column = 5;
+    fromRange.end.line = 10;
+    fromRange.end.column = 10;
     incoming.fromRanges.push_back(fromRange);
 
     json reply;
@@ -855,8 +910,10 @@ TEST_F(ProtocolTest002, ToJSON_ApplyWorkspaceEditParams_Valid) {
     ApplyWorkspaceEditParams params;
 
     TextEdit edit;
-    edit.range.start = {0, 0, 0};
-    edit.range.end = {0, 5, 0};
+    edit.range.start.line = 0;
+    edit.range.start.column = 0;
+    edit.range.end.line = 0;
+    edit.range.end.column = 5;
     edit.newText = "new text";
 
     params.edit.changes["file:///test.cj"] = std::vector<TextEdit>{edit};
@@ -872,8 +929,10 @@ TEST_F(ProtocolTest002, ToJSON_FileRefactorRespParams_Valid) {
 
     FileRefactorChange change;
     change.type = FileRefactorChangeType::ADD;
-    change.range.start = {0, 0, 0};
-    change.range.end = {0, 5, 0};
+    change.range.start.line = 0;
+    change.range.start.column = 0;
+    change.range.end.line = 0;
+    change.range.end.column = 5;
     change.content = "import test";
 
     params.changes["file:///test.cj"] = std::set<FileRefactorChange>{change};
@@ -904,5 +963,3 @@ TEST_F(ProtocolTest002, MessageHeaderEndOfLine_GetSet) {
     MessageHeaderEndOfLine::SetEol("\r\n\r\n");
     MessageHeaderEndOfLine::SetIsDeveco(false);
 }
-
-
