@@ -777,10 +777,6 @@ TEST_F(ProtocolTest001, ToJSON_Command_ValidInput) {
     arg.range.start.column = 0;
     arg.range.end.line = 10;
     arg.range.end.column = 20;
-    arg.projectName = "TestProject";
-    arg.packageName = "com.example";
-    arg.className = "TestClass";
-    arg.functionName = "testFunction";
     arg.extraOptions["option1"] = "value1";
     params.arguments.insert(arg);
 
@@ -797,10 +793,6 @@ TEST_F(ProtocolTest001, ToJSON_Command_ValidInput) {
     EXPECT_EQ(reply["arguments"][0]["selection"]["start"]["character"], 0);
     EXPECT_EQ(reply["arguments"][0]["selection"]["end"]["line"], 10);
     EXPECT_EQ(reply["arguments"][0]["selection"]["end"]["character"], 20);
-    EXPECT_EQ(reply["arguments"][0]["projectName"], "TestProject");
-    EXPECT_EQ(reply["arguments"][0]["packageName"], "com.example");
-    EXPECT_EQ(reply["arguments"][0]["className"], "TestClass");
-    EXPECT_EQ(reply["arguments"][0]["functionName"], "testFunction");
     EXPECT_EQ(reply["arguments"][0]["option1"], "value1");
 }
 
