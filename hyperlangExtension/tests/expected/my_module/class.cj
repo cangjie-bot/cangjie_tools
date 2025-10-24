@@ -9,6 +9,7 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
+import tpc.AbilityKit.common
 
 /*class ExportKeyword DeclareKeyword TDDiagBuilder {
     StaticKeywordReadonlyKeywordPLATFORM_OA: number = 0;
@@ -425,6 +426,144 @@ public class Logger {
     
     static func fromJSValue(context: JSContext, input: JSValue): Logger {
         Logger(input.asObject())
+    }
+}
+
+/*class ExportKeyword DeclareKeyword FirstContextualKeyword BasePlugin {
+    constructor(a1: string): void
+    }*/
+
+public open class BasePlugin {
+    
+    protected BasePlugin(public var arkts_object: JSObject) {}
+    /**
+	 * @brief constructor(a1: string): void
+	 */
+    public init(a1: String) {
+        arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
+            __ctx =>
+            let clazz = getClassConstructorObj("cases_class", "BasePlugin").toJSValue().asClass(__ctx)
+            clazz.new(a1.toJSValue(__ctx)).asObject()
+        }
+    }
+    public init() {
+        arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
+            __ctx =>
+            let clazz = getClassConstructorObj("cases_class", "BasePlugin").toJSValue().asClass(__ctx)
+            clazz.new().asObject()
+        }
+    }
+    
+    
+    public open func toJSValue(context: JSContext): JSValue {
+        arkts_object.toJSValue()
+    }
+    
+    static func fromJSValue(context: JSContext, input: JSValue): BasePlugin {
+        BasePlugin(input.asObject())
+    }
+}
+
+/*class ExportKeyword DeclareKeyword AnaPlugin {
+    constructor(a2?: string): void
+    }*/
+
+public class AnaPlugin <: BasePlugin {
+    
+    protected AnaPlugin(arkts_object: JSObject) { super(arkts_object) }
+    /**
+	 * @brief constructor(a2?: string): void
+	 */
+    public init(a2!:?String = None) {
+        // FIXME: Parent class has multiple constructors:
+        //   - init(a1: string)
+        //   - init()
+        // Please confirm which one to use.
+        super();
+        
+        arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
+            __ctx =>
+            let clazz = getClassConstructorObj("cases_class", "AnaPlugin").toJSValue().asClass(__ctx)
+            clazz.new((a2?.toJSValue(__ctx)) ?? __ctx.undefined().toJSValue()).asObject()
+        }
+    }
+    public init() {
+        // FIXME: Parent class has multiple constructors:
+        //   - init(a1: string)
+        //   - init()
+        // Please confirm which one to use.
+        super();
+        
+        arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
+            __ctx =>
+            let clazz = getClassConstructorObj("cases_class", "AnaPlugin").toJSValue().asClass(__ctx)
+            clazz.new().asObject()
+        }
+    }
+    
+    
+    public func toJSValue(context: JSContext): JSValue {
+        arkts_object.toJSValue()
+    }
+    
+    static func fromJSValue(context: JSContext, input: JSValue): AnaPlugin {
+        AnaPlugin(input.asObject())
+    }
+}
+
+/*class ExportKeyword DeclareKeyword EmptyClass {
+    constructor(): void
+    }*/
+
+public open class EmptyClass {
+    
+    protected EmptyClass(public var arkts_object: JSObject) {}
+    /**
+	 * @brief constructor(): void
+	 */
+    public init() {
+        arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
+            __ctx =>
+            let clazz = getClassConstructorObj("cases_class", "EmptyClass").toJSValue().asClass(__ctx)
+            clazz.new().asObject()
+        }
+    }
+    
+    
+    public open func toJSValue(context: JSContext): JSValue {
+        arkts_object.toJSValue()
+    }
+    
+    static func fromJSValue(context: JSContext, input: JSValue): EmptyClass {
+        EmptyClass(input.asObject())
+    }
+}
+
+/*class ExportKeyword DeclareKeyword EmptyClass2 {
+    constructor(): void
+    }*/
+
+public class EmptyClass2 <: EmptyClass {
+    
+    protected EmptyClass2(arkts_object: JSObject) { super(arkts_object) }
+    /**
+	 * @brief constructor(): void
+	 */
+    public init() {
+        arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
+            __ctx =>
+            let clazz = getClassConstructorObj("cases_class", "EmptyClass2").toJSValue().asClass(__ctx)
+            clazz.new().asObject()
+        }
+    }
+    
+    
+    public func toJSValue(context: JSContext): JSValue {
+        arkts_object.toJSValue()
+    }
+    
+    static func fromJSValue(context: JSContext, input: JSValue): EmptyClass2 {
+        EmptyClass2(input.asObject())
     }
 }
 

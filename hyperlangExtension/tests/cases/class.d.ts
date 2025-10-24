@@ -35,3 +35,19 @@ export declare class Logger {
     debug(...args: (number | string | boolean | null | undefined)[]): void;
     info(...args: (number | string | boolean)[]): void;
 }
+
+export declare abstract class BasePlugin {
+    constructor(a1: string);
+}
+
+export declare class AnaPlugin extends BasePlugin {
+    constructor(a2?: string);
+}
+
+export declare class EmptyClass {
+    constructor();
+}
+
+export declare class EmptyClass2 extends EmptyClass {
+    constructor();
+}

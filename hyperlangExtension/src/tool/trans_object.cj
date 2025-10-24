@@ -169,6 +169,11 @@ public class TransObject {
     }
 
     private func genConstructor(tm: TransMethod, arkMethod: MethodType, constructorToken: Tokens) {
+        // Set parent constructor information
+        let parentConstructors = getParentConstructors()
+        let hasMultiple = hasMultipleParentConstructors()
+        tm.setParentConstructors(parentConstructors, hasMultiple)
+        
         constructorToken.append(tm.generateConstructor(arkName))
         if (arkMethod.parameters.size != 0) {
             constructorToken.append(tm.generateEmptyParamConstructor(arkName))
@@ -270,6 +275,27 @@ public class TransObject {
         }
         res += ") }"
         return res
+    }
+
+    private func getParentConstructors(): ArrayList<MethodType> {
+        let constructors = ArrayList<MethodType>()
+        for (method in arkParentsMethods) {
+            if (method.isConstructor) {
+                constructors.add(method)
+            }
+        }
+        return constructors
+    }
+
+    private func hasMultipleParentConstructors(): Bool {
+        let parentConstructors = getParentConstructors()
+        // Check if parent has constructors with parameters (which will generate both parameterized and empty constructors)
+        for (constructor in parentConstructors) {
+            if (constructor.parameters.size > 0) {
+                return true
+            }
+        }
+        return parentConstructors.size > 1
     }
 
     private func generateAll(modifiersTokens: Tokens, templateClassNameToken: Token, parent: Tokens,
