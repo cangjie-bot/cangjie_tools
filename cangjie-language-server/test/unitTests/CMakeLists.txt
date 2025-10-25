@@ -8,11 +8,13 @@ set(UNIT_TESTS_SRC
         json-rpc/ProtocolTest.cpp
         languageserver/capabilities/fileRefactor/FileMoveTest.cpp
         languageserver/capabilities/fileRefactor/FileRefactorTest.cpp
+        languageserver/capabilities/overrideMethods/FindOverrideMethodsUtilsTest.cpp
 )
 
 include_directories(
         ../../src/json-rpc
         ../../src/languageserver/capabilities/fileRefactor
+        ../../src/languageserver/capabilities/overrideMethods
 )
 
 add_library(UnitTests OBJECT ${UNIT_TESTS_SRC})
