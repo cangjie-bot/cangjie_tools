@@ -539,7 +539,7 @@ func getLinkList(res: ModuleResolve, fullName: String, requires: HashSet<String>
         if (r.isPureTestPkg()) {
             continue
         }
-        let libPath = Path(testConfig.globalConfig.targetDir).join(r.rootPkgName).toString()
+        let libPath = Path(testConfig.globalConfig.targetDir).join(r.rootPkgName.replace("::", "@")).toString()
         result.add(all: linkPackage(r.fullName, libPath, testConfig.isLto), at: 0)
     }
 
@@ -618,20 +618,20 @@ func getDependencyMap(res: ModuleResolve, testConfig: TestConfig): HashMap<Strin
 }
 
 public func getOutput(targetDir: String, fullName: String, isCross: Bool): String {
-    let output = Path(targetDir).join(UNITTEST_BIN).join(fullName).toString()
+    let output = Path(targetDir).join(UNITTEST_BIN).join(fullName.replace("::", "@")).toString()
     return getUnittestOutput(output, isCross)
 }
 
 func getRootPackageDir(pkgFullName: String, targetDir: String) {
-    return targetDir.replace(UNITTEST_BIN, RELEASE) + PATH_SPLIT_CHAR + pkgFullName.split(".")[0]
+    return targetDir.replace(UNITTEST_BIN, RELEASE) + PATH_SPLIT_CHAR + pkgFullName.split(".")[0].replace("::", "@")
 }
 
 func addOptionsForSeparateCompilation(pkgInfo: PkgTestInfo, testConfig: TestConfig) {
     let rootProdPkgDir = getRootPackageDir(pkgInfo.fqname.value, testConfig.globalConfig.targetDir)
     if (testConfig.isLto) {
-        pkgInfo.linkOptions = ["${rootProdPkgDir}${PATH_SPLIT_CHAR}${pkgInfo.fqname}.bc"].concat(pkgInfo.linkOptions)
+        pkgInfo.linkOptions = ["${rootProdPkgDir}${PATH_SPLIT_CHAR}${pkgInfo.fqname.value.replace("::", "@")}.bc"].concat(pkgInfo.linkOptions)
     } else {
-        pkgInfo.linkOptions = ["-L", rootProdPkgDir, "-l${pkgInfo.fqname}"].concat(pkgInfo.linkOptions)
+        pkgInfo.linkOptions = ["-L", rootProdPkgDir, "-l${pkgInfo.fqname.value.replace("::", "@")}"].concat(pkgInfo.linkOptions)
     }
 }
 
