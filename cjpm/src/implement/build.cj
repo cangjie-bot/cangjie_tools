@@ -659,7 +659,7 @@ func generateIncrementalCache(buildConfig: BuildConfig, curResolveData: ModuleRe
 
     var cacheFlag = true
     for ((k, v) in cacheMap) {
-        let cachePath = Path(buildConfig.globalConfig.targetDir).join(k.replace("::", "@"))
+        let cachePath = Path(buildConfig.globalConfig.targetDir).join(swapOrgName(k))
         if (!createDirectory(cachePath.toString())) {
             cacheFlag = false
             continue
@@ -1046,9 +1046,9 @@ func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConf
         }
         var libPath: String
         if (!isNativeForCross) {
-            libPath = Path(buildConfig.globalConfig.targetDir).join(depRootName.replace("::", "@")).toString()
+            libPath = Path(buildConfig.globalConfig.targetDir).join(swapOrgName(depRootName)).toString()
         } else {
-            libPath = Path(buildConfig.globalConfig.nativeDir).join(depRootName.replace("::", "@")).toString()
+            libPath = Path(buildConfig.globalConfig.nativeDir).join(swapOrgName(depRootName)).toString()
         }
         let linkArray: ArrayList<String> = linkPackage(depName, libPath, buildConfig.isLto)
         if (linkArray.size <= 1) {
@@ -1123,9 +1123,9 @@ func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNati
         }
         var libPath: String
         if (!isNativeForCross) {
-            libPath = Path(buildConfig.globalConfig.targetDir).join(depRootName.replace("::", "@")).toString()
+            libPath = Path(buildConfig.globalConfig.targetDir).join(swapOrgName(depRootName)).toString()
         } else {
-            libPath = Path(buildConfig.globalConfig.nativeDir).join(depRootName.replace("::", "@")).toString()
+            libPath = Path(buildConfig.globalConfig.nativeDir).join(swapOrgName(depRootName)).toString()
         }
         let linkArray: ArrayList<String> = linkPackage(depName, libPath, buildConfig.isLto)
         if (linkArray.size <= 1) {
