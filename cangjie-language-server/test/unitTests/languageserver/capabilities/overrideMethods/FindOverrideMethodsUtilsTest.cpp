@@ -276,7 +276,7 @@ TEST(FindOverrideMethodUtilsTest, ResolveFuncDetailTest001) {
     EXPECT_EQ(result.identifier, "myFunction");
     EXPECT_EQ(result.params.params.size(), 1);
     EXPECT_NE(result.retType, nullptr);
-    EXPECT_EQ(result.ToString(), "public func myFunction(param1: int32): Int32");
+    EXPECT_EQ(result.ToString(), "public func myFunction(param1: Int32): Int32");
 }
 
 TEST(FindOverrideMethodUtilsTest, ResolveFuncDetailTest002) {
