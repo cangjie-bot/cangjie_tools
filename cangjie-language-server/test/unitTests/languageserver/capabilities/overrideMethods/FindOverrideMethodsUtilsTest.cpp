@@ -127,7 +127,7 @@ TEST(FindOverrideMethodUtilsTest, ResolveFuncRetTypeTest001) {
 
     auto result = ResolveFuncRetType(Ptr<FuncDecl>(funcDecl));
     EXPECT_NE(result, nullptr);
-    EXPECT_EQ(result->ToString(), "int32");
+    EXPECT_EQ(result->ToString(), "Int32");
 }
 
 TEST(FindOverrideMethodUtilsTest, ResolveFuncRetTypeTest002) {
@@ -157,7 +157,7 @@ TEST(FindOverrideMethodUtilsTest, ResolveTypeTest002) {
     auto funcTy = new FuncTy(paramTys, Ptr<Ty>(retTy));
     auto result = ResolveType(Ptr<Ty>(funcTy));
     EXPECT_NE(result, nullptr);
-    EXPECT_EQ(result->ToString(), "(int32) -> void");
+    EXPECT_EQ(result->ToString(), "(Int32) -> Int32");
 }
 
 TEST(FindOverrideMethodUtilsTest, ResolveTypeTest003) {
@@ -228,7 +228,7 @@ TEST(FindOverrideMethodUtilsTest, ResolveTypeTest009) {
     auto varrayTy = new VArrayTy(Ptr<Ty>(elemTy), 10);
     auto result = ResolveType(Ptr<Ty>(varrayTy));
     EXPECT_NE(result, nullptr);
-    EXPECT_EQ(result->ToString(), "VArray<int32, $10>");
+    EXPECT_EQ(result->ToString(), "VArray<Int32, $10>");
 }
 
 // Test for ResolveType function - TupleTy branch
@@ -240,7 +240,7 @@ TEST(FindOverrideMethodUtilsTest, ResolveTypeTest010) {
     auto tupleTy = new TupleTy(elemTys);
     auto result = ResolveType(Ptr<Ty>(tupleTy));
     EXPECT_NE(result, nullptr);
-    EXPECT_EQ(result->ToString(), "(int32, float32)");
+    EXPECT_EQ(result->ToString(), "(Int32, Float32)");
 }
 
 // Test for ResolveType function - default Ty branch
@@ -266,7 +266,8 @@ TEST(FindOverrideMethodUtilsTest, ResolveFuncDetailTest001) {
     paramList->params.emplace_back(param);
     funcBody->paramLists.emplace_back(paramList);
 
-    funcBody->retType = nullptr;
+    funcBody->retType = OwnedPtr<Type>(new Type());
+    funcBody->retType->ty = new PrimitiveTy(TypeKind::TYPE_INT32);
 
     funcDecl->funcBody = OwnedPtr<FuncBody>(funcBody);
 
@@ -275,7 +276,7 @@ TEST(FindOverrideMethodUtilsTest, ResolveFuncDetailTest001) {
     EXPECT_EQ(result.identifier, "myFunction");
     EXPECT_EQ(result.params.params.size(), 1);
     EXPECT_NE(result.retType, nullptr);
-    EXPECT_EQ(result.ToString(), "public func myFunction(param1: int32): void");
+    EXPECT_EQ(result.ToString(), "public func myFunction(param1: int32): int32");
 }
 
 TEST(FindOverrideMethodUtilsTest, ResolveFuncDetailTest002) {
