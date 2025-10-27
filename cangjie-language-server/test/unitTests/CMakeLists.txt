@@ -9,12 +9,14 @@ set(UNIT_TESTS_SRC
         languageserver/capabilities/fileRefactor/FileMoveTest.cpp
         languageserver/capabilities/fileRefactor/FileRefactorTest.cpp
         languageserver/capabilities/overrideMethods/FindOverrideMethodsUtilsTest.cpp
+        languageserver/capabilities/semanticHighlight/SemanticHighlightImplTest.cpp
 )
 
 include_directories(
         ../../src/json-rpc
         ../../src/languageserver/capabilities/fileRefactor
         ../../src/languageserver/capabilities/overrideMethods
+        ../../src/languageserver/capabilities/semanticHighlight
 )
 
 add_library(UnitTests OBJECT ${UNIT_TESTS_SRC})
