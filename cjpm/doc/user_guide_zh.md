@@ -61,7 +61,6 @@ Available options:
   -m, --member <value>          specify a member module of the workspace
   --target <value>              generate code for the given target platform
   --target-dir <value>          specify target directory
-  --script-dir <value>          specify build script output directory
   -o, --output <value>          specify product name when compiling an executable file
   --mock                        enable support of mocking classes in tests
   --skip-script                 disable script 'build.cj'.
