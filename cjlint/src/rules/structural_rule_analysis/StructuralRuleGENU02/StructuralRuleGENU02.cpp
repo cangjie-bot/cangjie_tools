@@ -59,6 +59,11 @@ bool StructuralRuleGENU02::IsEqual(Cangjie::AST::Ty* base, Cangjie::AST::Ty* der
 
 void StructuralRuleGENU02::DuplicatedEnumCtrOrFuncHelper(const Cangjie::AST::FuncDecl& funcDecl)
 {
+    for (auto modifier : funcDecl.modifiers) {
+        if (modifier.ToString().find("common") == 0 || modifier.ToString().find("platform") == 0) {
+            return;
+        }
+    }
     auto& params = funcDecl.funcBody->paramLists[0]->params;
     std::vector<AST::Ty*> args;
     for (size_t i = 0; i < params.size(); i++) {
