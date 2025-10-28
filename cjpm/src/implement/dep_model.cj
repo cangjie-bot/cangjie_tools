@@ -147,8 +147,8 @@ class DepModel {
         for (name in this.depMap.keys()) {
             verifyMultiplatformPost(this.depPathMap[name], name, resolvedModuleMap)
                 .inspect { v => verifiedModuleMap[name] = v }
-                .inspectErr { errs => 
-                    for (err in errs) { eprintln(err) } 
+                .inspectErr { errs =>
+                    for (err in errs) { eprintln(err) }
                 }.ok ?? return FAILED_BUILD_CHECK_RESULT
         }
 
@@ -683,9 +683,9 @@ class DepModel {
     func scanPkgInfo(pkgSource: CJMPSource, isTest!: Bool = false, compileOptions!: String = ""): Result<RequiresPackages, Array<ScanDependencyError>> {
         if (pkgSource.allPaths.size > 1) {
             let paths = pkgSource.allPaths
-            return paths.iterator().allResult { it => 
+            return paths.iterator().allResult { it =>
                 scanDependency(it, isTest: isTest, compileOptions: compileOptions).mapErr { e => [ e ] }
-            }.flatMap { scans: Array<RequiresPackages> => 
+            }.flatMap { scans: Array<RequiresPackages> =>
                 let name = scans[0].packageName
                 let isMacro = scans[0].isMacroPackage
                 let errors = ArrayList<String>()
@@ -702,7 +702,7 @@ class DepModel {
                     let specifiedFeatures = scans[i].features
                     if (!(specifiedFeatures.contains(all: expectedFeatures)) ||
                         !(expectedFeatures.contains(all: specifiedFeatures))) {
-                            let stringify = { it: Iterable<Feature> => 
+                            let stringify = { it: Iterable<Feature> =>
                                 if (let str <- (it |> collectString(delimiter: ", ")) && !str.isEmpty()) {
                                     str
                                 } else { "<none>" }
@@ -739,7 +739,7 @@ class DepModel {
             return Ok(this.pkgTestDepCacheMap[pkgPathString])
         }
         // update pkgDepCacheMap
-        scanDependency(pkgPath, isTest: isTest, compileOptions: compileOptions).inspect { depRes => 
+        scanDependency(pkgPath, isTest: isTest, compileOptions: compileOptions).inspect { depRes =>
             var dep = depRes
             dep.timeStamp = timeStamp
             synchronized (this.scanPkgMtx) {
@@ -767,11 +767,11 @@ class DepModel {
                 .deduceTargetFeatures(Triple.fromString(target).getOrThrow())
                 .setFeatureMapping(mapping)
                 .collect()
-            
+
             propagatedFeatures[name].add(all: features)
             for (feature in features) {
                 if (
-                    let Some(fname) <- feature.depName && 
+                    let Some(fname) <- feature.depName &&
                     let Some(featureset) <- propagatedFeatures.get(fname)
                 ) { featureset.add(feature) }
             }
@@ -1020,7 +1020,7 @@ class DepModel {
     func runPackageTask(pkgInfo: ResolveItem, fileNameHash: String, timeStamp: Int64,
         directDeps: HashSet<String>): BuildCheckResult {
 
-        let info = getPackageInfo(pkgInfo.packagePath, pkgInfo.compileOption, pkgInfo.customizedOption) ?? 
+        let info = getPackageInfo(pkgInfo.packagePath, pkgInfo.compileOption, pkgInfo.customizedOption) ??
             return FAILED_BUILD_CHECK_RESULT
 
         pkgInfo.fullName = info.packageName
@@ -1158,7 +1158,7 @@ class DepModel {
         }
 
         scanPkgInfo(pkgSource, isTest: this.globalConfig.isTest, compileOptions: options)
-            .inspectErr { errs => synchronized (this.errPrintMtx) { 
+            .inspectErr { errs => synchronized (this.errPrintMtx) {
                 for (e in errs) { eprintln(e) }
             } }.ok
     }
@@ -1317,7 +1317,7 @@ func constructSource(modulePath: String, srcDir: String, sourceSets: SourceLocat
     assertion { globalFeatures.contains(all: localFeatures) }
     if (sourceSets.isEmpty) {
         return Ok((CJMPSource(modulePath, srcDir), localFeatures))
-    } else { 
+    } else {
         return sourceSets.selectSourceSets(modulePath, localFeatures, globalFeatures).map { it => (it, localFeatures) }
     }
 }

@@ -474,6 +474,8 @@ public class CommandInfo <: Serializable<CommandInfo> {
 public var GLOBAL_CJPM_CONFIG_DIR: Path = Path(getVariable("CJPM_CONFIG") ??
     DEFAULT_CONFIG_LOCATION + PATH_SPLIT_CHAR + ".cjpm")
 
+public let FINAL_CJPM_CONFIG_INFO: SettingsConfig = loadConfigInfo()
+
 public open class CommandConfig {
     public var isCov: Bool = false
     public var isVerbose: Bool = false
@@ -728,7 +730,6 @@ public class SuperPackageConfig {
     public let subPkgSet: HashSet<String> = HashSet<String>()
 }
 
-// Repo: used for central repository
 public enum InstallType {
     | Default | Repo | Git | Local
 }
@@ -764,10 +765,23 @@ public class InstallConfig {
     // output root
     public var root: String = ""
     public var rootBin: String = ""
-    // used for central repository
     public var rootRepo: String = ""
     public var rootLibs: String = ""
     public var rootList: String = ""
+}
+
+public class BundleConfig {
+    public var isVerbose: Bool = false
+    public var isTest: Bool = true
+    public var isLint: Bool = true
+    public var currentDir: String = DIR_CURRENT
+    public var targetDir: String = TARGET
+
+    public init() {}
+
+    public init(isVerbose: Bool) {
+        this.isVerbose = isVerbose
+    }
 }
 
 public class ScriptConfig {

@@ -10,12 +10,8 @@ import std.env.*
 import cjpm.command.*
 import cjpm.util.CliFailError
 
-func getCommandArgs(): Array<String> {
-    return getCommandLine()[1..]
-}
-
 main(): Int64 {
-    let args = getCommandArgs()
+    let args = getCommandLine()[1..]
 
     let factory = CommandFactory()
     let cmdHandler = factory.createCommandHandler(args)
@@ -25,6 +21,10 @@ main(): Int64 {
         }
 
         if (lackCjc()) {
+            return 1
+        }
+
+        if (lackConfigInfo()) {
             return 1
         }
 
