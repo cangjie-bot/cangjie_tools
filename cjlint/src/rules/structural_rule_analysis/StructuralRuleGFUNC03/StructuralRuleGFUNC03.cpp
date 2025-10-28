@@ -61,7 +61,12 @@ void StructuralRuleGFUNC03::FuncDeclProcessor(Ptr<Node> node)
     auto functy = DynamicCast<AST::FuncTy*>(funcDecl->ty);
     if (functy) {
         auto paramTys = functy->paramTys;
-        auto funcInfo = FuncInfo(funcDecl->identifier.GetRawText(), paramTys, blocks.top());
+        for (auto modifier : funcDecl->modifiers) {
+            if (modifier.ToString().find("common") == 0 || modifier.ToString().find("platform") == 0) {
+                return;
+            }
+        }
+	auto funcInfo = FuncInfo(funcDecl->identifier.GetRawText(), paramTys, blocks.top());
         localFuncInBlock[blocks.top()].insert(funcInfo);
         auto status = CheckFuncDecl(allFuncs, funcInfo);
         if (status == Status::IN_DIFF_SCOPE) {
@@ -92,7 +97,12 @@ void StructuralRuleGFUNC03::FileProcessor(Ptr<Node> node)
             continue;
         }
         auto paramTys = functy->paramTys;
-        auto funcInfo = FuncInfo(funcDecl->identifier.GetRawText(), paramTys, nullptr);
+        for (auto modifier : funcDecl->modifiers) {
+            if (modifier.ToString().find("common") == 0 || modifier.ToString().find("platform") == 0) {
+                return;
+            }
+        }
+	auto funcInfo = FuncInfo(funcDecl->identifier.GetRawText(), paramTys, nullptr);
         auto status = CheckFuncDecl(allFuncs, funcInfo);
         if (status == Status::SUB_CLASS) {
             Diagnose(funcDecl->identifier.Begin(), funcDecl->identifier.End(),
