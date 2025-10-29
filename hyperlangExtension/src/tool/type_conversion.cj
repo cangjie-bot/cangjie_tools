@@ -108,17 +108,28 @@ private func toCJType(ty: TsType): String {
             }
             if (nonNullTypes.size == 1) {
                 return "Option<${toCJType(nonNullTypes[0])}>"
+            } else if (nonNullTypes.size == 2) {
+                // Handle two-type unions like string | Promise<string>
+                // For now, return the first type (same as old TypeMap behavior for some cases)
+                return toCJType(nonNullTypes[0])
+            } else {
+                // FIXME: General union types need further processing.
+                println("WARNING: type is not supported - ${ty}")
+                "JSValue/* FIXME: `${ty}` */"
             }
-            // FIXME: General union types need further processing.
-            println("WARNING: type is not supported - ${ty}")
-            "JSValue/* FIXME: `${ty}` */"
         case TsTypeRef(x) =>
             if (userDefinedNames.contains(x)) {
                 return x
             } else {
                 return "JSValue/* FIXME: `${x}` */"
             }
-        case TsTypeRef("Promise", _) => "JSValue/* FIXME: `${ty}` */"
+        case TsTypeRef("Promise", arr) => 
+            if (arr.size == 1) {
+                // Promise<InnerType> -> InnerType (same as old TypeMap behavior)
+                arr[0].toCJType()
+            } else {
+                "JSValue/* FIXME: `Promise` */"
+            }
         case TsTypeRef(x, arr) =>
             var hasJSValueTy = false
             for (ty in arr) {
