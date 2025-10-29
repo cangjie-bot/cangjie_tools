@@ -505,17 +505,24 @@ public struct PackageList {
         }
     }
 
-    public prop multiplatform: Array<String> {
-        get() {
-            packages |> filterMap {
-                it: ResolveItem => if (it.isMultiplatform) {
-                    it.fullName
-                } else {
-                    None
+    public func bestFitFeatures(features: HashSet<Feature>): HashMap<String, String> {
+        packages |> filterMap {
+            it: ResolveItem => if (!it.isMultiplatform) {
+                return None<(String, String)>
+            } else {
+                let reversed = it.packagePath._sources.clone()
+                reversed.reverse()
+                for (source in reversed) {
+                    let finalFeatures = it.featureDeducer.addFeature(features).collect()
+                    if (finalFeatures.contains(all: source.features)) {
+                        return Some((it.fullName, getPath(source.outputSuffix.toString(), it.rootPkgName)))
+                    }
                 }
-            } |> collectArray
-        }
+                return None<(String, String)>
+            }
+        } |> collectHashMap
     }
+
     public prop macros: Array<String> {
         get() {
             packages |> filterMap {
@@ -527,6 +534,7 @@ public struct PackageList {
             } |> collectArray
         }
     }
+
     public prop dylib: Array<String> {
         get() {
             packages |> filterMap {
@@ -674,6 +682,7 @@ public class RunConfig {
     public var buildArgs: String = ""
     public var runArgs: String = ""
     public var enableFeatures: String = ""
+    public var newRunArgs: ArrayList<String> = ArrayList<String>()
     public var filePath: String = ""
     public var targetPath: String = ""
     public var originTargetPath: String = TARGET
@@ -682,7 +691,7 @@ public class RunConfig {
 
 public struct TreeItem {
     public TreeItem(
-        public let packagePath: CMPSource,
+        public let packagePath: CJMPSource,
         public let version: String,
         public let requires: ReadOnlySet<String>
     ) {}
@@ -702,7 +711,7 @@ public class TreeConfig {
 
 public struct PackageInfo {
     public PackageInfo(
-        public let sources: CMPSource,
+        public let sources: CJMPSource,
         public let hashCode: String,
         public let timeStamp: Int64,
         public let hasTestFiles: Bool,
@@ -832,6 +841,7 @@ public class GlobalConfig {
     public var isIncremental: Bool = false
     public var isForScript: Bool = false
     public var isSkipScript: Bool = false
+    public var isProjectCombine: Bool = false
     public var isAnalysisCompilePerformance: Bool = false
     public var rootName: String = WORKSPACE_NAME
     public var resolveType: String = RESOLVE_CHECK
@@ -851,9 +861,9 @@ public class GlobalConfig {
     public var overrideCompileOption: String = ""
     public var nativeOverrideOption: String = ""
     public var customizedOption: HashSet<String> = HashSet<String>()
-
-    public var features: ArrayList<Feature> = ArrayList<Feature>()
     public var noFeatureDeduce: Bool = false
+    public var enabledFeatures: Array<Feature> = []
+    public var verifiedEnabledFeatures: Array<Feature> = []
 
     // record git dependency: (url, commitId, localPath)
     public let gitStack: Stack<(String, String)> = Stack<(String, String)>()
@@ -868,6 +878,7 @@ public class GlobalConfig {
         this.isIncremental = globalConfig.isIncremental
         this.isForScript = globalConfig.isForScript
         this.isSkipScript = globalConfig.isSkipScript
+        this.isProjectCombine = globalConfig.isProjectCombine
         this.resolveType = globalConfig.resolveType
         this.rootName = globalConfig.rootName
         this.rootPath = globalConfig.rootPath
@@ -885,14 +896,15 @@ public class GlobalConfig {
         }
         this.overrideCompileOption = globalConfig.overrideCompileOption
         this.nativeOverrideOption = globalConfig.nativeOverrideOption
-        this.features = globalConfig.features
         this.noFeatureDeduce = globalConfig.noFeatureDeduce
+        this.enabledFeatures = globalConfig.enabledFeatures
+        this.verifiedEnabledFeatures = globalConfig.verifiedEnabledFeatures
     }
 }
 
 public struct ResolveConfig {
     public var targetPath: String = ""
-    public var packagePath: CMPSource = CMPSource.empty
+    public var packagePath: CJMPSource = CJMPSource.empty
     public var rootPkgName: String = ""
     public var fullName: String = ""
     public var outputType: OutputType = Unknown("")
@@ -913,10 +925,16 @@ public struct ResolveConfig {
     public var checkDepCjo: Bool = false
     public var superPkgCfg: ?SuperPackageConfig = None
     public var hasTestFiles: Bool = false
-    public var features: ArrayList<Feature> = ArrayList()
+    public var features: HashSet<Feature> = HashSet()
+    public var featureDeducer: FeatureDeducer = FeatureDeducer.empty
+
+    public prop isMultiplatform: Bool {
+        get() {
+            this.packagePath.isMultiplatform
+        }
+    }
 }
 
-@When[os == "Linux"]
 public func linkPackage(libName: String, libPath: String, isLto: Bool): ArrayList<String> {
     let res = ArrayList<String>()
     let ltoFile = Path(libPath).join(makeLtoName(libName)).toString()
@@ -936,18 +954,6 @@ public func linkPackage(libName: String, libPath: String, isLto: Bool): ArrayLis
         res.add(ltoFile)
     }
 
-    return res
-}
-
-@When[os == "Windows" || os == "macOS"]
-public func linkPackage(libName: String, libPath: String, _: Bool): ArrayList<String> {
-    var res = ArrayList<String>()
-    if (fileExists(Path(libPath).join(makeCangjieStaticlibName(libName)).toString()) || fileExists(
-        Path(libPath).join("lib${libName}.so").toString()) || fileExists(
-        Path(libPath).join("lib${libName}.dll").toString()) || fileExists(
-        Path(libPath).join("lib${libName}.dylib").toString())) {
-        res.add(all: ["-L", libPath, "-l${libName}"])
-    }
     return res
 }
 

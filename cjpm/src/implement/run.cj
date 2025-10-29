@@ -16,8 +16,28 @@ public func doRun(runConfig: RunConfig): Bool {
         return false
     }
 
-    let binPath = Path(runConfig.targetPath).join(BIN).toString()
+    let historyFile = Path(runConfig.originTargetPath).join(HISTORY_FILE_NAME).toString()
+
+    let binPath = if (fileExists(historyFile)) {
+        let resInfo: ModuleResolve = loadHistoryFile(historyFile) ?? return false
+
+        let maybeResolveItem = resInfo.resolves.iterator()
+            .filter { it => it.fullName == runConfig.rootPkgName} |> 
+            first<ResolveItem> 
+
+        if (let Some(resolveItem) <- maybeResolveItem && resolveItem.isMultiplatform) {
+            let outputSuffix = resolveItem.packagePath.product.outputSuffix.toString()
+            getPath(runConfig.targetPath, BIN, outputSuffix)
+        } else { 
+            Path(runConfig.targetPath).join(BIN).toString()
+        }
+
+    } else {
+        Path(runConfig.targetPath).join(BIN).toString()
+    }
+
     runConfig.filePath = Path(binPath).join(makeExeName(runConfig.name)).toString()
+
     if (!fileExists(runConfig.filePath)) {
         eprintln("Error: can not find the '${runConfig.filePath}' file")
         return false
@@ -86,9 +106,16 @@ func startRun(runConfig: RunConfig): Bool {
     let envBuilder = EnvironmentBuilder.fromEnvConfig(runConfig.envConfig)
     addLibEnvConfig(envBuilder, runConfig.targetPath, runConfig.globalConfig.nativeDir, runConfig.originTargetPath)
 
-    let (exeTool, args) = getExecPair(runConfig.filePath, runConfig.targetPath, runConfig.originTargetPath)
-    if (!runConfig.runArgs.isEmpty()) {
+    let exeTool = runConfig.filePath
+    let args = ArrayList<String>()
+    if (!runConfig.runArgs.isEmpty() && runConfig.newRunArgs.isEmpty()) {
+        println("Warning: option '--run-args' will be removed in the future, prefer to use '--' instead")
         args.add(all: extractOptionByString(runConfig.runArgs))
+    } else if (!runConfig.runArgs.isEmpty() && !runConfig.newRunArgs.isEmpty()) {
+        println("Warning: option '--run-args' will be ignored while using '--' at the same time")
+        args.add(all: runConfig.newRunArgs)
+    } else {
+        args.add(all: runConfig.newRunArgs)
     }
 
     let env = getVariables()
