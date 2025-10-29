@@ -7,12 +7,8 @@
 package cjpm.implement
 import cjpm.config.*
 
-@When[os == "Linux"]
-func supportLto(): Bool {
-    return true
-}
+import cjpm.config.*
 
-@When[os != "Linux"]
 func supportLto(): Bool {
     return false
 }

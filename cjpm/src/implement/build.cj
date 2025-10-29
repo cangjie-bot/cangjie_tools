@@ -218,10 +218,31 @@ func getResolveData(buildConfig: BuildConfig, tomlInfo: TomlInfo, isScriptDep: B
     buildConfig.globalConfig.overrideCompileOption = dm.globalConfig.overrideCompileOption
     buildConfig.globalConfig.nativeOverrideOption = dm.globalConfig.nativeOverrideOption
 
+    if (buildConfig.globalConfig.isProjectCombine &&
+        buildConfig.packageList.macros.contains(buildConfig.globalConfig.rootName)) {
+        eprintln("Error: field " +
+            "'package.package-configuration.${buildConfig.globalConfig.rootName}.combine-all-deps = true' " +
+            "is not support for macro root package '${buildConfig.globalConfig.rootName}'")
+        return Option<ModuleResolve>.None
+    }
+
     if (!tomlInfo.profile.build.ltoValue.isEmpty()) {
         buildConfig.isLto = supportLto()
         buildConfig.ltoValue = tomlInfo.profile.build.ltoValue
     }
+
+    if (supportLto() && buildConfig.globalConfig.isProjectCombine && buildConfig.ltoValue.isEmpty()) {
+        eprintln("Error: field " +
+            "'package.package-configuration.${buildConfig.globalConfig.rootName}.combine-all-deps = true' " +
+            "is invalid when field 'profile.build.lto' is empty")
+        return Option<ModuleResolve>.None
+    } else if (!supportLto() && buildConfig.globalConfig.isProjectCombine) {
+        eprintln("Error: field " +
+            "'package.package-configuration.${buildConfig.globalConfig.rootName}.combine-all-deps = true' " +
+            "only supports compilation to Linux/OHOS")
+        return Option<ModuleResolve>.None
+    }
+
     if (tomlInfo.profile.build.analysisCompilePerformance) {
         buildConfig.globalConfig.isAnalysisCompilePerformance = true
     }
@@ -232,8 +253,21 @@ func getResolveData(buildConfig: BuildConfig, tomlInfo: TomlInfo, isScriptDep: B
     let resolves = ArrayList<ResolveItem>()
     let superPkgList = ArrayList<SuperPackageConfig>()
     for (k in dm.readyPkgs) {
-        if (let Some(v) <- dm.packageDepMap[k].superPkgCfg) {
+        var pkg = dm.packageDepMap[k]
+        if (let Some(v) <- pkg.superPkgCfg) {
             superPkgList.add(v)
+        }
+        if (buildConfig.globalConfig.isProjectCombine) {
+            if (pkg.requires.contains(buildConfig.globalConfig.rootName)) {
+                eprintln("Error: roo package '${buildConfig.globalConfig.rootName}' is depended by package ${k}, " +
+                    "it cannot be depended by any package when field 'combine-all-deps = true' is valid")
+                return Option<ModuleResolve>.None
+            }
+            if (k != buildConfig.globalConfig.rootName && !pkg.isMacroPackage) {
+                pkg.outputType = Static
+            } else {
+                pkg.outputType = Dynamic
+            }
         }
         resolves.add(dm.packageDepMap[k])
     }
@@ -381,6 +415,11 @@ func refreshIncreInfo(buildConfig: BuildConfig, curResolveData: ModuleResolve): 
     for (r in curResolveData.resolves) {
         if (!buildConfig.rebuildList.contains(r.fullName)) {
             r.buildFlag = true
+        }
+        if (r.fullName == buildConfig.globalConfig.rootName && buildConfig.globalConfig.isProjectCombine &&
+            !buildConfig.rebuildList.isEmpty()) {
+            buildConfig.rebuildList.add(r.fullName)
+            r.buildFlag = false
         }
     }
     return
@@ -643,56 +682,64 @@ func generateIncrementalCache(buildConfig: BuildConfig, curResolveData: ModuleRe
     return cacheFlag
 }
 
-func getMultiplatformPipeline(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool): (ArrayList<String>,
-    ArrayList<String>) {
-    let commonBuild = ArrayList<String>()
-    let platformBuild = ArrayList<String>()
 
-    let commonOutputPath = Path(resolveConfig.targetPath).join("common")
+func getMultiplatformPipeline(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool): Array<ArrayList<String>> {
+    let builds = ArrayList<ArrayList<String>>()
 
-    // Common build
-    let commonFiles = resolveConfig.packagePath.commonPaths |> flatMap {it: Path => ["-p", it.toString()]} |>
-        collectArray
-    if (state.isExperimental) {
-        commonBuild.add("--experimental")
+    // topologically ordered sources of a package in each source set it's present in
+    var prevStageChir = None<String>
+    var prevStageCjo = None<String>
+    for (source in resolveConfig.packagePath._sources) {
+        let options = ArrayList<String>()
+        let outputPath = match (resolveConfig.outputType) {
+            case Exe => getPath(resolveConfig.targetPath, source.outputSuffix.toString())
+            case _ => getPath(resolveConfig.targetPath, source.outputSuffix.toString(), resolveConfig.rootPkgName)
+        } 
+        if (state.isExperimental) {
+            options.add("--experimental")
+        }
+
+        let buildType = if (source.product) { Product } else { Chir }
+        let features = resolveConfig.featureDeducer.addFeature(source.features).collect()
+        options.add(all: getCommandArgs(resolveConfig, buildConfig, isNativeForCross, buildType, features))
+
+        options.add(all: ["-p", source.srcDir.toString()])
+        if (source.product) {
+            options.add(all: ["--output-dir", outputPath])
+            if (let Some(chirpath) <- prevStageChir) {
+                options.add(chirpath)
+            }
+            if (let Some(commoncjo) <- prevStageCjo) {
+                options.add("--common-part-cjo=${commoncjo}")
+            }
+            options.add("--output-type=${resolveConfig.outputType.asCompilerArg}")
+        } else {
+            options.add("--output-type=chir")
+            prevStageChir = Path(outputPath).join("${resolveConfig.fullName}.chir").toString()
+            prevStageCjo = Path(outputPath).join("${resolveConfig.fullName}.cjo").toString()
+            options.add(all: ["--output", outputPath])
+        }
+        builds.add(options)
     }
-    commonBuild.add(all: commonFiles)
-
-    let (commonCjos, platformCjos) = getCommonPlatformDepCjos(resolveConfig, buildConfig, isNativeForCross)
-    commonBuild.add(all: getCommandArgs(resolveConfig, buildConfig, isNativeForCross, true))
-    commonBuild.add(all: commonCjos)
-
-    commonBuild.add("--output-type=chir")
-    let commonChirPath = commonOutputPath.join("${resolveConfig.fullName}.chir").toString()
-    let commonCjoPath = commonOutputPath.join("${resolveConfig.fullName}.cjo").toString()
-    commonBuild.add("--output")
-
-    commonBuild.add(commonOutputPath.toString())
-
-    // Platform build
-    if (state.isExperimental) {
-        platformBuild.add("--experimental")
-    }
-
-    platformBuild.add(all: getCommandArgs(resolveConfig, buildConfig, isNativeForCross, false))
-    platformBuild.add(
-        all: resolveConfig.packagePath.platformPaths |> flatMap {it: Path => ["-p", it.toString()]} |> collectArray)
-    platformBuild.add(commonChirPath)
-    platformBuild.add(all: platformCjos)
-    platformBuild.add("--common-part-cjo=${commonCjoPath}")
-    platformBuild.add("--output-type=${resolveConfig.outputType.asCompilerArg}")
-    return (commonBuild, platformBuild)
+    return builds.toArray()
 }
 
-func getCommandArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool,
-    isCommon: Bool): ArrayList<String> {
+enum BuildType {
+    | Chir
+    | Product
+    | Default
+}
+
+func getCommandArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool, buildType: BuildType, features: HashSet<Feature>): ArrayList<String> {
     var res: ArrayList<String> = ArrayList<String>()
-    if (isCommon) {
-        res.add(all: appendCommandOptionsCommon(buildConfig))
-    } else {
-        res.add(all: appendCommandOptions(resolveConfig, buildConfig, isNativeForCross))
+
+    let toAdd = match (buildType) {
+        case Chir => appendCommandOptionsCommon(buildConfig)
+        case Default => appendCommandOptions(resolveConfig, buildConfig, isNativeForCross)
+        case Product => appendCommandOptions(resolveConfig, buildConfig, isNativeForCross, isCJMPProduct: true)
     }
-    res.add(all: getDepLinkCommand(resolveConfig, buildConfig, isNativeForCross))
+    res.add(all: toAdd)
+    res.add(all: getDepLinkCommand(resolveConfig, buildConfig, isNativeForCross, features: features))
     if (buildConfig.customizedOption.size != 0) {
         for (k in buildConfig.customizedOption) {
             if (resolveConfig.customizedOption.contains(k)) {
@@ -744,7 +791,7 @@ func appendCommandOptionsCommon(buildConfig: BuildConfig) {
     return res
 }
 
-func appendCommandOptions(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool): ArrayList<String> {
+func appendCommandOptions(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool, isCJMPProduct!: Bool = false): ArrayList<String> {
     var res: ArrayList<String> = ArrayList<String>()
 
     for (p in buildConfig.globalConfig.cjPathList) {
@@ -769,10 +816,12 @@ func appendCommandOptions(resolveConfig: ResolveConfig, buildConfig: BuildConfig
         res.add("--mock=on")
     }
 
-    if (!isNativeForCross) {
-        res.add("--output-dir=${Path(resolveConfig.targetPath)}")
-    } else {
-        res.add("--output-dir=${Path(resolveConfig.nativePath)}")
+    if (!isCJMPProduct) {
+        if (!isNativeForCross) {
+            res.add("--output-dir=${Path(resolveConfig.targetPath)}")
+        } else {
+            res.add("--output-dir=${Path(resolveConfig.nativePath)}")
+        }
     }
 
     return res
@@ -796,52 +845,20 @@ func appendLinkOption(resolveConfig: ResolveConfig, requiredForTests: Bool, isNa
     return ArrayList<String>()
 }
 
-func getDepLinkCommand(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool): ArrayList<String> {
+func getDepLinkCommand(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool, features!: HashSet<Feature> = HashSet()): ArrayList<String> {
     let res = ArrayList<String>()
     if (resolveConfig.outputType == Exe || resolveConfig.outputType == Dynamic) {
-        res.add(all: getBuildArgs(resolveConfig, buildConfig, isNativeForCross))
+        if (buildConfig.globalConfig.isProjectCombine &&
+            resolveConfig.fullName == buildConfig.globalConfig.rootName) {
+            res.add(all: getLtoCombineBuildArgs(resolveConfig, buildConfig, isNativeForCross))
+        } else {
+            res.add(all: getBuildArgs(resolveConfig, buildConfig, isNativeForCross, features))
+        }
     }
     if (let Some(superPkgCfg) <- resolveConfig.superPkgCfg) {
         res.add(all: getForcedLibArgs(resolveConfig, superPkgCfg, buildConfig, isNativeForCross))
     }
     return res
-}
-
-func getCommonPlatformDepCjos(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool): (ArrayList<String>,
-    ArrayList<String>) {
-    let commonRes = ArrayList<String>()
-    let platformRes = ArrayList<String>()
-    if (resolveConfig.outputType == Exe || resolveConfig.outputType == Dynamic) {
-        var linkSort: HashSet<String> = getDepSet(resolveConfig.fullName, buildConfig.requiresMap,
-            buildConfig.superPkgSubMap) // Record dependent package names
-
-        if (linkSort.size == 0) {
-            return (commonRes, platformRes)
-        }
-
-        for (index in (buildConfig.packageList.all.size - 1)..=0 : -1) {
-            let depName = buildConfig.packageList.all[index]
-            if (!linkSort.contains(depName)) {
-                continue
-            }
-            let depRootName: String = getRootPkgName(depName)
-            if (buildConfig.packageList.macros.contains(depName) || buildConfig.packageList.test.contains(depName)) {
-                continue
-            }
-            var libPath: Path
-            if (!isNativeForCross) {
-                libPath = Path(buildConfig.globalConfig.targetDir).join(depRootName)
-            } else {
-                libPath = Path(buildConfig.globalConfig.nativeDir).join(depRootName)
-            }
-            if (buildConfig.packageList.multiplatform.contains(depName)) {
-                commonRes.add(libPath.join("common").join("${depName}.cjo").toString())
-            }
-            commonRes.add("--import-path=${libPath}")
-            platformRes.add("--import-path=${libPath}")
-        }
-    }
-    return (commonRes, platformRes)
 }
 
 func getTypeCommand(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool): ArrayList<String> {
@@ -881,7 +898,6 @@ func getTypeCommand(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNa
     return res
 }
 
-@When[os == "Linux"]
 func makeStaticlibCommand(fullName: String, isLto: Bool, ltoValue: String): ArrayList<String> {
     var res = ArrayList<String>()
     res.add("--output-type=staticlib")
@@ -895,15 +911,6 @@ func makeStaticlibCommand(fullName: String, isLto: Bool, ltoValue: String): Arra
         res.add("-o=${ltoName}")
     }
 
-    return res
-}
-
-@When[os == "Windows" || os == "macOS"]
-func makeStaticlibCommand(fullName: String, _: Bool, _: String): ArrayList<String> {
-    var res = ArrayList<String>()
-    let staticlibName: String = makeCangjieStaticlibName(fullName)
-    res.add("--output-type=staticlib")
-    res.add("-o=${staticlibName}")
     return res
 }
 
@@ -989,7 +996,81 @@ func appendCLibLinkStr(buildConfig: BuildConfig, cLibNameList: ArrayList<String>
     }
 }
 
-func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool): ArrayList<String> {
+func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool):
+    ArrayList<String> {
+    let res = ArrayList<String>()
+    var cLibNameList = ArrayList<String>([resolveConfig.rootPkgName]) // Record dependent root packages
+    var linkSort: HashSet<String> = getDepSet(resolveConfig.fullName, buildConfig.requiresMap,
+        buildConfig.superPkgSubMap) // Record dependent package names
+    let allOptions = ArrayList<String>()
+    let libPathSet = HashSet<String>()
+    var binDepSet = HashSet<String>()
+    // link all lto packages
+    // and get all binary dependencies depended by root package
+    for (index in (buildConfig.packageList.all.size - 1)..=0 : -1) {
+        let depName = buildConfig.packageList.all[index]
+        if (linkSort.contains(depName)) {
+            linkSort.add(all: getDepSet(depName, buildConfig.requiresMap, buildConfig.superPkgSubMap))
+        }
+        let depRootName: String = getRootPkgName(depName)
+        cLibNameList.add(depRootName, at: 0)
+        if (buildConfig.packageList.macros.contains(depName) || buildConfig.packageList.test.contains(depName)) {
+            continue
+        }
+        var libPath: String
+        if (!isNativeForCross) {
+            libPath = Path(buildConfig.globalConfig.targetDir).join(depRootName).toString()
+        } else {
+            libPath = Path(buildConfig.globalConfig.nativeDir).join(depRootName).toString()
+        }
+        let linkArray: ArrayList<String> = linkPackage(depName, libPath, buildConfig.isLto)
+        if (linkArray.size <= 1) {
+            allOptions.add(all: linkArray)
+            binDepSet.add(all: getDepSet(depName, buildConfig.requiresMap, buildConfig.superPkgSubMap))
+            continue
+        }
+        if (libPathSet.contains(libPath)) {
+            allOptions.add(linkArray[linkArray.size - 1])
+        } else {
+            allOptions.add(all: linkArray)
+            libPathSet.add(libPath)
+        }
+        binDepSet.add(all: getDepSet(depName, buildConfig.requiresMap, buildConfig.superPkgSubMap))
+    }
+    res.add(all: allOptions)
+
+    // link all binary dependecies depended by root package
+    let binOptions = ArrayList<String>()
+    binOptions.add(all: appendOptionForBindep(buildConfig.binDepMap, linkSort, buildConfig.isLto), at: 0)
+    binOptions.add(all: appendOptionForBindep(buildConfig.crossBinDepMap, linkSort, buildConfig.isLto), at: 0)
+    res.add(all: binOptions)
+
+    // link all binary dependencies depended by other packages which are not depended by root package
+    let otherBinOptions = ArrayList<String>()
+    binDepSet.remove(all: linkSort)
+    otherBinOptions.add(all: getForcedBinDep(buildConfig, binDepSet, cLibNameList, isNativeForCross))
+
+    var compileTarget: String = targetConfigName
+    if (!crossCompileTarget.isEmpty() && !isNativeForCross) {
+        compileTarget = crossCompileTarget
+    }
+    addForcedLibArgs(res, otherBinOptions, compileTarget)
+
+    // forced-add std dynamic libs
+    if (let Some(stdLinks) <- addStdLibsLink(compileTarget)) {
+        res.add(all: stdLinks)
+    } else {
+        println("Warning: cannot find std dynamic libraries for target '${compileTarget}' " +
+            "from $CANGJIE_HOME/runtime/lib while compiling combine package ${resolveConfig.fullName}, " +
+            "output may be invalid if sub packages import std libraries")
+    }
+    appendCLibLinkStr(buildConfig, cLibNameList, res, buildConfig.isCrossCompile && !isNativeForCross)
+    res.add("--lto=${buildConfig.ltoValue}")
+    
+    return res
+}
+
+func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool, features: HashSet<Feature>): ArrayList<String> {
     let res = ArrayList<String>()
     var cLibNameList = ArrayList<String>([resolveConfig.rootPkgName]) // Record dependent root packages
     var linkSort: HashSet<String> = getDepSet(resolveConfig.fullName, buildConfig.requiresMap,
@@ -1002,6 +1083,7 @@ func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNati
 
     let allOptions = ArrayList<String>()
     let libPathSet = HashSet<String>()
+    let CJMPPathSet = HashSet<String>()
     for (index in (buildConfig.packageList.all.size - 1)..=0 : -1) {
         let depName = buildConfig.packageList.all[index]
         if (!linkSort.contains(depName)) {
@@ -1019,6 +1101,12 @@ func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNati
         } else {
             libPath = Path(buildConfig.globalConfig.nativeDir).join(depRootName).toString()
         }
+
+        if (let Some(suffix) <- buildConfig.packageList.bestFitFeatures(features).get(depName)) {
+            libPath = getPath(libPath.toString(), suffix.toString())
+            CJMPPathSet.add(libPath)
+        }
+
         let linkArray: ArrayList<String> = linkPackage(depName, libPath, buildConfig.isLto)
         if (linkArray.size <= 1) {
             allOptions.add(all: linkArray)
@@ -1032,6 +1120,7 @@ func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNati
         }
     }
 
+    res.add(all: CJMPPathSet |> map { p => "--import-path=${p}"} |> collectArray)
     res.add(all: allOptions)
     let binOptions = ArrayList<String>()
     binOptions.add(all: appendOptionForBindep(buildConfig.binDepMap, linkSort, buildConfig.isLto), at: 0)

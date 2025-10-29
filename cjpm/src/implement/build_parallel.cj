@@ -87,16 +87,24 @@ class ParallelBuilder {
             let task = this.taskMap[pkgName]
             let future = spawn {
                 =>
-                for (dep in task.requirePkgs) {
-                    if (!this.checkDepFuture(dep, task, futTasks, sem)) {
-                        return false
+                if (this.buildConfig.globalConfig.isProjectCombine && pkgName == buildConfig.globalConfig.rootName) {
+                    for ((k,_) in this.taskMap) {
+                        if (k != pkgName && !this.checkDepFuture(k, task, futTasks, sem)) {
+                            return false
+                        }
                     }
-                }
-
-                if (let Some(superPkgCfg) <- task.superPkgCfg) {
-                    for (dep in superPkgCfg.subPkgSet) {
+                } else {
+                    for (dep in task.requirePkgs) {
                         if (!this.checkDepFuture(dep, task, futTasks, sem)) {
                             return false
+                        }
+                    }
+
+                    if (let Some(superPkgCfg) <- task.superPkgCfg) {
+                        for (dep in superPkgCfg.subPkgSet) {
+                            if (!this.checkDepFuture(dep, task, futTasks, sem)) {
+                                return false
+                            }
                         }
                     }
                 }
@@ -196,12 +204,10 @@ class ParallelBuilder {
         envBuilder.prepend(LD_PATH, ldPath)
 
         let cjcCalls = ArrayList<ArrayList<String>>()
-        if (resolveConfig.packagePath.isMultiplatform) {
-            let (commonArgs, platformArgs) = getMultiplatformPipeline(resolveConfig, this.buildConfig, isNativeForCross)
-            cjcCalls.add(commonArgs)
-            cjcCalls.add(platformArgs)
+        if (resolveConfig.isMultiplatform) {
+            cjcCalls.add(all: getMultiplatformPipeline(resolveConfig, this.buildConfig, isNativeForCross))
         } else {
-            let args = getCommandArgs(resolveConfig, this.buildConfig, isNativeForCross, false)
+            let args = getCommandArgs(resolveConfig, this.buildConfig, isNativeForCross, Default, resolveConfig.features)
             args.add(all: getTypeCommand(resolveConfig, this.buildConfig, isNativeForCross))
             cjcCalls.add(args)
         }
@@ -266,7 +272,7 @@ class ParallelBuilder {
                     } else {
                         execCmdFlag = false
                         errFile.write("Error: failed to compile package `${resolveConfig.fullName}`, return code is ${returnCode}\n".toArray())
-                        if (resolveConfig.packagePath.isMultiplatform) {
+                        if (resolveConfig.isMultiplatform) {
                             errFile.write("${SourceLocationsPrinter(resolveConfig.packagePath, resolveConfig.features, project: resolveConfig.fullName)}".toArray())
                         }
                     }
@@ -341,10 +347,12 @@ func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
                 return false
             }
 
-            if (resolve.packagePath.isMultiplatform) {
-                let finalCommonPath = Path(finalPath).join("common").toString()
-                if (!createDirectory(finalCommonPath)) {
-                    return false
+            if (resolve.isMultiplatform) {
+                for (source in resolve.packagePath._sources) {
+                    let finalSpecificPath = Path(finalPath).join(source.outputSuffix).join(resolve.rootPkgName).toString()
+                    if (!createDirectory(finalSpecificPath)) {
+                        return false
+                    }
                 }
             }
 
@@ -364,6 +372,12 @@ func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
             resolveConfig.nativePlatform = resolve.nativePlatform
             resolveConfig.superPkgCfg = resolve.superPkgCfg
             resolveConfig.hasTestFiles = resolve.hasTestFiles
+            resolveConfig.features = resolve.featureDeducer
+                .addFeature(resolve.features)
+                .collect()
+
+            resolveConfig.featureDeducer = resolve.featureDeducer.cleanFeatures() // leaving only mapping to apply them to source set features
+
             if (buildConfig.isIncremental && resolveConfig.outputType == Static &&
                 buildConfig.indirectRebuilds.contains(resolve.fullName)) {
                 resolveConfig.checkDepCjo = true
