@@ -14,6 +14,8 @@ import std.fs.*
 import stdx.encoding.json.*
 import stdx.serialization.serialization.*
 import cjpm.config.*
+import cjpm.engine.*
+import cjpm.engine.core.*
 
 public let FIXED_SUBPACKAGE = HashSet<String>()
 
@@ -63,6 +65,10 @@ public func doBuild(tomlInfo: TomlInfo, buildConfig: BuildConfig, isScriptDep!: 
         analyseIncrementalCache(buildConfig, curResolveData)
         collectRebuildMacros(buildConfig)
     }
+
+    // if (!startBuildUnified(buildConfig, curResolveData)) {
+    //     return false
+    // }
 
     if (!startBuild(buildConfig, curResolveData)) {
         return false
@@ -565,6 +571,83 @@ func analyseRebuild(buildConfig: BuildConfig): Bool {
 
     return false
 }
+
+// func startBuildUnified(buildConfig: BuildConfig, res: ModuleResolve): Bool {
+//     let cacheLocation = Path(buildConfig.globalConfig.targetDir).join("incremental-cache.json")
+//     let engine = IncrementalEngine(
+//         cacheLocation: cacheLocation
+//     )
+//     var result = true
+//     result = result && constructTaskGraph(engine, buildConfig, res)
+//     return result
+// }
+// 
+// // TODO: Unify later, to remove unnecessary duplication of task graphs
+// func constructTaskGraph(engine: IncrementalEngine, buildConfig: BuildConfig, res: ModuleResolve): Bool {
+//     let taskMap = HashMap<TaskId, Task<TaskUnit>>()
+// 
+//     let sourceMap = HashMap<String, ResolveConfig>()
+//     res.forEachPkg { r: ResolveItem => 
+//         sourceMap.add(r.fullName, fromResolveItem(r, buildConfig) ?? return false)
+//         return true
+//     }
+// 
+//     for (task in buildConfig.packageList.all) {
+//         let resolveConfig = sourceMap.get(task)
+//         let ldPath = buildConfig.globalConfig.ldPath
+//         
+//         let target = if (buildConfig.isCrossCompile) {
+//             crossCompileTarget
+//         } else { targetConfigName }
+// 
+//         let taskName = "${task}:${target}"
+//         let nativeTaskName = "${task}:${targetConfigName}"
+// 
+//         if (resolveConfig.targetPlatform) {
+//             let cjcCalls = constructCjcCalls(resolveConfig, ldPath, isNativeForCross: false)
+//             var lastcall: ?TaskId = None
+//             for ((i, source) in resolveConfig.packagePath._sources.enumerate()) {
+//                 let productsuffix = if (source.product) { "product" } else { "nonproduct" }
+//                 let finalTaskName = "${taskName}:${source.sourceSetDir}:${productsuffix}"
+//                 let dependentTasks
+//                 if ()
+//                     resolveConfig.requirePkgs
+//             }
+//             engine.task(taskName) {
+//             }
+//         }
+//         if (resolveConfig.nativePlatform) {
+//             let cjcCalls = constructCjcCalls(resolveConfig, ldPath, isNativeForCross: true)
+//             engine.task(nativeTaskName) {}
+//         }
+// 
+//         return false
+//     }
+//     return true
+// }
+// 
+// 
+// func createCompilerTask(taskMap: HashMap<TaskId, Task<TaskUnit>>, engine: IncrementalEngine, buildConfig: BuildConfig): Task<TaskUnit> {
+// 
+//     engine.task("name") { => 
+//         TaskUnit()
+//     }
+// }
+// 
+// func constructCjcCalls(resolveConfig: ResolveConfig, ldPath: HashSet<String>, isNativeForCross!: Bool = false): ArrayList<ArrayList<String>> {
+//     let envBuilder = EnvironmentBuilder()
+//     envBuilder.prepend(LD_PATH, ldPath)
+// 
+//     let cjcCalls = ArrayList<ArrayList<String>>()
+//     if (resolveConfig.isMultiplatform) {
+//         cjcCalls.add(all: getMultiplatformPipeline(resolveConfig, this.buildConfig, isNativeForCross))
+//     } else {
+//         let args = getCommandArgs(resolveConfig, this.buildConfig, isNativeForCross, Default, resolveConfig.features)
+//         args.add(all: getTypeCommand(resolveConfig, this.buildConfig, isNativeForCross))
+//         cjcCalls.add(args)
+//     }
+//     return cjcCalls
+// }
 
 // Call cjc to compile.
 func startBuild(buildConfig: BuildConfig, res: ModuleResolve): Bool {

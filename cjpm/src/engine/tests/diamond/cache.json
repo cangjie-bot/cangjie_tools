@@ -1,0 +1,22 @@
+{
+  "task0": {
+    "value": "Test",
+    "inputHash": -7046029254386353131,
+    "outputHash": -9121846888331423929
+  },
+  "task1": {
+    "value": "Wohoo, World",
+    "inputHash": -3461418205423374051,
+    "outputHash": -5006186233592093576
+  },
+  "task2": {
+    "value": "Test, Fellas",
+    "inputHash": 809256656125203447,
+    "outputHash": 4571538416056453614
+  },
+  "task3": {
+    "value": "s1: Wohoo, World; s2: Wohoo, Fellas",
+    "inputHash": -8577531784002868984,
+    "outputHash": 2818864691330899897
+  }
+}

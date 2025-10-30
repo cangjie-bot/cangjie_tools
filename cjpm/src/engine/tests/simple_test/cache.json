@@ -1,0 +1,17 @@
+{
+  "task0": {
+    "value": "Hello",
+    "inputHash": -7046029254386353131,
+    "outputHash": 3246559493600863281
+  },
+  "task1": {
+    "value": "Hello, World",
+    "inputHash": -2412057441983858467,
+    "outputHash": 5574257267004950007
+  },
+  "task2": {
+    "value": "Hello, World!",
+    "inputHash": -87545029488403833,
+    "outputHash": -4857450266178246442
+  }
+}

@@ -325,80 +325,71 @@ func addEndTime(fullName: String): Unit {
     return
 }
 
+func fromResolveItem(r: ResolveItem, buildConfig: BuildConfig, ): ?ResolveConfig {
+    var finalPath = getFinalPath(buildConfig.globalConfig.targetDir, buildConfig.globalConfig.nativeDir,
+        r.outputType, true, r.rootPkgName, buildConfig.requiredForTests)
+    var finalLogPath = getLogPath(buildConfig.globalConfig.targetDir, buildConfig.globalConfig.nativeDir, true,
+        r.rootPkgName)
+    if (!createDirectory(finalPath) || !createDirectory(finalLogPath)) {
+        return None
+    }
+
+    if (r.isMultiplatform) {
+        for (source in r.packagePath._sources) {
+            let finalSpecificPath = Path(finalPath).join(source.outputSuffix).join(r.rootPkgName).toString()
+            if (!createDirectory(finalSpecificPath)) {
+                return None
+            }
+        }
+    }
+
+    var resolveConfig = ResolveConfig()
+    resolveConfig.targetPath = finalPath
+    resolveConfig.packagePath = r.packagePath
+    resolveConfig.fullName = r.fullName
+    resolveConfig.rootPkgName = r.rootPkgName
+    resolveConfig.outputType = r.outputType
+    resolveConfig.compileOption = r.compileOption
+    resolveConfig.linkOption = r.linkOption
+    resolveConfig.nativeCompileOption = r.nativeCompileOption
+    resolveConfig.nativeLinkOption = r.nativeLinkOption
+    resolveConfig.customizedOption = r.customizedOption
+    resolveConfig.requirePkgs = r.requires
+    resolveConfig.targetPlatform = r.targetPlatform
+    resolveConfig.nativePlatform = r.nativePlatform
+    resolveConfig.superPkgCfg = r.superPkgCfg
+    resolveConfig.hasTestFiles = r.hasTestFiles
+    resolveConfig.features = r.featureDeducer
+        .addFeature(r.features)
+        .collect()
+
+    resolveConfig.featureDeducer = r.featureDeducer.cleanFeatures() // leaving only mapping to apply them to source set features
+
+    resolveConfig.outLogFile = Path(finalLogPath).join("${resolveConfig.fullName}.outlog").toString()
+    resolveConfig.errLogFile = Path(finalLogPath).join("${resolveConfig.fullName}.errlog").toString()
+
+    if (r.nativePlatform) {
+        resolveConfig.nativePath = getFinalPath(buildConfig.globalConfig.targetDir,
+            buildConfig.globalConfig.nativeDir, r.outputType, false, r.rootPkgName,
+            buildConfig.requiredForTests)
+        let nativeLogPath = getLogPath(buildConfig.globalConfig.targetDir, buildConfig.globalConfig.nativeDir,
+            false, r.rootPkgName)
+        resolveConfig.nativeOutLog = Path(nativeLogPath).join("${resolveConfig.fullName}.outlog").toString()
+        resolveConfig.nativeErrLog = Path(nativeLogPath).join("${resolveConfig.fullName}.errlog").toString()
+        if (!createDirectory(resolveConfig.nativePath) || !createDirectory(nativeLogPath)) {
+            return None
+        }
+    }
+    return resolveConfig
+}
+
 func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
     let parallel = ParallelBuilder(buildConfig)
     res.forEachPkg(
         {
-            resolve: ResolveItem =>
-            if (buildConfig.isIncremental && !buildConfig.rebuildList.contains(resolve.fullName)) {
-                return true
-            }
-
-            if (!resolve.hasProdFiles) { // No files to compile, avoid useless cjc invocations
-                buildConfig.rebuildList.remove(resolve.fullName)
-                return true
-            }
-
-            var finalPath = getFinalPath(buildConfig.globalConfig.targetDir, buildConfig.globalConfig.nativeDir,
-                resolve.outputType, true, resolve.rootPkgName, buildConfig.requiredForTests)
-            var finalLogPath = getLogPath(buildConfig.globalConfig.targetDir, buildConfig.globalConfig.nativeDir, true,
-                resolve.rootPkgName)
-            if (!createDirectory(finalPath) || !createDirectory(finalLogPath)) {
-                return false
-            }
-
-            if (resolve.isMultiplatform) {
-                for (source in resolve.packagePath._sources) {
-                    let finalSpecificPath = Path(finalPath).join(source.outputSuffix).join(resolve.rootPkgName).toString()
-                    if (!createDirectory(finalSpecificPath)) {
-                        return false
-                    }
-                }
-            }
-
-            var resolveConfig = ResolveConfig()
-            resolveConfig.targetPath = finalPath
-            resolveConfig.packagePath = resolve.packagePath
-            resolveConfig.fullName = resolve.fullName
-            resolveConfig.rootPkgName = resolve.rootPkgName
-            resolveConfig.outputType = resolve.outputType
-            resolveConfig.compileOption = resolve.compileOption
-            resolveConfig.linkOption = resolve.linkOption
-            resolveConfig.nativeCompileOption = resolve.nativeCompileOption
-            resolveConfig.nativeLinkOption = resolve.nativeLinkOption
-            resolveConfig.customizedOption = resolve.customizedOption
-            resolveConfig.requirePkgs = resolve.requires
-            resolveConfig.targetPlatform = resolve.targetPlatform
-            resolveConfig.nativePlatform = resolve.nativePlatform
-            resolveConfig.superPkgCfg = resolve.superPkgCfg
-            resolveConfig.hasTestFiles = resolve.hasTestFiles
-            resolveConfig.features = resolve.featureDeducer
-                .addFeature(resolve.features)
-                .collect()
-
-            resolveConfig.featureDeducer = resolve.featureDeducer.cleanFeatures() // leaving only mapping to apply them to source set features
-
-            if (buildConfig.isIncremental && resolveConfig.outputType == Static &&
-                buildConfig.indirectRebuilds.contains(resolve.fullName)) {
-                resolveConfig.checkDepCjo = true
-            }
-            resolveConfig.outLogFile = Path(finalLogPath).join("${resolveConfig.fullName}.outlog").toString()
-            resolveConfig.errLogFile = Path(finalLogPath).join("${resolveConfig.fullName}.errlog").toString()
-
-            if (resolve.nativePlatform) {
-                resolveConfig.nativePath = getFinalPath(buildConfig.globalConfig.targetDir,
-                    buildConfig.globalConfig.nativeDir, resolve.outputType, false, resolve.rootPkgName,
-                    buildConfig.requiredForTests)
-                let nativeLogPath = getLogPath(buildConfig.globalConfig.targetDir, buildConfig.globalConfig.nativeDir,
-                    false, resolve.rootPkgName)
-                resolveConfig.nativeOutLog = Path(nativeLogPath).join("${resolveConfig.fullName}.outlog").toString()
-                resolveConfig.nativeErrLog = Path(nativeLogPath).join("${resolveConfig.fullName}.errlog").toString()
-                if (!createDirectory(resolveConfig.nativePath) || !createDirectory(nativeLogPath)) {
-                    return false
-                }
-            }
-
-            parallel.taskMap.add(resolve.fullName, resolveConfig)
+            r: ResolveItem =>
+            resolveConfig = fromResolveItem(r, buildConfig) ?? return false
+            parallel.taskMap.add(r.fullName, resolveConfig)
             return true
         }
     )
