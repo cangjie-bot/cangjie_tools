@@ -168,7 +168,7 @@ class ASTVisitor {
         if (comments) {
             comment = comments.join('\n');
         }
-        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, "\\\$1")}`, 'gm'), '').trim();
+        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, '\\\$1')}`, 'gm'), '').trim();
         info.comment = comment;
 
         this.visit(node, content);
@@ -226,7 +226,7 @@ class ASTVisitor {
         if (comments) {
             comment = comments.join('\n');
         }
-        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, "\\\$1")}`, 'gm'), '').trim();
+        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, '\\\$1')}`, 'gm'), '').trim();
         rjson[rjson.length - 1].info.comment = comment;
 
     }
@@ -289,7 +289,7 @@ class ASTVisitor {
         if (comments) {
             comment = comments.join('\n');
         }
-        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, "\\\$1")}`, 'gm'), '').trim();
+        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, '\\\$1')}`, 'gm'), '').trim();
         rjson[rjson.length - 1].info.comment = comment;
     }
 
@@ -309,7 +309,7 @@ class ASTVisitor {
 
         rjson[rjson.length - 1].info.return = `${returnType}`;
 
-        this.handleTypeParameters(node, rjson[rjson.length - 1]['info']);
+        this.handleTypeParameters(node, rjson[rjson.length - 1].info);
 
         let comment = '';
         const comments = ts.getLeadingCommentRanges(fileContent, node.getFullStart())?.map(
@@ -318,7 +318,7 @@ class ASTVisitor {
         if (comments) {
             comment = comments.join('\n');
         }
-        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, "\\\$1")}`, 'gm'), '').trim();
+        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, '\\\$1')}`, 'gm'), '').trim();
         rjson[rjson.length - 1].info.comment = comment;
     }
 
@@ -374,7 +374,7 @@ class ASTVisitor {
         if (comments) {
             comment = comments.join('\n');
         }
-        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, "\\\$1")}`, 'gm'), '').trim();
+        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, '\\\$1')}`, 'gm'), '').trim();
         rjson[rjson.length - 1].info.comment = comment;
 
         this.visit(node, rjson[rjson.length - 1]);
@@ -436,7 +436,7 @@ class ASTVisitor {
         if (comments) {
             comment = comments.join('\n');
         }
-        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, "\\\$1")}`, 'gm'), '').trim();
+        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, '\\\$1')}`, 'gm'), '').trim();
         rjson[rjson.length - 1].info.comment = comment;
 
     }
@@ -459,7 +459,7 @@ class ASTVisitor {
             if (comments) {
                 comment = comments.join('\n');
             }
-            comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, "\\\$1")}`, 'gm'), '').trim();
+            comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, '\\\$1')}`, 'gm'), '').trim();
             rjson[rjson.length - 1].info.comment = comment;
 
             rjson[rjson.length - 1].info.name = declaration.name.escapedText;
@@ -506,7 +506,7 @@ class ASTVisitor {
         if (comments) {
             comment = comments.join('\n');
         }
-        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, "\\\$1")}`, 'gm'), '').trim();
+        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, '\\\$1')}`, 'gm'), '').trim();
         rjson[rjson.length - 1].info.comment = comment;
     }
 
@@ -557,7 +557,7 @@ class ASTVisitor {
         if (comments) {
             comment = comments.join('\n');
         }
-        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, "\\\$1")}`, 'gm'), '').trim();
+        comment = comment.replace(new RegExp(`^${copyrightC.replace(/([.*+?^=!:${}()|\[\]\/\\,-])/g, '\\\$1')}`, 'gm'), '').trim();
         rjson[rjson.length - 1].info.comment = comment;
     }
 
