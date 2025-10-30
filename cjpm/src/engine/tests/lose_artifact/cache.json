@@ -1,0 +1,27 @@
+{
+  "artifact1": {
+    "value": "./src/tests/lose_artifact/artifact1",
+    "inputHash": -7046029254386353131,
+    "outputHash": -8244767604709540005
+  },
+  "readArtifact": {
+    "value": "artifact1Content\n + reading",
+    "inputHash": 4543854581948720099,
+    "outputHash": 9167755853028132702
+  },
+  "artifact2Path": {
+    "value": "artifact2",
+    "inputHash": -7046029254386353131,
+    "outputHash": -1574010462890924242
+  },
+  "createArtifact2": {
+    "value": "./src/tests/lose_artifact/artifact2",
+    "inputHash": 7204842290820807646,
+    "outputHash": -8244767604709540826
+  },
+  "readArtifact2": {
+    "value": "artifact2Content\n + reading",
+    "inputHash": 4543854581948719318,
+    "outputHash": 2077453134750097875
+  }
+}
