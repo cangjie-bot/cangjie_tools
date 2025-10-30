@@ -30,7 +30,6 @@ IS_MACOS = platform.system() == "Darwin"
 IS_CROSS_WINDOWS = False
 SUPPORTED_BUILD_TYPE = ["debug", "release"]
 SUPPORTED_TARGET = ["native", "windows-x86_64"]
-
 # Check command
 def check_call(command):
     try:
@@ -38,7 +37,6 @@ def check_call(command):
     except subprocess.CalledProcessError as e:
         print(f"Command '{e.cmd}' returned non-zero exit status {e.returncode}.")
         sys.exit(e.returncode) 
-
 # Build HLE
 def build(args):
     target = args.target
@@ -91,7 +89,6 @@ def build(args):
         return returncode
 
     print("Successfully build HLE!")
-
 # Install HLE
 def install(args):
     prefix = args.prefix
@@ -106,13 +103,11 @@ def install(args):
         if os.path.exists(os.path.join(CURRENT_DIR, '..', 'target', 'bin', 'main.exe')):
             shutil.copy(os.path.join(CURRENT_DIR, '..', 'target', 'bin', 'main.exe'), os.path.join(os.path.abspath(prefix), 'hle.exe'))
     print("Successfully install HLE!")
-
 # Clean output of build
 def clean():
     if os.path.exists(os.path.join(CURRENT_DIR, '..', 'target')):
         shutil.rmtree(os.path.join(CURRENT_DIR, '..', 'target'))
     print("Successfully clean HLE!")
-
 def main():
     # set options
     parser = argparse.ArgumentParser()
