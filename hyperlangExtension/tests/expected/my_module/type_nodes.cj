@@ -11,10 +11,13 @@ import ohos.ark_interop_helper.*
 import ohos.base.*
 import std.math.numeric.*
 import std.collection.{ HashMap }
-/***********OBJECT***********/
-// These interfaces are used for testing type syntax of the typescript compiler.
-// Properties are named after the syntax kinds as in tsc.
-/*interface BasicTypes {
+/*class  DeclareKeyword ArrayTypesC {
+    arr10: Array<Error>;
+    arr11?: Array<Error>;
+    arr20: number[];
+    arr21?: number[];
+    }*/
+/*interface  BasicTypes {
     numberKeyword: number;
     stringKeyword: String;
     booleanKeyword: boolean;
@@ -27,6 +30,70 @@ import std.collection.{ HashMap }
     unknownKeyword: unknown;
     neverKeyword: never;
     }*/
+/*interface  FunctionTypes {
+    functionType1: () => void;
+    functionType10: <V>(arg: V) => void;
+    functionType11: <V, W extends String>(arg: V) => W;
+    functionType12: <V = object, W extends String = '123' | '345'>(arg: V) => W;
+    functionType20: (...a: number[]) => void;
+    functionType30: (a?: number) => void;
+    }*/
+/*interface  ComplexTypes {
+    typeReference10: U;
+    typeReference20: ComplexTypes<T, U>;
+    typeReference21: Promise<T>;
+    typeReference30: Pick<ComplexTypes<T, U>, 'literalType1'>;
+    literalType1: 123;
+    literalType2: "abc";
+    literalType3: null;
+    arrayType1: number[];
+    arrayType2: U[];
+    unionType: number | U;
+    intersectionType: object & Record<U, T>;
+    parenthesizedType1: (any);
+    parenthesizedType2: (U | number)[];
+    tupleType: [number, number, String];
+    typeLiteral10: { x: number; y: U; };
+    typeLiteral20: { [p: number]: String; [p: symbol]: T };
+    typeLiteral30: { (): void; (number): String };
+    typeOperator1: keyof ComplexTypes<T, U>;
+    typeOperator10: readonly number[];
+    typeQuery: typeof setTimeout;
+    mappedType10: { [k in keyof ComplexTypes<T, U>]: number };
+    mappedType20: { [k in keyof Promise<U>]: number };
+    }*/
+/*interface  NestedTypes {
+    nested10: {
+		x: { value: number; unit: String; } | number;
+		y: { value: number; unit: String; } | number;
+	};
+    nested20: ComplexTypes<Record<String, (x: number) => Promise<String>>, String>;
+    nested21: ComplexTypes<Record<String, <T>(x: T) => Promise<String>>, String>;
+    nested22: ComplexTypes<Record<String, <T>(x?: T) => Promise<[String, String]>>, String>;
+    }*/
+/*interface  Optionals {
+    optionalField1?: number;
+    optionalParam10: (a: number, b?: String) => void;
+    }*/
+/*interface  InferredTypes {
+    inferred1: number & String;
+    inferred10: ReturnType<typeof setTimeout>;
+    }*/
+/*interface  UnsupportedTypes {
+    unsupported10: { [123]: String; };
+    unsupported20: { ['234']: number; };
+    unsupported30: { [Symbol.toStringTag]: number };
+    }*/
+/*interface  ArrayTypesI {
+    arr10: Array<Error>;
+    arr11?: Array<Error>;
+    arr20: number[];
+    arr21?: number[];
+    }*/
+
+/***********OBJECT***********/
+// These interfaces are used for testing type syntax of the typescript compiler.
+// Properties are named after the syntax kinds as in tsc.
 
 public open class BasicTypes {
     
@@ -78,14 +145,6 @@ public open class BasicTypes {
     
 }
 
-/*interface FunctionTypes {
-    functionType1: () => void;
-    functionType10: <V>(arg: V) => void;
-    functionType11: <V, W extends String>(arg: V) => W;
-    functionType12: <V = object, W extends String = '123' | '345'>(arg: V) => W;
-    functionType20: (...a: number[]) => void;
-    functionType30: (a?: number) => void;
-    }*/
 
 public open class FunctionTypes {
     
@@ -176,30 +235,6 @@ public open class FunctionTypes {
     
 }
 
-/*interface ComplexTypes {
-    typeReference10: U;
-    typeReference20: ComplexTypes<T, U>;
-    typeReference21: Promise<T>;
-    typeReference30: Pick<ComplexTypes<T, U>, 'literalType1'>;
-    literalType1: 123;
-    literalType2: "abc";
-    literalType3: null;
-    arrayType1: number[];
-    arrayType2: U[];
-    unionType: number | U;
-    intersectionType: object & Record<U, T>;
-    parenthesizedType1: (any);
-    parenthesizedType2: (U | number)[];
-    tupleType: [number, number, String];
-    typeLiteral10: { x: number; y: U; };
-    typeLiteral20: { [p: number]: String; [p: symbol]: T };
-    typeLiteral30: { (): void; (number): String };
-    typeOperator1: keyof ComplexTypes<T, U>;
-    typeOperator10: readonly number[];
-    typeQuery: typeof setTimeout;
-    mappedType10: { [k in keyof ComplexTypes<T, U>]: number };
-    mappedType20: { [k in keyof Promise<U>]: number };
-    }*/
 
 public open class ComplexTypes<T, U> where T <: JSInteropType<T>, U <: JSInteropType<U> {
     
@@ -284,15 +319,6 @@ public open class ComplexTypes<T, U> where T <: JSInteropType<T>, U <: JSInterop
     
 }
 
-/*interface NestedTypes {
-    nested10: {
-		x: { value: number; unit: String; } | number;
-		y: { value: number; unit: String; } | number;
-	};
-    nested20: ComplexTypes<Record<String, (x: number) => Promise<String>>, String>;
-    nested21: ComplexTypes<Record<String, <T>(x: T) => Promise<String>>, String>;
-    nested22: ComplexTypes<Record<String, <T>(x?: T) => Promise<[String, String]>>, String>;
-    }*/
 
 public open class NestedTypes {
     
@@ -323,10 +349,6 @@ public open class NestedTypes {
     
 }
 
-/*interface Optionals {
-    optionalParam10: (a: number, b?: String) => void;
-    optionalField1?: number;
-    }*/
 
 public open class Optionals {
     
@@ -364,10 +386,6 @@ public open class Optionals {
     
 }
 
-/*interface InferredTypes {
-    inferred1: number & String;
-    inferred10: ReturnType<typeof setTimeout>;
-    }*/
 
 public open class InferredTypes {
     
@@ -392,11 +410,6 @@ public open class InferredTypes {
     
 }
 
-/*interface UnsupportedTypes {
-    unsupported10: { [123]: String; };
-    unsupported20: { ['234']: number; };
-    unsupported30: { [Symbol.toStringTag]: number };
-    }*/
 
 public open class UnsupportedTypes {
     
@@ -424,12 +437,6 @@ public open class UnsupportedTypes {
     
 }
 
-/*interface ArrayTypesI {
-    arr10: Array<Error>;
-    arr20: number[];
-    arr11?: Array<Error>;
-    arr21?: number[];
-    }*/
 
 public open class ArrayTypesI {
     
@@ -464,12 +471,6 @@ public open class ArrayTypesI {
     
 }
 
-/*class DeclareKeyword ArrayTypesC {
-    arr10: Array<Error>;
-    arr20: number[];
-    arr11?: Array<Error>;
-    arr21?: number[];
-    }*/
 
 public class ArrayTypesC {
     

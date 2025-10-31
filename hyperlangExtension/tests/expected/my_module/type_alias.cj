@@ -12,6 +12,21 @@ import ohos.base.*
 import std.math.numeric.*
 import std.collection.{ HashMap }
 
+
+public enum Union_2_Members < A, B > {
+    | A(A)
+    | B(B)
+}
+
+public enum Union_4_Members < A, B, C, D > {
+    | A(A)
+    | B(B)
+    | C(C)
+    | D(D)
+}
+
+
+
 public type TA10 = Float64
 
 

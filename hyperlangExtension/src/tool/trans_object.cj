@@ -303,7 +303,8 @@ public class TransObject {
 
         let headToken = Tokens(Token(TokenKind.COMMENT, arkComment), nl)
         tokens.append(headToken)
-        tokens.append(addComment(arkCategory + signature))
+        // 待讨论：这里我将TS源代码的注释移除了，因为位置原因我将他们的输出放到了hle.cj里面。这样做是否符合代码结构的安排待讨论。
+        // tokens.append(addComment(arkCategory + signature))
 
         let typeParameter = generateClassTypeParameters()
         let templateClassNameToken = Token(TokenKind.IDENTIFIER, arkName + typeParameter)

@@ -10,6 +10,14 @@ import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
 import tpc.AbilityKit.common
+/*class  DeclareKeyword ASC {
+    constructor(param1:string, param2:{a:number,b:string}, param3:number, funcParam:()=>string, callback?:AsyncCallback<string>): void
+    AS1(callback:AsyncCallback<void>): void
+    }*/
+/*class  DeclareKeyword ForParamToJs {
+    constructor(param1:common.Context, param2:Colors, param3:BigInt, param4:Uint8Array, param5:number[], param6:Array<number>, callback:AsyncCallback<string>, paramEnum:Array<Colors>, param7?:Array<number>, param8?:Colors, param9?:Array<UInt8>): void
+    }*/
+
 /***********ENUM***********/
 
 /* enum Colors {
@@ -66,10 +74,6 @@ public enum Colors <: ToString & Equatable < Colors > {
 
 
 
-/*class DeclareKeyword ASC {
-    constructor(param1:string, param2:{a:number,b:string}, param3:number, funcParam:()=>string, callback?:AsyncCallback<string>): void
-    AS1(callback:AsyncCallback<void>): void
-    }*/
 
 public class ASC {
     
@@ -110,9 +114,6 @@ public class ASC {
     }
 }
 
-/*class DeclareKeyword ForParamToJs {
-    constructor(param1:common.Context, param2:Colors, param3:BigInt, param4:Uint8Array, param5:number[], param6:Array<number>, callback:AsyncCallback<string>, paramEnum:Array<Colors>, param7?:Array<number>, param8?:Colors, param9?:Array<UInt8>): void
-    }*/
 
 public class ForParamToJs {
     

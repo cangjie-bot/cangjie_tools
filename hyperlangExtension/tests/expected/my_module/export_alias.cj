@@ -9,6 +9,17 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
+/*class  MyClass {
+    }*/
+/*class  ExportedClass {
+    }*/
+/*interface  MyInterface {
+    }*/
+/*interface  ExportedInterface {
+    }*/
+/*interface  ExportKeyword I3 {
+    }*/
+
 
 public const MY_VALUE = 123
 
@@ -106,8 +117,6 @@ public enum MyNumericEnum <: ToString & Equatable < MyNumericEnum > {
 
 /***********OBJECT***********/
 
-/*interface MyInterface {
-    }*/
 
 public open class MyInterface {
     
@@ -129,8 +138,6 @@ public open class MyInterface {
     
 }
 
-/*interface ExportedInterface {
-    }*/
 
 public open class ExportedInterface {
     
@@ -152,8 +159,6 @@ public open class ExportedInterface {
     
 }
 
-/*interface ExportKeyword I3 {
-    }*/
 
 public open class I3 {
     
@@ -175,8 +180,6 @@ public open class I3 {
     
 }
 
-/*class MyClass {
-    }*/
 
 public class MyClass {
     
@@ -193,8 +196,6 @@ public class MyClass {
     }
 }
 
-/*class ExportedClass {
-    }*/
 
 public class ExportedClass {
     

@@ -9,10 +9,11 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
-
-/*class ExportKeyword DeclareKeyword UserInfoManager {
+/*class  ExportKeyword DeclareKeyword UserInfoManager {
     userPreferences?: { [key: String]: String | number | boolean };
     }*/
+
+
 
 public class UserInfoManager {
     

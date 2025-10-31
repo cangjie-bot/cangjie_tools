@@ -25,6 +25,7 @@ public class GlobalConfig {
     public var typeDeclFile: String = ""
     public var gconfigArray: ArrayList<GlobalConfig> = ArrayList<GlobalConfig>()
     public var arkTSMoudleName: String = ""
+    public var requiredUnionMemberCounts: HashSet<Int64> = HashSet<Int64>()
 
     public init(cjModuleNameArg: String, is3rdArg: Bool,
         typeDeclFileArg!: String = "") {
@@ -158,5 +159,97 @@ public class GlobalConfig {
         let moduleName = moduleFullName.replace("@", "").replace("hms", "").replace("ohos", "")
 
         "tpc" + removeTsSuffix(moduleName)
+    }
+    
+    // Collect all required union member counts by scanning all types in the module
+    public func collectRequiredUnionMemberCounts(): Unit {
+        for (i in 0..this.moduleMeta.namespaces.size) {
+            let cns: NameSpace = this.moduleMeta.namespaces[i]
+            if (cns.isEmpty()) {
+                continue
+            }
+            
+            // Scan type aliases
+            for (typeAlias in cns.types) {
+                scanTypeForUnions(typeAlias.tsType)
+            }
+            
+            // Scan properties in classes
+            for ((_, c) in cns.classes) {
+                for (p in c.properties) {
+                    scanTypeForUnions(p.typeNode)
+                }
+                // Scan methods in classes
+                for (m in c.methods) {
+                    for (param in m.parameters) {
+                        scanTypeForUnions(param.ty)
+                    }
+                    scanTypeForUnions(m.returnTypeNode)
+                }
+            }
+            
+            // Scan properties in interfaces
+            for ((_, iface) in cns.interfaces) {
+                for (p in iface.properties) {
+                    scanTypeForUnions(p.typeNode)
+                }
+                // Scan methods in interfaces
+                for (m in iface.methods) {
+                    for (param in m.parameters) {
+                        scanTypeForUnions(param.ty)
+                    }
+                    scanTypeForUnions(m.returnTypeNode)
+                }
+            }
+            
+            // Scan global methods
+            for (m in cns.methods) {
+                for (param in m.parameters) {
+                    scanTypeForUnions(param.ty)
+                }
+                scanTypeForUnions(m.returnTypeNode)
+            }
+        }
+    }
+    
+    // Recursively scan a type for union types and record their member counts
+    private func scanTypeForUnions(ty: TsType): Unit {
+        match (ty) {
+            case TsUnion(elems) =>
+                let nonNullTypes = ArrayList<TsType>()
+                for (e in elems) {
+                    match (e) {
+                        case TsNull | TsUndefined => ()
+                        case _ => nonNullTypes.add(e)
+                    }
+                }
+                // Only count primitive unions with 2+ members
+                if (nonNullTypes.size > 1) {
+                    let info = ty.getPrimitiveUnionInfo(None)
+                    if (info.isSome()) {
+                        requiredUnionMemberCounts.add(nonNullTypes.size)
+                    }
+                }
+                // Recursively scan union members
+                for (e in elems) {
+                    scanTypeForUnions(e)
+                }
+            case TsArray(elemTy) => scanTypeForUnions(elemTy)
+            case TsOptional(elemTy) => scanTypeForUnions(elemTy)
+            case TsTypeRef(_, arr) =>
+                for (t in arr) {
+                    scanTypeForUnions(t)
+                }
+            case TsTuple(elems) =>
+                for (e in elems) {
+                    scanTypeForUnions(e)
+                }
+            case TsFunction(ret, params, _) =>
+                scanTypeForUnions(ret)
+                for (p in params) {
+                    scanTypeForUnions(p.ty)
+                }
+            case _ => ()
+        }
     }
 }

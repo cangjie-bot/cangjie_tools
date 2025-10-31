@@ -11,6 +11,14 @@ import ohos.ark_interop_helper.*
 import ohos.base.*
 import std.collection.{ HashMap }
 
-public type TB700 = Option<HashMap<String, JSValue/* FIXME: `string | number` */>>
+
+public enum Union_2_Members < A, B > {
+    | A(A)
+    | B(B)
+}
+
+
+
+public type TB700 = Option<HashMap<String, Union_2_Members<String, Float64>>>
 
 

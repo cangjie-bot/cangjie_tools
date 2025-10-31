@@ -9,11 +9,20 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
-
-/*class ExportKeyword DeclareKeyword AppSettings {
+/*class  ExportKeyword DeclareKeyword AppSettings {
     getInstance(): AppSettings
     getSetting(key: string): String | number | boolean | undefined
     }*/
+
+
+public enum Union_3_Members < A, B, C > {
+    | A(A)
+    | B(B)
+    | C(C)
+}
+
+
+
 
 public class AppSettings {
     
@@ -31,9 +40,9 @@ public class AppSettings {
     /**
 	 * @brief getSetting(key: string): String | number | boolean | undefined
 	 */
-    public func getSetting(key: String): JSValue/* FIXME: `String|number|boolean|undefined` */ {
-        jsObjApiCall < JSValue/* FIXME: `String|number|boolean|undefined` */ >( arkts_object, "getSetting", { ctx =>[key.toJSValue(ctx)] }) {
-            ctx, info => info
+    public func getSetting(key: String): Union_3_Members<String, Float64, Bool> {
+        jsObjApiCall < Union_3_Members<String, Float64, Bool> >( arkts_object, "getSetting", { ctx =>[key.toJSValue(ctx)] }) {
+            ctx, info => Union_3_Members<String, Float64, Bool>.fromJSValue(ctx, info)
         }
     }
     

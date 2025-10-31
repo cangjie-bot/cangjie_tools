@@ -10,6 +10,30 @@ import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
 import std.collection.{ HashMap }
+/*class  MyListener4 {
+    on(key: string, cb: (r: ListenerStatusString) => void): void
+    }*/
+/*interface  TestListener {
+    onStart?: () => void;
+    onDestroy?: () => void;
+    onError?: (code: ErrorCode, msg: String) => void;
+    onTouch?: () => void;
+    onEvent?: (e: EventType) => void;
+    }*/
+/*interface  MyListener {
+    on(key: string, cb: (r: Record<string, string>) => void): void
+    off(key: string, cb: (r: Record<string, string>, t:number) => void): void
+    }*/
+/*interface  MyListener2 {
+    on(key: string, cb: (r: ListenerStatusNumeric) => void): void
+    }*/
+/*interface  MyListener3 {
+    on(key: string, cb: (r: ListenerStatusString) => void): void
+    }*/
+/*interface  MyListener5 {
+    on(key: string, cb: Callback<number>): void
+    }*/
+
 
 public type ErrorCode = Float64
 
@@ -156,13 +180,6 @@ public enum ListenerStatusString <: ToString & Equatable < ListenerStatusString 
 
 /***********OBJECT***********/
 
-/*interface TestListener {
-    onStart?: () => void;
-    onDestroy?: () => void;
-    onError?: (code: ErrorCode, msg: String) => void;
-    onTouch?: () => void;
-    onEvent?: (e: EventType) => void;
-    }*/
 
 public open class TestListener {
     
@@ -267,10 +284,6 @@ public open class TestListener {
     
 }
 
-/*interface MyListener {
-    on(key: string, cb: (r: Record<string, string>) => void): void
-    off(key: string, cb: (r: Record<string, string>, t:number) => void): void
-    }*/
 
 public open class MyListener {
     let callbackManager = CallbackManager < String, JSValue >()
@@ -327,9 +340,6 @@ public open class MyListener {
     }
 }
 
-/*interface MyListener2 {
-    on(key: string, cb: (r: ListenerStatusNumeric) => void): void
-    }*/
 
 public open class MyListener2 {
     let callbackManager = CallbackManager < String, JSValue >()
@@ -367,9 +377,6 @@ public open class MyListener2 {
     }
 }
 
-/*interface MyListener3 {
-    on(key: string, cb: (r: ListenerStatusString) => void): void
-    }*/
 
 public open class MyListener3 {
     let callbackManager = CallbackManager < String, JSValue >()
@@ -407,9 +414,6 @@ public open class MyListener3 {
     }
 }
 
-/*interface MyListener5 {
-    on(key: string, cb: Callback<number>): void
-    }*/
 
 public open class MyListener5 {
     let callbackManager = CallbackManager < String, JSValue >()
@@ -447,9 +451,6 @@ public open class MyListener5 {
     }
 }
 
-/*class MyListener4 {
-    on(key: string, cb: (r: ListenerStatusString) => void): void
-    }*/
 
 public class MyListener4 {
     let callbackManager = CallbackManager < String, JSValue >()

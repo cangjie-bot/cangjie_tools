@@ -9,6 +9,13 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
+/*class  ExportKeyword DefaultKeyword BuildProfile {
+    StaticKeywordReadonlyKeywordj: string = "0.3.6";
+    StaticKeywordReadonlyKeywordm: string = "release";
+    StaticKeywordReadonlyKeywordDEBUG: boolean = false;
+    StaticKeywordReadonlyKeywordo: string = "default";
+    }*/
+
 /*
 
 public const aesEncText = 0/* FIXME: Initialization is required */
@@ -45,12 +52,6 @@ public const DEBUG = false
 public const o = "default"
 
 
-/*class ExportKeyword DefaultKeyword BuildProfile {
-    StaticKeywordReadonlyKeywordj: string = "0.3.6";
-    StaticKeywordReadonlyKeywordm: string = "release";
-    StaticKeywordReadonlyKeywordDEBUG: boolean = false;
-    StaticKeywordReadonlyKeywordo: string = "default";
-    }*/
 
 public class BuildProfile {
     

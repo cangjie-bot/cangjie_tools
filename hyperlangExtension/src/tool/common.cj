@@ -196,6 +196,7 @@ public class MethodType <: Serializable<MethodType> {
     public var parameters: ArrayList<TsParameter> = ArrayList<TsParameter>()
     public var isConstructor: Bool = false
     public var returns: String = ""
+    public var returnTypeNode: TsType = TsVoid  
     public var comment: String = ""
     public var typeParameters: ArrayList<TypeParameter> = ArrayList<TypeParameter>()
 
@@ -250,6 +251,12 @@ public class MethodType <: Serializable<MethodType> {
         result.isConstructor = Bool.deserialize(dms2.get("isConstructor"))
         result.parameters = ArrayList<TsParameter>.deserialize(dms2.get("parameters"))
         result.typeParameters = ArrayList<TypeParameter>.deserialize(dms2.get("typeParameters"))
+        // Parse return type node if available
+        try {
+            result.returnTypeNode = TsType.fromSExp(String.deserialize(dms2.get("returnTypeNode")))
+        } catch (e: Exception) {
+            result.returnTypeNode = TsVoid  // Fallback to void if parsing fails
+        }
         return result
     }
 }
@@ -330,7 +337,7 @@ public class TypeType <: Serializable<TypeType> {
                 let nonNullTypes: ArrayList<TsType> = ArrayList<TsType>()
                 for (e in arr) {
                     match (e) {
-                        case TsNull | TsUndefined => ()
+                        case TsNull | TsUndefined | TsVoid => ()
                         case _ => nonNullTypes.add(e)
                     }
                 }
@@ -772,4 +779,34 @@ public class CommandLineArg {
     public var is3rd: Bool = true
     public var directoryPath: String = ""
     public var tsPath: String = ""
+}
+
+// 生成通用的、利用范型的、以联合体成员数量为准的enum模板 (Union_2_Members, Union_3_Members, 视情况递增.)
+public func generateGenericUnionEnum(memberCount: Int64): Tokens {
+    if (memberCount < 2) {
+        throw IllegalArgumentException("Union member count must be more than 2")
+    }
+    
+    let enumName = "Union_${memberCount}_Members"
+    
+    // Generate type parameters: <A, B, C, ...>
+    let typeParams = ArrayList<String>()
+    for (i in 0..memberCount) {
+        typeParams.add(String.fromUtf8(UInt8(65 + i))) // 'A', 'B', 'C', ...
+    }
+    let typeParamsStr = typeParams.toArray() |> collectString<String>(delimiter: ", ")
+    
+    var ret = Tokens()
+    ret.append(quote(public enum $(Token(TokenKind.IDENTIFIER, enumName))<$(Token(TokenKind.IDENTIFIER, typeParamsStr))> {) + nl)
+    
+    // Generate enum variants: | A(A) | B(B) ...
+    for (i in 0..memberCount) {
+        let typeName = typeParams[i]
+        let typeToken = Token(TokenKind.IDENTIFIER, typeName)
+        ret.append(quote(    | $(typeToken)($(typeToken))) + nl)
+    }
+    
+    ret.append(quote(}) + nl)
+    
+    ret
 }
