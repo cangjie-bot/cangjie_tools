@@ -11,23 +11,32 @@ import ohos.ark_interop_helper.*
 import ohos.base.*
 import std.math.numeric.*
 import std.collection.{ HashMap }
-/***********IMPORT***********/
-/*FIXME: Import details need to be verified and rewritten by user.*/
-/*exportAlias*/
-
-/***********OBJECT***********/
-
-/*interface I1 {
+/*class  C1 {
+    StaticKeywordsa: number = 123;
+    StaticKeywordsb: String;
+    StaticKeywordsc?: String = "abc";
+    StaticKeywordReadonlyKeywordsd: number = 999;
+    StaticKeywordReadonlyKeywordse: String = "zzz";
+    va: number = 234;
+    vb: Float32Array;
+    vc?: MyNumericEnum;
+    vd?: string = "def";
+    ve?: bigint[];
+    }*/
+/*interface  I1 {
     a: number;
+    b?: String;
     c: Uint8Array;
+    d?: ArrayBuffer;
     e: Float32Array;
+    f?: boolean;
     g: Record<String, Uint8Array>;
     h: MyStringEnum;
     i: bigint;
-    b?: String;
-    d?: ArrayBuffer;
-    f?: boolean;
     }*/
+
+/***********OBJECT***********/
+
 
 public open class I1 {
     
@@ -79,18 +88,6 @@ public open class I1 {
     
 }
 
-/*class C1 {
-    StaticKeywordsa: number = 123;
-    StaticKeywordsb: String;
-    StaticKeywordReadonlyKeywordsd: number = 999;
-    StaticKeywordReadonlyKeywordse: String = "zzz";
-    va: number = 234;
-    vb: Float32Array;
-    StaticKeywordsc?: String = "abc";
-    vc?: MyNumericEnum;
-    vd?: string = "def";
-    ve?: bigint[];
-    }*/
 
 public class C1 {
     

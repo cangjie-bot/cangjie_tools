@@ -9,8 +9,7 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
-
-/*class ExportKeyword DeclareKeyword TDDiagBuilder {
+/*class  ExportKeyword DeclareKeyword TDDiagBuilder {
     StaticKeywordReadonlyKeywordPLATFORM_OA: number = 0;
     StaticKeywordReadonlyKeywordPLATFORM_PRO: number = 3;
     appId: String;
@@ -18,13 +17,19 @@ import ohos.base.*
     appVersion: String;
     platform: number;
     loggerAdapter: LoggerAdapter | null | undefined;
+    logUploadListener?: LogUploadListener;
+    initiativeUploadWhiteListTags?: Array<String>;
     xgTrafficQuota: number;
     platform: String | null;
     crashListener: ICrashListener | null;
-    logUploadListener?: LogUploadListener;
-    initiativeUploadWhiteListTags?: Array<String>;
     constructor(): void
     }*/
+/*class  ExportKeyword DeclareKeyword d10 {
+    getInstance(): d10
+    putSync(key: string, value: number | string | boolean | Array<number> | Array<string> | Array<boolean>): d10
+    }*/
+
+
 
 public class TDDiagBuilder {
     
@@ -35,7 +40,7 @@ public class TDDiagBuilder {
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_class", "TDDiagBuilder").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_class", "TDDiagBuilder").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -206,10 +211,6 @@ public class TDDiagBuilder {
     }
 }
 
-/*class ExportKeyword DeclareKeyword d10 {
-    getInstance(): d10
-    putSync(key: string, value: number | string | boolean | Array<number> | Array<string> | Array<boolean>): d10
-    }*/
 
 public class d10 {
     

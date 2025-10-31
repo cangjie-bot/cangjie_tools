@@ -12,6 +12,100 @@ import ohos.base.*
 import std.math.numeric.*
 import tpc.AbilityKit.common
 import std.collection.{ HashMap }
+/*class  DeclareKeyword CM {
+    StaticKeywordsa: String;
+    ma: String;
+    mb: EMStr;
+    mc: (s: String, n: EMNum) => void;
+    f00(x: (obj: IM, cb: (msg: EMStr) => void) => void): void
+    f01(x: (obj: IM, cb: Callback<EMStr>) => void): void
+    f1(): void
+    f2(s: string): number
+    f3(r: Record<string, string>): EMNum
+    f4(e: EMStr): (s: String) => void
+    f5(cb: (s: string, n: number) => string): void
+    f6(evt: EMNum, cb: () => Record<number, Uint8Array>): boolean
+    f7(p: bigint, cb: (p: bigint) => void): bigint
+    f8(result: string | Promise<string>): boolean
+    }*/
+/*class  DeclareKeyword TE {
+    constructor(callback:AsyncCallback<string>, param1?:Array<UInt8>, param2?:Array<string>): void
+    f1(): void
+    f1(result: string | Promise<string>): Promise<String>
+    }*/
+/*class  DeclareKeyword Greeter {
+    constructor(greeting: string): void
+    }*/
+/*class  DeclareKeyword Person {
+    }*/
+/*class  DeclareKeyword AnimalProtect {
+    ProtectedKeywordname: String;
+    makeSound(): void
+    }*/
+/*class  DeclareKeyword Car {
+    ReadonlyKeywordbrand: String;
+    name: String;
+    }*/
+/*class  DeclareKeyword Box {
+    value: T;
+    getValue(): T
+    }*/
+/*class  DeclareKeyword FirstContextualKeyword Shape {
+    getArea(): number
+    }*/
+/*class  DeclareKeyword Car1 {
+    start(): void
+    stop(): void
+    }*/
+/*class  DeclareKeyword Animal {
+    name: String;
+    constructor(name: string): void
+    move(distance: number): void
+    }*/
+/*class  DeclareKeyword Dog {
+    bark(): void
+    }*/
+/*class  DeclareKeyword Calculator {
+    add(x: number, y: number): number
+    add(x: string, y: string): String
+    add(x: any, y: any): any
+    }*/
+/*class  Decorator DeclareKeyword MyClass {
+    name: String;
+    constructor(name: string): void
+    }*/
+/*class  ExportKeyword DeclareKeyword UMConfig {
+    appKey?: String;
+    channel?: String;
+    enableLog?: boolean;
+    }*/
+/*class  ExportKeyword DeclareKeyword RecordTest {
+    recordTest: Record<String, String>;
+    recordTest1: Record<String, String | number>;
+    recordTest2: Record<String, String> | null;
+    recordTest3: Record<String, String | number> | null;
+    }*/
+/*interface  IM {
+    f1(): void
+    f2(s: string): number
+    f3(r: Record<string, string>): EMNum
+    f4(e: EMStr): (s: String) => void
+    f5(cb: (obj: CM, n: number) => string): void
+    f6(evt: EMNum, cb: () => Record<number, Uint8Array>): boolean
+    f7(p: bigint, cb: (p: bigint) => void): bigint
+    }*/
+/*interface  Drivable {
+    start(): void
+    stop(): void
+    }*/
+
+
+public enum Union_2_Members < A, B > {
+    | A(A)
+    | B(B)
+}
+
+
 
 public type Callback = (arg: T) -> Unit/* FIXME: `<T>(arg: T) => void` */
 
@@ -130,15 +224,6 @@ public enum EMStr <: ToString & Equatable < EMStr > {
 
 /***********OBJECT***********/
 
-/*interface IM {
-    f1(): void
-    f2(s: string): number
-    f3(r: Record<string, string>): EMNum
-    f4(e: EMStr): (s: String) => void
-    f5(cb: (obj: CM, n: number) => string): void
-    f6(evt: EMNum, cb: () => Record<number, Uint8Array>): boolean
-    f7(p: bigint, cb: (p: bigint) => void): bigint
-    }*/
 
 public open class IM {
     
@@ -168,9 +253,9 @@ public open class IM {
     /**
 	 * @brief f4(e: EMStr): (s: String) => void
 	 */
-    public func f4(e: EMStr): (String)->Unit {
-        jsObjApiCall < (String)->Unit >( arkts_object, "f4", { ctx =>[e.get().toJSValue(ctx)] }) {
-            ctx, info => (String)->Unit.fromJSValue(ctx, info)
+    public func f4(e: EMStr): (s: String) -> Unit {
+        jsObjApiCall < (s: String) -> Unit >( arkts_object, "f4", { ctx =>[e.get().toJSValue(ctx)] }) {
+            ctx, info => (s: String) -> Unit.fromJSValue(ctx, info)
         }
     }
     /**
@@ -215,10 +300,6 @@ public open class IM {
     }
 }
 // 类实现接口
-/*interface Drivable {
-    start(): void
-    stop(): void
-    }*/
 
 public open class Drivable {
     
@@ -247,22 +328,6 @@ public open class Drivable {
     }
 }
 
-/*class DeclareKeyword CM {
-    StaticKeywordsa: String;
-    ma: String;
-    mb: EMStr;
-    mc: (s: String, n: EMNum) => void;
-    f00(x: (obj: IM, cb: (msg: EMStr) => void) => void): void
-    f01(x: (obj: IM, cb: Callback<EMStr>) => void): void
-    f1(): void
-    f2(s: string): number
-    f3(r: Record<string, string>): EMNum
-    f4(e: EMStr): (s: String) => void
-    f5(cb: (s: string, n: number) => string): void
-    f6(evt: EMNum, cb: () => Record<number, Uint8Array>): boolean
-    f7(p: bigint, cb: (p: bigint) => void): bigint
-    f8(result: string | Promise<string>): boolean
-    }*/
 
 public class CM {
     
@@ -386,9 +451,9 @@ public class CM {
     /**
 	 * @brief f4(e: EMStr): (s: String) => void
 	 */
-    public func f4(e: EMStr): (String)->Unit {
-        jsObjApiCall < (String)->Unit >( arkts_object, "f4", { ctx =>[e.get().toJSValue(ctx)] }) {
-            ctx, info => (String)->Unit.fromJSValue(ctx, info)
+    public func f4(e: EMStr): (s: String) -> Unit {
+        jsObjApiCall < (s: String) -> Unit >( arkts_object, "f4", { ctx =>[e.get().toJSValue(ctx)] }) {
+            ctx, info => (s: String) -> Unit.fromJSValue(ctx, info)
         }
     }
     /**
@@ -445,11 +510,6 @@ public class CM {
     }
 }
 
-/*class DeclareKeyword TE {
-    constructor(callback:AsyncCallback<string>, param1?:Array<UInt8>, param2?:Array<string>): void
-    f1(): void
-    f1(result: string | Promise<string>): Promise<String>
-    }*/
 
 public class TE {
     
@@ -460,14 +520,14 @@ public class TE {
     public init(callback: AsyncCallback<String>, param1!:?Array<UInt8> = None, param2!:?Array<String> = None) {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "TE").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "TE").toJSValue().asClass(__ctx)
             clazz.new(jsCallback,(param1?.toJSValue(__ctx)) ?? __ctx.undefined().toJSValue(), toJSArray < String >(__ctx, param2, { __ctx, item => item.toJSValue(ctx) })).asObject()
         }
     }
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "TE").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "TE").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -481,14 +541,18 @@ public class TE {
     /**
 	 * @brief f1(result: string | Promise<string>): Promise<String>
 	 */
-    public func f1(callback: AsyncCallback < String >, result: string|Promise<String>): Unit {
-        jsObjApiCallPromise < String >( arkts_object, "f1", callback, { ctx =>[result.toJSValue(ctx)] })
+    public func f1(callback: AsyncCallback < JSValue/* FIXME: `Promise<string>` */ >, result: string|Promise<String>): Unit {
+        jsObjApiCallPromise < JSValue/* FIXME: `Promise<string>` */ >( arkts_object, "f1", callback, { ctx =>[result.toJSValue(ctx)] }) {
+            ctx, info => info
+        }
     }
     /**
 	 * @brief f1(result: string | Promise<string>): Promise<String>
 	 */
-    public func f1(callback: AsyncCallback < String >, result: string|Promise<String>): Unit {
-        jsObjApiCallPromise < String >( arkts_object, "f1", callback, { ctx =>[result] })
+    public func f1(callback: AsyncCallback < JSValue/* FIXME: `Promise<string>` */ >, result: string|Promise<String>): Unit {
+        jsObjApiCallPromise < JSValue/* FIXME: `Promise<string>` */ >( arkts_object, "f1", callback, { ctx =>[result] }) {
+            ctx, info => info
+        }
     }
     
     func toJSValue(context: JSContext): JSValue {
@@ -500,9 +564,6 @@ public class TE {
     }
 }
 // 构造函数
-/*class DeclareKeyword Greeter {
-    constructor(greeting: string): void
-    }*/
 
 public class Greeter {
     
@@ -513,14 +574,14 @@ public class Greeter {
     public init(greeting: String) {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "Greeter").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "Greeter").toJSValue().asClass(__ctx)
             clazz.new(greeting.toJSValue(__ctx)).asObject()
         }
     }
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "Greeter").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "Greeter").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -535,8 +596,6 @@ public class Greeter {
     }
 }
 
-/*class DeclareKeyword Person {
-    }*/
 
 public class Person {
     
@@ -553,10 +612,6 @@ public class Person {
     }
 }
 
-/*class DeclareKeyword AnimalProtect {
-    ProtectedKeywordname: String;
-    makeSound(): void
-    }*/
 
 public class AnimalProtect {
     
@@ -594,10 +649,6 @@ public class AnimalProtect {
     }
 }
 
-/*class DeclareKeyword Car {
-    ReadonlyKeywordbrand: String;
-    name: String;
-    }*/
 
 public class Car {
     
@@ -636,10 +687,6 @@ public class Car {
     }
 }
 // 泛型成员
-/*class DeclareKeyword Box {
-    value: T;
-    getValue(): T
-    }*/
 
 public class Box<T> where T <: JSInteropType<T> {
     
@@ -679,9 +726,6 @@ public class Box<T> where T <: JSInteropType<T> {
     }
 }
 // 抽象类
-/*class DeclareKeyword FirstContextualKeyword Shape {
-    getArea(): number
-    }*/
 
 public open class Shape {
     
@@ -705,10 +749,6 @@ public open class Shape {
     }
 }
 
-/*class DeclareKeyword Car1 {
-    start(): void
-    stop(): void
-    }*/
 
 public class Car1 <: Drivable {
     
@@ -737,11 +777,6 @@ public class Car1 <: Drivable {
     }
 }
 // 继承类
-/*class DeclareKeyword Animal {
-    name: String;
-    constructor(name: string): void
-    move(distance: number): void
-    }*/
 
 public open class Animal {
     
@@ -752,14 +787,14 @@ public open class Animal {
     public init(name: String) {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "Animal").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "Animal").toJSValue().asClass(__ctx)
             clazz.new(name.toJSValue(__ctx)).asObject()
         }
     }
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "Animal").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "Animal").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -794,9 +829,6 @@ public open class Animal {
     }
 }
 // Dog.d.ts
-/*class DeclareKeyword Dog {
-    bark(): void
-    }*/
 
 public class Dog <: Animal {
     
@@ -819,11 +851,6 @@ public class Dog <: Animal {
     }
 }
 // 重载方法
-/*class DeclareKeyword Calculator {
-    add(x: number, y: number): number
-    add(x: string, y: string): String
-    add(x: any, y: any): any
-    }*/
 
 public class Calculator {
     
@@ -847,9 +874,9 @@ public class Calculator {
 	 * @brief add(x: any, y: any): any
 	 */
 	// 实现
-    public func add(x: Any, y: Any): Any {
-        jsObjApiCall < Any >( arkts_object, "add", { ctx =>[x.toJSValue(ctx), y.toJSValue(ctx)] }) {
-            ctx, info => Any.fromJSValue(ctx, info)
+    public func add(x: JSValue/* FIXME: `any` */, y: JSValue/* FIXME: `any` */): JSValue/* FIXME: `any` */ {
+        jsObjApiCall < JSValue/* FIXME: `any` */ >( arkts_object, "add", { ctx =>[x, y] }) {
+            ctx, info => info
         }
     }
     
@@ -862,10 +889,6 @@ public class Calculator {
     }
 }
 
-/*class Decorator DeclareKeyword MyClass {
-    name: String;
-    constructor(name: string): void
-    }*/
 
 public class MyClass {
     
@@ -876,14 +899,14 @@ public class MyClass {
     public init(name: String) {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "MyClass").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "MyClass").toJSValue().asClass(__ctx)
             clazz.new(name.toJSValue(__ctx)).asObject()
         }
     }
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_methods", "MyClass").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_methods", "MyClass").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -912,11 +935,6 @@ public class MyClass {
     }
 }
 
-/*class ExportKeyword DeclareKeyword UMConfig {
-    appKey?: String;
-    channel?: String;
-    enableLog?: boolean;
-    }*/
 
 public class UMConfig {
     
@@ -975,12 +993,6 @@ public class UMConfig {
     }
 }
 
-/*class ExportKeyword DeclareKeyword RecordTest {
-    recordTest: Record<String, String>;
-    recordTest1: Record<String, String | number>;
-    recordTest2: Record<String, String> | null;
-    recordTest3: Record<String, String | number> | null;
-    }*/
 
 public class RecordTest {
     
@@ -1001,15 +1013,15 @@ public class RecordTest {
         
     }
     
-    public mut prop recordTest1: HashMap<String, JSValue/* FIXME: `string | number` */> {
+    public mut prop recordTest1: HashMap<String, Union_2_Members<String, Float64>> {
         get() {
-            checkThreadAndCall < HashMap<String, JSValue/* FIXME: `string | number` */> >(getMainContext()) {
-                ctx: JSContext => record2Hashmap<JSValue/* FIXME: `string | number` */>(ctx, arkts_object["recordTest1"], { context, i => JSValue/* FIXME: `string | number` */.fromJSValue(context, i) })
+            checkThreadAndCall < HashMap<String, Union_2_Members<String, Float64>> >(getMainContext()) {
+                ctx: JSContext => record2Hashmap<Union_2_Members<String, Float64>>(ctx, arkts_object["recordTest1"], { context, i => Union_2_Members<String, Float64>.fromJSValue(context, i) })
             }
         }
         set(v) {
             checkThreadAndCall < Unit >(getMainContext()) {
-                ctx: JSContext => arkts_object["recordTest1"] = hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, v, { context, i => i.toJSValue(context) })
+                ctx: JSContext => arkts_object["recordTest1"] = hashmap2Record<Union_2_Members<String, Float64>>(ctx, v, { context, i => i.toJSValue(context) })
             }
         }
         
@@ -1029,15 +1041,15 @@ public class RecordTest {
         
     }
     
-    public mut prop recordTest3: Option<HashMap<String, JSValue/* FIXME: `string | number` */>> {
+    public mut prop recordTest3: Option<HashMap<String, Union_2_Members<String, Float64>>> {
         get() {
-            checkThreadAndCall < Option<HashMap<String, JSValue/* FIXME: `string | number` */>> >(getMainContext()) {
-                ctx: JSContext => record2Hashmap<JSValue/* FIXME: `string | number` */>(ctx, arkts_object["recordTest3"], { context, i => JSValue/* FIXME: `string | number` */.fromJSValue(context, i) })
+            checkThreadAndCall < Option<HashMap<String, Union_2_Members<String, Float64>>> >(getMainContext()) {
+                ctx: JSContext => record2Hashmap<Union_2_Members<String, Float64>>(ctx, arkts_object["recordTest3"], { context, i => Union_2_Members<String, Float64>.fromJSValue(context, i) })
             }
         }
         set(v) {
             checkThreadAndCall < Unit >(getMainContext()) {
-                ctx: JSContext => arkts_object["recordTest3"] = hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, v, { context, i => i.toJSValue(context) })
+                ctx: JSContext => arkts_object["recordTest3"] = hashmap2Record<Union_2_Members<String, Float64>>(ctx, v, { context, i => i.toJSValue(context) })
             }
         }
         
@@ -1057,8 +1069,10 @@ public class RecordTest {
 /**
 	 * @brief test(): Promise<String>
 	 */
-public func test(callback: AsyncCallback < String >): Unit {
-    hmsGlobalApiCallPromise < String >( "my_module_methods", "test", callback, emptyArg)
+public func test(callback: AsyncCallback < JSValue/* FIXME: `Promise<string>` */ >): Unit {
+    hmsGlobalApiCallPromise < JSValue/* FIXME: `Promise<string>` */ >( "my_module_methods", "test", callback, emptyArg) {
+        ctx, info => info
+    }
 }
 
 /**
@@ -1107,15 +1121,15 @@ public func onEnumCb(p1: Bool, p2: String): String {
 	 * @brief logClass(target: any): void
 	 */
 	// 带装饰器的类
-public func logClass(target: Any): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "logClass", { ctx =>[target.toJSValue(ctx)] })
+public func logClass(target: JSValue/* FIXME: `any` */): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "logClass", { ctx =>[target] })
 }
 
 /**
 	 * @brief getFavoriteNumber(t: T): T
 	 */
 	// 泛型
-public func getFavoriteNumber < T >(t: T): T where T <: JSInteropType<T> {
+public func getFavoriteNumber < T >(t: T): T {
     hmsGlobalApiCall < T >( "my_module_methods", "getFavoriteNumber", { ctx =>[t.toJSValue(ctx)] }) {
         ctx, info => T.fromJSValue(ctx, info)
     }
@@ -1124,15 +1138,19 @@ public func getFavoriteNumber < T >(t: T): T where T <: JSInteropType<T> {
 /**
 	 * @brief test(): Promise<void>
 	 */
-public func test(callback: AsyncCallback < Unit >): Unit {
-    hmsGlobalApiCallPromise < Unit >( "my_module_methods", "test", callback, emptyArg)
+public func test(callback: AsyncCallback < JSValue/* FIXME: `Promise<void>` */ >): Unit {
+    hmsGlobalApiCallPromise < JSValue/* FIXME: `Promise<void>` */ >( "my_module_methods", "test", callback, emptyArg) {
+        ctx, info => info
+    }
 }
 
 /**
 	 * @brief test1(name:string): Promise<void>
 	 */
-public func test1(callback: AsyncCallback < Unit >, name: String): Unit {
-    hmsGlobalApiCallPromise < Unit >( "my_module_methods", "test1", callback, { ctx =>[name.toJSValue(ctx)] })
+public func test1(callback: AsyncCallback < JSValue/* FIXME: `Promise<void>` */ >, name: String): Unit {
+    hmsGlobalApiCallPromise < JSValue/* FIXME: `Promise<void>` */ >( "my_module_methods", "test1", callback, { ctx =>[name.toJSValue(ctx)] }) {
+        ctx, info => info
+    }
 }
 
 /**
@@ -1181,36 +1199,36 @@ public func testUnion4(t: Option<HashMap<String, Array<UInt8>>>): Unit {
 /**
 	 * @brief RecordAndOptionalTest(eventID: string, params?: Record<string, string | number>): void
 	 */
-public func RecordAndOptionalTest(eventID: String, params!: Option < HashMap<String, JSValue/* FIXME: `string | number` */> >= None): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) })] })
+public func RecordAndOptionalTest(eventID: String, params!: Option < HashMap<String, Union_2_Members<String, Float64>> >= None): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) })] })
 }
 
 /**
 	 * @brief RecordTest(eventID: string, params: Record<string, string | number>): void
 	 */
-public func RecordTest(eventID: String, params: HashMap<String, JSValue/* FIXME: `string | number` */>): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordTest", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) })] })
+public func RecordTest(eventID: String, params: HashMap<String, Union_2_Members<String, Float64>>): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordTest", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) })] })
 }
 
 /**
 	 * @brief RecordAndOptionalTest1(eventID: string, params?: Record<string, string | number>, params1?: Record<string, string | number>): void
 	 */
-public func RecordAndOptionalTest1(eventID: String, params!: Option < HashMap<String, JSValue/* FIXME: `string | number` */> >= None, params1!: Option < HashMap<String, JSValue/* FIXME: `string | number` */> >= None): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest1", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params1, { context, i => i.toJSValue(context) })] })
+public func RecordAndOptionalTest1(eventID: String, params!: Option < HashMap<String, Union_2_Members<String, Float64>> >= None, params1!: Option < HashMap<String, Union_2_Members<String, Float64>> >= None): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest1", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params1, { context, i => i.toJSValue(context) })] })
 }
 
 /**
 	 * @brief RecordTest1(eventID: string, params: Record<string, string | number>, params1: Record<string, string | number>): void
 	 */
-public func RecordTest1(eventID: String, params: HashMap<String, JSValue/* FIXME: `string | number` */>, params1: HashMap<String, JSValue/* FIXME: `string | number` */>): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordTest1", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params1, { context, i => i.toJSValue(context) })] })
+public func RecordTest1(eventID: String, params: HashMap<String, Union_2_Members<String, Float64>>, params1: HashMap<String, Union_2_Members<String, Float64>>): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordTest1", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params1, { context, i => i.toJSValue(context) })] })
 }
 
 /**
 	 * @brief RecordAndOptionalTest2(eventID: string, params?: Record<string, string | number>, params1?: Record<string, string | number>): void
 	 */
-public func RecordAndOptionalTest2(eventID: String, params!: Option < HashMap<String, JSValue/* FIXME: `string | number` */> >= None, params1!: Option < HashMap<String, JSValue/* FIXME: `string | number` */> >= None): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest2", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params1, { context, i => i.toJSValue(context) })] })
+public func RecordAndOptionalTest2(eventID: String, params!: Option < HashMap<String, Union_2_Members<String, Float64>> >= None, params1!: Option < HashMap<String, Union_2_Members<String, Float64>> >= None): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest2", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params1, { context, i => i.toJSValue(context) })] })
 }
 
 /**
@@ -1223,8 +1241,8 @@ public func RecordTest2(eventID: String, params: HashMap<String, Float64>, param
 /**
 	 * @brief RecordAndOptionalTest3(eventID: string, params: Record<string, string | number> | null, params1: Record<string, string | number>|undefined): void
 	 */
-public func RecordAndOptionalTest3(eventID: String, params: Option<HashMap<String, JSValue/* FIXME: `string | number` */>>, params1: Option<HashMap<String, JSValue/* FIXME: `string | number` */>>): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest3", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params1, { context, i => i.toJSValue(context) })] })
+public func RecordAndOptionalTest3(eventID: String, params: Option<HashMap<String, Union_2_Members<String, Float64>>>, params1: Option<HashMap<String, Union_2_Members<String, Float64>>>): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest3", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params1, { context, i => i.toJSValue(context) })] })
 }
 
 

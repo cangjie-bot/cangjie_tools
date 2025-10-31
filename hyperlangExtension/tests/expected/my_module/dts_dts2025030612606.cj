@@ -9,13 +9,19 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
-/***********OBJECT***********/
-
-/*interface Item {
+/*interface  Item {
     id: number;
     name: String;
     category: T;
     }*/
+/*interface  Item1 {
+    id: number;
+    name: U;
+    category: T;
+    }*/
+
+/***********OBJECT***********/
+
 
 public open class Item<T> where T <: JSInteropType<T> {
     
@@ -43,11 +49,6 @@ public open class Item<T> where T <: JSInteropType<T> {
     
 }
 
-/*interface Item1 {
-    id: number;
-    name: U;
-    category: T;
-    }*/
 
 public open class Item1<T, U> where T <: JSInteropType<T>, U <: JSInteropType<U> {
     

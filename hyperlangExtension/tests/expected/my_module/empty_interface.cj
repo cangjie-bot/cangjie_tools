@@ -9,10 +9,13 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
+/*class  ExportKeyword c {
+    }*/
+/*interface  i {
+    }*/
+
 /***********OBJECT***********/
 
-/*interface i {
-    }*/
 
 public open class i <: e {
     
@@ -34,8 +37,6 @@ public open class i <: e {
     
 }
 
-/*class ExportKeyword c {
-    }*/
 
 public class c <: e {
     

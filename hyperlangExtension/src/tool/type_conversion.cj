@@ -8,6 +8,7 @@ package hle.tool
 
 import std.ast.*
 import std.collection.*
+import std.sort.*
 
 extend TsType {
     public func toCJType(): String {
@@ -33,11 +34,156 @@ extend TsType {
         initValue!: ?String = None): Tokens {
         fromJSValue(normalize(this), gconfig, targetObj, ctxParam, isOptional: isOptional, initValue: initValue)
     }
+    
+    // Check if this type is a primitive union and return analysis info
+    public func getPrimitiveUnionInfo(context: Option<String>): ?PrimitiveUnionInfo {
+        let normalized = normalize(this)
+        let ctxStr = match (context) {
+            case Some(s) => s
+            case None => ""
+        }
+        analyzePrimitiveUnion(normalized, ctxStr)
+    }
 }
 
 /**************************************************
  * The following functions are mutually recursive *
  **************************************************/
+
+enum TypeFingerprint {
+    | FpNumber
+    | FpString
+    | FpBoolean
+    | FpBigInt
+    // | FpVoid  // for void type
+    | FpStringLiteral(String) // for "on" | "off" etc
+    | FpOther // for non-primitive types
+}
+
+// Extract type fingerprint from a TsType
+private func getTypeFingerprint(ty: TsType): TypeFingerprint {
+    match (ty) {
+        case TsNumber => FpNumber
+        case TsString => FpString
+        case TsBoolean => FpBoolean
+        case TsBigInt => FpBigInt
+        // case TsVoid => FpVoid
+        case TsStringLiteral(s) => FpStringLiteral(s)
+        case TsNull | TsUndefined | TsVoid => FpOther // these are filtered out in nullable unions
+        case _ => FpOther
+    }
+}
+
+// 判断单个类型是否为原始类型，以此决定其是否会在这里被转换联合体成员
+private func isPrimitiveType(ty: TsType): Bool {
+    match (getTypeFingerprint(ty)) {
+        case FpOther => false
+        case _ => true
+    }
+}
+
+// 判断该联合体中是否所有类型都为原始类型
+private func isPrimitiveUnion(types: Array<TsType>): Bool {
+    for (t in types) {
+        if (!isPrimitiveType(t)) {
+            return false
+        }
+    }
+    true
+}
+
+// Generate a stable identifier from type fingerprints
+private func generateFingerprintKey(fingerprints: Array<TypeFingerprint>): String {
+    let stringReps = fingerprints.map(fingerprintToString)
+    let sortedList = ArrayList<String>()
+    for (s in stringReps) {
+        sortedList.add(s)
+    }
+    sort(sortedList)
+    sortedList.toArray() |> collectString<String>(delimiter: "_")
+}
+
+private func fingerprintToString(fp: TypeFingerprint): String {
+    match (fp) {
+        case FpNumber => "Float64"
+        case FpString => "String"
+        case FpBoolean => "Boolean"
+        case FpBigInt => "BigInt"
+        // case FpVoid => "Unit"
+        case FpStringLiteral(s) => "Lit_" + sanitizeIdentifier(s)
+        case FpOther => "Other"
+    }
+}
+
+private func sanitizeIdentifier(s: String): String {
+    // Replace non-alphanumeric characters with underscores
+    s.replace("-", "_").replace(".", "_").replace("\"", "").replace("'", "")
+}
+
+// Generate union enum name based on type structure
+private func generateUnionTypeName(types: Array<TsType>, context: String): String {
+    let fingerprints = ArrayList<TypeFingerprint>()
+    for (t in types) {
+        let fp = getTypeFingerprint(t)
+        // Deduplicate by string representation
+        let fpStr = fingerprintToString(fp)
+        var found = false
+        for (existing in fingerprints) {
+            if (fingerprintToString(existing) == fpStr) {
+                found = true
+                break
+            }
+        }
+        if (!found) {
+            fingerprints.add(fp)
+        }
+    }
+    
+    let key = generateFingerprintKey(fingerprints.toArray())
+    if (context.isEmpty()) {
+        "Union_" + key
+    } else {
+        context + "_Union_" + key
+    }
+}
+
+// Extract primitive union type information
+struct PrimitiveUnionInfo {
+    public let enumName: String
+    public let unionType: TsType
+    public let fingerprints: Array<TypeFingerprint>
+    
+    public init(enumName: String, unionType: TsType, fingerprints: Array<TypeFingerprint>) {
+        this.enumName = enumName
+        this.unionType = unionType
+        this.fingerprints = fingerprints
+    }
+}
+
+private func buildPrimitiveUnionInfo(members: Array<TsType>, context: String): ?PrimitiveUnionInfo {
+    let nonNullTypes = ArrayList<TsType>()
+    for (e in members) {
+        match (e) {
+            case TsNull | TsUndefined => ()
+            case _ => nonNullTypes.add(e)
+        }
+    }
+    if (nonNullTypes.size > 1 && isPrimitiveUnion(nonNullTypes.toArray())) {
+        let fingerprints = nonNullTypes.toArray().map(getTypeFingerprint)
+        let enumName = generateUnionTypeName(nonNullTypes.toArray(), context)
+        Some(PrimitiveUnionInfo(enumName, TsUnion(nonNullTypes.toArray()), fingerprints))
+    } else {
+        None
+    }
+}
+
+// Analyze if a union type is a primitive union and return its info
+private func analyzePrimitiveUnion(ty: TsType, context: String): ?PrimitiveUnionInfo {
+    match (ty) {
+        case TsUnion(members) => buildPrimitiveUnionInfo(members, context)
+        case _ => None
+    }
+}
 
 // preprocess the original type to reveal its real structure
 private func normalize(ty: TsType): TsType {
@@ -109,7 +255,15 @@ private func toCJType(ty: TsType): String {
             if (nonNullTypes.size == 1) {
                 return "Option<${toCJType(nonNullTypes[0])}>"
             }
-            // FIXME: General union types need further processing.
+            if (nonNullTypes.size > 1 && isPrimitiveUnion(nonNullTypes.toArray())) {
+                let typeArgs = nonNullTypes.toArray().map(toCJType)
+                let genericName = "Union_${typeArgs.size}_Members"
+                return "${genericName}<${typeArgs |> collectString<String>(delimiter: ", ")}>"
+            }
+            
+            // TODO: 这里可能需要加一种情况，就是nonNullTypes.size > 1 && !isPrimitiveUnion(nonNullTypes.toArray())，这种情况下需要生成一个Option<Union_N_Members<...>>.
+            // 该情况的方案是否可行，待讨论
+
             println("WARNING: type is not supported - ${ty}")
             "JSValue/* FIXME: `${ty}` */"
         case TsTypeRef(x) =>
@@ -241,6 +395,10 @@ private func toJSValue(tsType: TsType, gconfig: GlobalConfig, targetObj: Tokens,
             }
             if (nonNullTypes.size == 1) {
                 return toJSValue(nonNullTypes[0], gconfig, targetObj, ctxParam, isOptional: true)
+            }
+            // Check if this is a primitive union - call generic enum's toJSValue
+            if (nonNullTypes.size > 1 && isPrimitiveUnion(nonNullTypes.toArray())) {
+                return quote($(targetObj).toJSValue($(ctxParam)))
             }
             return genTo(tsType, gconfig, targetObj, ctxParam, None, optional)
         case TsFunction(ret, params, _) =>
@@ -421,6 +579,14 @@ private func fromJSValue(tsType: TsType, gconfig: GlobalConfig, targetObj: Token
             }
             if (nonNullTypes.size == 1) {
                 return fromJSValue(nonNullTypes[0], gconfig, targetObj, ctxParam, isOptional: true)
+            }
+            // Check if this is a primitive union - call generic enum's fromJSValue
+            if (nonNullTypes.size > 1 && isPrimitiveUnion(nonNullTypes.toArray())) {
+                let typeArgs = nonNullTypes.toArray().map(toCJType)
+                let genericName = "Union_${typeArgs.size}_Members"
+                let fullTypeName = "${genericName}<${typeArgs |> collectString<String>(delimiter: ", ")}>"
+                let unionNameToken = Token(TokenKind.IDENTIFIER, fullTypeName)
+                return quote($(unionNameToken).fromJSValue($(ctxParam), $(targetObj)))
             }
             genFrom(tsType, gconfig, targetObj, ctxParam, isOptional: isOptional, initValue: initValue)
         case TsFunction(ret, params, _) => genFunction(ret, gconfig, targetObj, ctxParam, params, isOptional: isOptional)

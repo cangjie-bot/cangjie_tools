@@ -11,11 +11,94 @@ import ohos.ark_interop_helper.*
 import ohos.base.*
 import tpc.AbilityKit.common
 import std.collection.{ HashMap }
-/***********OBJECT***********/
-// 可选属性
-/*interface Product {
+/*class  ExportKeyword DeclareKeyword FirstContextualKeyword BasePlugin {
+    pluginVersion: String;
+    pluginId: Biz_Type;
+    alias: String;
+    alias_h: String;
+    cfg: UMConfig;
+    plugins: PluginContainer;
+    constructor(d12: Biz_Type): void
+    getPluginId(): Biz_Type
+    install(b12: UMConfig, c12: PluginContainer): void
+    uninstall(): void
+    agree(): Promise<void>
+    write(x11: string, y11: Record<string, string | number>, z11: number, a12?: string): void
+    beforeEncode(w11: buffer.Buffer): Promise<buffer.Buffer>
+    }*/
+/*class  ExportKeyword DeclareKeyword DefaultPluginContainer {
+    ReadonlyKeyword_pluginMap: BasePlugin[];
+    constructor(): void
+    registryPlugin(g12: BasePlugin, h12: UMConfig): BasePlugin
+    getPluginById(e12: Biz_Type): BasePlugin | undefined
+    }*/
+/*interface  Product {
     price?: number;
     }*/
+/*interface  Point {
+    ReadonlyKeywordx: number;
+    ReadonlyKeywordy: number;
+    }*/
+/*interface  Callback1 {
+    (data: string): void
+    }*/
+/*interface  Person {
+    name: String;
+    greet(): String
+    }*/
+/*interface  Dictionary {
+    (key: string): string
+    }*/
+/*interface  Calculator {
+    add(x: number, y: number): number
+    add(x: string, y: string): String
+    }*/
+/*interface  Config {
+    (key: string): string | number
+    }*/
+/*interface  UserProfile {
+    id: number;
+    name: String;
+    address: {
+      city: String;
+      zipCode: String;
+    };
+    }*/
+/*interface  List {
+    items: String[];
+    }*/
+/*interface  ClockConstructor {
+    }*/
+/*interface  ExportKeyword IWBAPI {
+    authorize(context: common.UIAbilityContext, listener: WbASListener): void
+    authorizeClient(context: Context, listener: WbASListener): void
+    authorizeClient(context: BaseContext, listener: WbASListener): void
+    authorizeClient(context: common.Context, listener: WbASListener): void
+    }*/
+/*interface  UnionInterface {
+    foo(a: string|null): null | String
+    goo(b: undefined | string): String | undefined
+    }*/
+/*interface  ExportKeyword LoggerAdapter {
+    setColorLevel(level: LogLevel): void
+    printDiagnoseLog(level: LogLevel, tag: string, msg: string, e: Error | null): void
+    getPubKey(): String
+    getLogPaths(): Array<String>
+    }*/
+/*interface  ExportKeyword PluginContainer {
+    registryPlugin(plugin: BasePlugin, cfg: UMConfig): BasePlugin
+    getPluginById(pluginId: string): BasePlugin | undefined
+    }*/
+
+
+public enum Union_2_Members < A, B > {
+    | A(A)
+    | B(B)
+}
+
+
+/***********OBJECT***********/
+// 可选属性
 
 public open class Product {
     
@@ -39,10 +122,6 @@ public open class Product {
     
 }
 //只读属性
-/*interface Point {
-    ReadonlyKeywordx: number;
-    ReadonlyKeywordy: number;
-    }*/
 
 public open class Point {
     
@@ -67,16 +146,23 @@ public open class Point {
     
 }
 // 函数类型
-/*interface Callback1 {
-    (data: string): void
-    }*/
-public open type Callback1 =(data: String) -> Unit
+
+public open class Callback1 {
+    
+    protected Callback1(public var arkts_object: JSObject) {}
+    
+    
+    
+    public open func toJSValue(context: JSContext): JSValue {
+        arkts_object.toJSValue()
+    }
+    
+    static func fromJSValue(context: JSContext, input: JSValue): Callback1 {
+        Callback1(input.asObject())
+    }
+}
 // 成员函数
 // person.d.ts
-/*interface Person {
-    name: String;
-    greet(): String
-    }*/
 
 public open class Person {
     
@@ -113,15 +199,22 @@ public open class Person {
     }
 }
 // 索引签名
-/*interface Dictionary {
-    (key: string): string
-    }*/
-public open type Dictionary =(key: String) -> Unit
+
+public open class Dictionary {
+    
+    protected Dictionary(public var arkts_object: JSObject) {}
+    
+    
+    
+    public open func toJSValue(context: JSContext): JSValue {
+        arkts_object.toJSValue()
+    }
+    
+    static func fromJSValue(context: JSContext, input: JSValue): Dictionary {
+        Dictionary(input.asObject())
+    }
+}
 // 函数重载
-/*interface Calculator {
-    add(x: number, y: number): number
-    add(x: string, y: string): String
-    }*/
 
 public open class Calculator {
     
@@ -150,19 +243,22 @@ public open class Calculator {
     }
 }
 // 动态属性
-/*interface Config {
-    (key: string): string | number
-    }*/
-public open type Config =(key: String) -> Unit
+
+public open class Config {
+    
+    protected Config(public var arkts_object: JSObject) {}
+    
+    
+    
+    public open func toJSValue(context: JSContext): JSValue {
+        arkts_object.toJSValue()
+    }
+    
+    static func fromJSValue(context: JSContext, input: JSValue): Config {
+        Config(input.asObject())
+    }
+}
 // 嵌套对象
-/*interface UserProfile {
-    id: number;
-    name: String;
-    address: {
-      city: String;
-      zipCode: String;
-    };
-    }*/
 
 public open class UserProfile {
     
@@ -191,9 +287,6 @@ public open class UserProfile {
 }
 // 数组类型
 // list.d.ts
-/*interface List {
-    items: String[];
-    }*/
 
 public open class List {
     
@@ -215,8 +308,6 @@ public open class List {
     
 }
 
-/*interface ClockConstructor {
-    }*/
 
 public open class ClockConstructor {
     
@@ -238,12 +329,6 @@ public open class ClockConstructor {
     
 }
 
-/*interface ExportKeyword IWBAPI {
-    authorize(context: common.UIAbilityContext, listener: WbASListener): void
-    authorizeClient(context: Context, listener: WbASListener): void
-    authorizeClient(context: BaseContext, listener: WbASListener): void
-    authorizeClient(context: common.Context, listener: WbASListener): void
-    }*/
 
 public open class IWBAPI {
     
@@ -284,10 +369,6 @@ public open class IWBAPI {
     }
 }
 
-/*interface UnionInterface {
-    foo(a: string|null): null | String
-    goo(b: undefined | string): String | undefined
-    }*/
 
 public open class UnionInterface {
     
@@ -320,12 +401,6 @@ public open class UnionInterface {
     }
 }
 
-/*interface ExportKeyword LoggerAdapter {
-    setColorLevel(level: LogLevel): void
-    printDiagnoseLog(level: LogLevel, tag: string, msg: string, e: Error | null): void
-    getPubKey(): String
-    getLogPaths(): Array<String>
-    }*/
 
 public open class LoggerAdapter {
     
@@ -372,10 +447,6 @@ public open class LoggerAdapter {
     }
 }
 
-/*interface ExportKeyword PluginContainer {
-    registryPlugin(plugin: BasePlugin, cfg: UMConfig): BasePlugin
-    getPluginById(pluginId: string): BasePlugin | undefined
-    }*/
 
 public open class PluginContainer {
     
@@ -408,21 +479,6 @@ public open class PluginContainer {
     }
 }
 
-/*class ExportKeyword DeclareKeyword FirstContextualKeyword BasePlugin {
-    pluginVersion: String;
-    pluginId: Biz_Type;
-    alias: String;
-    alias_h: String;
-    cfg: UMConfig;
-    plugins: PluginContainer;
-    constructor(d12: Biz_Type): void
-    getPluginId(): Biz_Type
-    install(b12: UMConfig, c12: PluginContainer): void
-    uninstall(): void
-    agree(): Promise<void>
-    write(x11: string, y11: Record<string, string | number>, z11: number, a12?: string): void
-    beforeEncode(w11: buffer.Buffer): Promise<buffer.Buffer>
-    }*/
 
 public open class BasePlugin {
     
@@ -433,14 +489,14 @@ public open class BasePlugin {
     public init(d12: JSValue/* FIXME: `Biz_Type` */) {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_interface", "BasePlugin").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_interface", "BasePlugin").toJSValue().asClass(__ctx)
             clazz.new(d12.toJSValue(__ctx)).asObject()
         }
     }
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_interface", "BasePlugin").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_interface", "BasePlugin").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -552,20 +608,22 @@ public open class BasePlugin {
     /**
 	 * @brief agree(): Promise<void>
 	 */
-    public func agree(callback: AsyncCallback < Unit >): Unit {
-        jsObjApiCallPromise < Unit >( arkts_object, "agree", callback, emptyArg)
+    public func agree(callback: AsyncCallback < JSValue/* FIXME: `Promise<void>` */ >): Unit {
+        jsObjApiCallPromise < JSValue/* FIXME: `Promise<void>` */ >( arkts_object, "agree", callback, emptyArg) {
+            ctx, info => info
+        }
     }
     /**
 	 * @brief write(x11: string, y11: Record<string, string | number>, z11: number, a12?: string): void
 	 */
-    public func write(x11: String, y11: HashMap<String, JSValue/* FIXME: `string | number` */>, z11: Float64, a12!: Option < String >= None): Unit {
-        jsObjApiCall < Unit >( arkts_object, "write", { ctx =>[x11.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, y11, { context, i => i.toJSValue(context) }), z11.toJSValue(ctx), a12.toJSValue(ctx)] })
+    public func write(x11: String, y11: HashMap<String, Union_2_Members<String, Float64>>, z11: Float64, a12!: Option < String >= None): Unit {
+        jsObjApiCall < Unit >( arkts_object, "write", { ctx =>[x11.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, y11, { context, i => i.toJSValue(context) }), z11.toJSValue(ctx), a12.toJSValue(ctx)] })
     }
     /**
 	 * @brief beforeEncode(w11: buffer.Buffer): Promise<buffer.Buffer>
 	 */
-    public func beforeEncode(callback: AsyncCallback < JSValue/* FIXME: `buffer.Buffer` */ >, w11: JSValue/* FIXME: `buffer.Buffer` */): Unit {
-        jsObjApiCallPromise < JSValue/* FIXME: `buffer.Buffer` */ >( arkts_object, "beforeEncode", callback, { ctx =>[w11] }) {
+    public func beforeEncode(callback: AsyncCallback < JSValue/* FIXME: `Promise<buffer.Buffer>` */ >, w11: JSValue/* FIXME: `buffer.Buffer` */): Unit {
+        jsObjApiCallPromise < JSValue/* FIXME: `Promise<buffer.Buffer>` */ >( arkts_object, "beforeEncode", callback, { ctx =>[w11] }) {
             ctx, info => info
         }
     }
@@ -579,12 +637,6 @@ public open class BasePlugin {
     }
 }
 
-/*class ExportKeyword DeclareKeyword DefaultPluginContainer {
-    ReadonlyKeyword_pluginMap: BasePlugin[];
-    constructor(): void
-    registryPlugin(g12: BasePlugin, h12: UMConfig): BasePlugin
-    getPluginById(e12: Biz_Type): BasePlugin | undefined
-    }*/
 
 public class DefaultPluginContainer <: PluginContainer {
     
@@ -595,7 +647,7 @@ public class DefaultPluginContainer <: PluginContainer {
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_interface", "DefaultPluginContainer").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_interface", "DefaultPluginContainer").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }

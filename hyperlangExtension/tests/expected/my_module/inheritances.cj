@@ -10,15 +10,46 @@ import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
 import tpc.AbilityKit.common
-/***********IMPORT***********/
-/*FIXME: Import details need to be verified and rewritten by user.*/
-/*superInterface*/
+/*class  ExportKeyword DeclareKeyword SubInterface {
+    p: number;
+    p1: number;
+    }*/
+/*class  ExportKeyword DeclareKeyword FirstContextualKeyword SuperClass {
+    p: number;
+    }*/
+/*class  ExportKeyword DeclareKeyword SubClass {
+    p: number;
+    }*/
+/*class  ExportKeyword DeclareKeyword SuperClass1 {
+    p: number;
+    }*/
+/*class  ExportKeyword DeclareKeyword SubClass1 {
+    p: number;
+    }*/
+/*interface  ExportKeyword DeclareKeyword SuperInterface {
+    p: number;
+    }*/
+/*interface  A {
+    p: number;
+    }*/
+/*interface  B {
+    p1: number;
+    }*/
+/*interface  C {
+    f(): void
+    }*/
+/*interface  D {
+    }*/
+/*interface  E {
+    }*/
+/*interface  F {
+    g(): void
+    }*/
+/*interface  ExportKeyword BuglyLogAdapter {
+    }*/
 
 /***********OBJECT***********/
 
-/*interface ExportKeyword DeclareKeyword SuperInterface {
-    p: number;
-    }*/
 
 public open class SuperInterface {
     
@@ -40,9 +71,6 @@ public open class SuperInterface {
     
 }
 
-/*interface A {
-    p: number;
-    }*/
 
 public open class A {
     
@@ -64,9 +92,6 @@ public open class A {
     
 }
 
-/*interface B {
-    p1: number;
-    }*/
 
 public open class B <: A {
     
@@ -91,9 +116,6 @@ public open class B <: A {
     
 }
 
-/*interface C {
-    f(): void
-    }*/
 
 public open class C {
     
@@ -116,8 +138,6 @@ public open class C {
     }
 }
 
-/*interface D {
-    }*/
 
 public open class D <: C {
     
@@ -134,8 +154,6 @@ public open class D <: C {
     }
 }
 
-/*interface E {
-    }*/
 
 public open class E <: A {
     
@@ -157,9 +175,6 @@ public open class E <: A {
     
 }
 
-/*interface F {
-    g(): void
-    }*/
 
 public open class F <: C {
     
@@ -182,8 +197,6 @@ public open class F <: C {
     }
 }
 
-/*interface ExportKeyword BuglyLogAdapter {
-    }*/
 
 public open class BuglyLogAdapter <: p29 {
     
@@ -200,10 +213,6 @@ public open class BuglyLogAdapter <: p29 {
     }
 }
 
-/*class ExportKeyword DeclareKeyword SubInterface {
-    p: number;
-    p1: number;
-    }*/
 
 public class SubInterface <: SuperInterface {
     
@@ -248,9 +257,6 @@ public class SubInterface <: SuperInterface {
     }
 }
 
-/*class ExportKeyword DeclareKeyword FirstContextualKeyword SuperClass {
-    p: number;
-    }*/
 
 public open class SuperClass {
     
@@ -281,9 +287,6 @@ public open class SuperClass {
     }
 }
 
-/*class ExportKeyword DeclareKeyword SubClass {
-    p: number;
-    }*/
 
 public class SubClass <: SuperClass {
     
@@ -314,9 +317,6 @@ public class SubClass <: SuperClass {
     }
 }
 
-/*class ExportKeyword DeclareKeyword SuperClass1 {
-    p: number;
-    }*/
 
 public open class SuperClass1 {
     
@@ -347,9 +347,6 @@ public open class SuperClass1 {
     }
 }
 
-/*class ExportKeyword DeclareKeyword SubClass1 {
-    p: number;
-    }*/
 
 public class SubClass1 <: SuperClass1 {
     

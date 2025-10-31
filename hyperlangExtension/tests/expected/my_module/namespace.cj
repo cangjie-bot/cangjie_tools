@@ -9,10 +9,15 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
+/*interface  B {
+    }*/
+/*interface  E {
+    }*/
+/*interface  H {
+    }*/
+
 /***********OBJECT***********/
 
-/*interface B {
-    }*/
 
 public open class B {
     
@@ -36,8 +41,6 @@ public open class B {
 
 /***********OBJECT***********/
 
-/*interface E {
-    }*/
 
 public open class E {
     
@@ -61,8 +64,6 @@ public open class E {
 
 /***********OBJECT***********/
 
-/*interface H {
-    }*/
 
 public open class H {
     

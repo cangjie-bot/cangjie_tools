@@ -9,6 +9,39 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
+/*class  ExportKeyword ArgumentMatchers {
+    StaticKeywordany: unsupported FirstToken;
+    StaticKeywordanyString: unsupported FirstToken;
+    StaticKeywordanyBoolean: unsupported FirstToken;
+    StaticKeywordanyNumber: unsupported FirstToken;
+    StaticKeywordanyObj: unsupported FirstToken;
+    StaticKeywordanyFunction: unsupported FirstToken;
+    matchRegexs(Regex: RegExp): void
+    }*/
+/*class  ExportKeyword MockKit {
+    constructor(): void
+    mockFunc(obj: Object, func: Function): Function
+    mockObject(obj: Object): Object
+    verify(methodName: String, argsArray: Array<any>): VerificationMode
+    ignoreMock(obj: Object, func: Function): void
+    clear(obj: Object): void
+    clearAll(): void
+    }*/
+/*interface  DeclareKeyword when {
+    afterReturn(value: any): any
+    afterReturnNothing(): undefined
+    afterAction(action: any): any
+    afterThrow(e_msg: string): String
+    (argMatchers?: any): when
+    }*/
+/*interface  ExportKeyword VerificationMode {
+    times(count: Number): void
+    never(): void
+    once(): void
+    atLeast(count: Number): void
+    atMost(count: Number): void
+    }*/
+
 /*
 
 public const when = 0/* FIXME: Initialization is required */
@@ -16,22 +49,52 @@ public const when = 0/* FIXME: Initialization is required */
 
 /***********OBJECT***********/
 
-/*interface DeclareKeyword when {
-    afterReturn(value: any): any
-    afterReturnNothing(): undefined
-    afterAction(action: any): any
-    afterThrow(e_msg: string): String
-    (argMatchers?: any): when
-    }*/
-public open type when =(argMatchers!:?Any = None) -> Unit
 
-/*interface ExportKeyword VerificationMode {
-    times(count: Number): void
-    never(): void
-    once(): void
-    atLeast(count: Number): void
-    atMost(count: Number): void
-    }*/
+public open class when {
+    
+    protected when(public var arkts_object: JSObject) {}
+    
+    
+    /**
+	 * @brief afterReturn(value: any): any
+	 */
+    public func afterReturn(value: JSValue/* FIXME: `any` */): JSValue/* FIXME: `any` */ {
+        jsObjApiCall < JSValue/* FIXME: `any` */ >( arkts_object, "afterReturn", { ctx =>[value] }) {
+            ctx, info => info
+        }
+    }
+    /**
+	 * @brief afterReturnNothing(): undefined
+	 */
+    public func afterReturnNothing(): JSValue/* FIXME: `undefined` */ {
+        jsObjApiCall < JSValue/* FIXME: `undefined` */ >( arkts_object, "afterReturnNothing", emptyArg) {
+            ctx, info => info
+        }
+    }
+    /**
+	 * @brief afterAction(action: any): any
+	 */
+    public func afterAction(action: JSValue/* FIXME: `any` */): JSValue/* FIXME: `any` */ {
+        jsObjApiCall < JSValue/* FIXME: `any` */ >( arkts_object, "afterAction", { ctx =>[action] }) {
+            ctx, info => info
+        }
+    }
+    /**
+	 * @brief afterThrow(e_msg: string): String
+	 */
+    public func afterThrow(e_msg: String): String {
+        jsObjApiCall < String >( arkts_object, "afterThrow", { ctx =>[e_msg.toJSValue(ctx)] })
+    }
+    
+    public open func toJSValue(context: JSContext): JSValue {
+        arkts_object.toJSValue()
+    }
+    
+    static func fromJSValue(context: JSContext, input: JSValue): when {
+        when(input.asObject())
+    }
+}
+
 
 public open class VerificationMode {
     
@@ -78,15 +141,6 @@ public open class VerificationMode {
     }
 }
 
-/*class ExportKeyword ArgumentMatchers {
-    StaticKeywordany: unsupported FirstToken;
-    StaticKeywordanyString: unsupported FirstToken;
-    StaticKeywordanyBoolean: unsupported FirstToken;
-    StaticKeywordanyNumber: unsupported FirstToken;
-    StaticKeywordanyObj: unsupported FirstToken;
-    StaticKeywordanyFunction: unsupported FirstToken;
-    matchRegexs(Regex: RegExp): void
-    }*/
 
 public class ArgumentMatchers {
     
@@ -193,15 +247,6 @@ public class ArgumentMatchers {
     }
 }
 
-/*class ExportKeyword MockKit {
-    constructor(): void
-    mockFunc(obj: Object, func: Function): Function
-    mockObject(obj: Object): Object
-    verify(methodName: String, argsArray: Array<any>): VerificationMode
-    ignoreMock(obj: Object, func: Function): void
-    clear(obj: Object): void
-    clearAll(): void
-    }*/
 
 public class MockKit {
     
@@ -212,7 +257,7 @@ public class MockKit {
     public init() {
         arkts_object = checkThreadAndCall < JSObject >(getMainContext()) {
             __ctx =>
-            let clazz = getClassConstructorObj("cases_callSignature", "MockKit").asClass(__ctx)
+            let clazz = getClassConstructorObj("cases_callSignature", "MockKit").toJSValue().asClass(__ctx)
             clazz.new().asObject()
         }
     }
@@ -220,8 +265,8 @@ public class MockKit {
     /**
 	 * @brief mockFunc(obj: Object, func: Function): Function
 	 */
-    public func mockFunc(obj: JSValue/* FIXME: `Object` */, func: JSValue/* FIXME: `Function` */): JSValue/* FIXME: `Function` */ {
-        jsObjApiCall < JSValue/* FIXME: `Function` */ >( arkts_object, "mockFunc", { ctx =>[obj, func] }) {
+    public func mockFunc(obj: JSValue/* FIXME: `Object` */, `func`: JSValue/* FIXME: `Function` */): JSValue/* FIXME: `Function` */ {
+        jsObjApiCall < JSValue/* FIXME: `Function` */ >( arkts_object, "mockFunc", { ctx =>[obj, `func`] }) {
             ctx, info => info
         }
     }
@@ -236,16 +281,16 @@ public class MockKit {
     /**
 	 * @brief verify(methodName: String, argsArray: Array<any>): VerificationMode
 	 */
-    public func verify(methodName: String, argsArray: Array<Any>): VerificationMode {
-        jsObjApiCall < VerificationMode >( arkts_object, "verify", { ctx =>[methodName.toJSValue(ctx), toJSArray < Any >(ctx, argsArray, { ctx: JSContext, val: Any => val.toJSValue(ctx) })] }) {
+    public func verify(methodName: String, argsArray: Array<JSValue/* FIXME: `any` */>): VerificationMode {
+        jsObjApiCall < VerificationMode >( arkts_object, "verify", { ctx =>[methodName.toJSValue(ctx), toJSArray < JSValue/* FIXME: `any` */ >(ctx, argsArray, { ctx: JSContext, val: JSValue/* FIXME: `any` */ => val })] }) {
             ctx, info => VerificationMode.fromJSValue(ctx, info)
         }
     }
     /**
 	 * @brief ignoreMock(obj: Object, func: Function): void
 	 */
-    public func ignoreMock(obj: JSValue/* FIXME: `Object` */, func: JSValue/* FIXME: `Function` */): Unit {
-        jsObjApiCall < Unit >( arkts_object, "ignoreMock", { ctx =>[obj, func] })
+    public func ignoreMock(obj: JSValue/* FIXME: `Object` */, `func`: JSValue/* FIXME: `Function` */): Unit {
+        jsObjApiCall < Unit >( arkts_object, "ignoreMock", { ctx =>[obj, `func`] })
     }
     /**
 	 * @brief clear(obj: Object): void

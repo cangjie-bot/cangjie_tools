@@ -10,6 +10,14 @@ import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
 
+
+public enum Union_2_Members < A, B > {
+    | A(A)
+    | B(B)
+}
+
+
+
 public enum MyUnion8 {
     | _STRING_NUMBER___(JSValue/* FIXME: `(string | number)[]` */)
     | _KEY_STRING_(JSValue/* FIXME: `{ key: string }` */)

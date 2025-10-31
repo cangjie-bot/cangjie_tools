@@ -9,15 +9,16 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
-/***********OBJECT***********/
-
-/*interface ExportKeyword p29 {
+/*interface  ExportKeyword p29 {
     debug(arg: string): void
     info(arg: string): void
     warn(arg: string): void
     error(arg: string): void
     fatal(arg: string): void
     }*/
+
+/***********OBJECT***********/
+
 
 public open class p29 {
     

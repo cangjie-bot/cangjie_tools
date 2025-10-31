@@ -9,6 +9,7 @@ package hle.entry
 import std.ast.*
 import std.fs.*
 import std.sync.*
+import std.sort.*
 import hle.tool.*
 import std.time.DateTime
 import std.collection.*
@@ -44,8 +45,13 @@ public class A2CJ {
     public func transfer(): Unit {
         let file = createDirAndFile()
 
+        // First, collect all required union member counts
+        gconfig.collectRequiredUnionMemberCounts()
+
         let outToken = Tokens()
         addHeader(outToken)
+        addOriginalCodeComments(outToken)
+        addGenericUnionEnums(outToken)
         for (i in 0..gconfig.moduleMeta.namespaces.size) {
             parseNamespaces(i, outToken)
         }
@@ -57,6 +63,30 @@ public class A2CJ {
         generateTemplateFile("${outSrcDir}/basic_service_kit.cj", createBasicServiceKit(gconfig))
         generateTemplateFile("${outSrcDir}/callback_manager.cj", createCallbackManager(gconfig))
         mtx.unlock()
+    }
+    
+    // Add original TypeScript/ArkTS code as comments before union enums
+    private func addOriginalCodeComments(out: Tokens): Unit {
+        for (i in 0..gconfig.moduleMeta.namespaces.size) {
+            let cns: NameSpace = gconfig.moduleMeta.namespaces[i]
+            if (cns.isEmpty()) {
+                continue
+            }
+            
+            // Add comments for classes
+            for ((_, c) in cns.classes) {
+                out.append(addComment("class " + c.signature()))
+            }
+            
+            // Add comments for interfaces
+            for ((_, iface) in cns.interfaces) {
+                out.append(addComment("interface " + iface.signature()))
+            }
+        }
+        
+        if (!gconfig.moduleMeta.namespaces.isEmpty()) {
+            out.append(nl) // Add newline after comments
+        }
     }
 
     private func createDirAndFile(): File {
@@ -215,6 +245,30 @@ public class A2CJ {
         out.append(headToken + nl)
         out.append(quote(package ) + packageName + nl + nl)
         addImport(gconfig, out)
+    }
+    
+    // Add generic union enum definitions only for the union sizes actually used in this module
+    private func addGenericUnionEnums(out: Tokens): Unit {
+        if (gconfig.requiredUnionMemberCounts.isEmpty()) {
+            return
+        }
+        
+        // Add a newline before union enums
+        out.append(nl)
+        
+        // Convert HashSet to Array and sort for consistent output
+        let counts = ArrayList<Int64>()
+        for (count in gconfig.requiredUnionMemberCounts) {
+            counts.add(count)
+        }
+        sort(counts)
+        
+        // Generate only the required union enums
+        for (count in counts) {
+            out.append(generateGenericUnionEnum(count) + nl)
+        }
+        
+        out.append(nl) // Extra newline after union enums
     }
 
     public func addImport(gconfig: GlobalConfig, out: Tokens): Unit {
