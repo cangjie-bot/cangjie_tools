@@ -5,6 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 #include "CJLintCompilerInstance.h"
+#include "PosixSpawn.h"
 
 using namespace Cangjie;
 using namespace Cangjie::CodeCheck;
@@ -43,7 +44,7 @@ bool CJLintCompilerInstance::PerformImportPackage()
         if (!FileUtil::FileExist(output.c_str()) || remove(output.c_str()) == 0) {
 #endif
             std::string cmd = "cjc -p " + package + " --compile-macro -o " + package + " > " + EMPTY_DEVICE + " 2>&1";
-            res = system(cmd.c_str());
+            res = CommandExecutor::execute(cmd.c_str());
 #ifdef _WIN32
         }
 #endif
