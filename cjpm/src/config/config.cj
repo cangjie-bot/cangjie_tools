@@ -902,26 +902,54 @@ public class GlobalConfig {
     }
 }
 
+public struct PackageTasks {
+    public PackageTasks(
+        public let targetConfig!: ?ResolveConfig = None,
+        public let nativeConfig!: ?ResolveConfig = None
+    ) { }
+
+    public func forEach(task: (ResolveConfig) -> Unit): Unit {
+        if (let Some(target) <- targetConfig) {
+            task(target)
+        }
+        if (let Some(native) <- nativeConfig) {
+            task(native)
+        }
+    }
+
+    public prop size: Int64 {
+        get() {
+            var result = 2
+            if (targetConfig.isNone()) { result-- }
+            if (nativeConfig.isNone()) { result-- }
+            return result
+        }
+    }
+}
+
+public func taskMapSize(taskMap: HashMap<String, PackageTasks>): Int64 {
+    var result = 0
+    for (v in taskMap.values()) {
+        result += v.size
+    }
+    return result
+}
+
 public struct ResolveConfig {
+    public var targetDir: String = ""
     public var targetPath: String = ""
     public var packagePath: CJMPSource = CJMPSource.empty
     public var rootPkgName: String = ""
     public var fullName: String = ""
     public var outputType: OutputType = Unknown("")
+    public var target: String = ""
     public var compileOption: String = ""
+    public var overrideOption: String = ""
     public var linkOption: String = ""
-    public var nativeCompileOption: String = ""
-    public var nativeLinkOption: String = ""
     public var customizedOption: HashMap<String, String> = HashMap<String, String>()
     public var requirePkgs: HashSet<String> = HashSet<String>()
-    public var stdRequirePkgs: HashSet<String> = HashSet<String>()
     public var outLogFile: String = ""
     public var errLogFile: String = ""
-    public var nativePath: String = ""
-    public var nativeOutLog: String = ""
-    public var nativeErrLog: String = ""
-    public var targetPlatform: Bool = true
-    public var nativePlatform: Bool = false
     public var checkDepCjo: Bool = false
     public var superPkgCfg: ?SuperPackageConfig = None
     public var hasTestFiles: Bool = false
