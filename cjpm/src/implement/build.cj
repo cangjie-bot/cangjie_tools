@@ -697,7 +697,7 @@ func generateIncrementalCache(buildConfig: BuildConfig, curResolveData: ModuleRe
 }
 
 
-func getMultiplatformPipeline(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool): Array<ArrayList<String>> {
+func getMultiplatformPipeline(resolveConfig: ResolveConfig, buildConfig: BuildConfig): Array<ArrayList<String>> {
     let builds = ArrayList<ArrayList<String>>()
 
     // topologically ordered sources of a package in each source set it's present in
@@ -715,7 +715,7 @@ func getMultiplatformPipeline(resolveConfig: ResolveConfig, buildConfig: BuildCo
 
         let buildType = if (source.product) { Product } else { Chir }
         let features = resolveConfig.featureDeducer.addFeature(source.features).collect()
-        options.add(all: getCommandArgs(resolveConfig, buildConfig, isNativeForCross, buildType, features))
+        options.add(all: getCommandArgs(resolveConfig, buildConfig, buildType, features))
 
         options.add(all: ["-p", source.srcDir.toString()])
         if (source.product) {
@@ -744,16 +744,16 @@ enum BuildType {
     | Default
 }
 
-func getCommandArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool, buildType: BuildType, features: HashSet<Feature>): ArrayList<String> {
+func getCommandArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, buildType: BuildType, features: HashSet<Feature>): ArrayList<String> {
     var res: ArrayList<String> = ArrayList<String>()
 
     let toAdd = match (buildType) {
         case Chir => appendCommandOptionsCommon(buildConfig)
-        case Default => appendCommandOptions(resolveConfig, buildConfig, isNativeForCross)
-        case Product => appendCommandOptions(resolveConfig, buildConfig, isNativeForCross, isCJMPProduct: true)
+        case Default => appendCommandOptions(resolveConfig, buildConfig)
+        case Product => appendCommandOptions(resolveConfig, buildConfig, isCJMPProduct: true)
     }
     res.add(all: toAdd)
-    res.add(all: getDepLinkCommand(resolveConfig, buildConfig, isNativeForCross, features: features))
+    res.add(all: getDepLinkCommand(resolveConfig, buildConfig, features: features))
     if (buildConfig.customizedOption.size != 0) {
         for (k in buildConfig.customizedOption) {
             if (resolveConfig.customizedOption.contains(k)) {
@@ -761,22 +761,10 @@ func getCommandArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNa
             }
         }
     }
-    if (!isNativeForCross) {
-        if (!resolveConfig.compileOption.isEmpty()) {
-            res.add(all: extractOptionByString(resolveConfig.compileOption))
-        }
-        if (!buildConfig.globalConfig.overrideCompileOption.isEmpty()) {
-            res.add(all: extractOptionByString(buildConfig.globalConfig.overrideCompileOption))
-        }
-    } else {
-        if (!resolveConfig.nativeCompileOption.isEmpty()) {
-            res.add(all: extractOptionByString(resolveConfig.nativeCompileOption))
-        }
-        if (!buildConfig.globalConfig.nativeOverrideOption.isEmpty()) {
-            res.add(all: extractOptionByString(buildConfig.globalConfig.nativeOverrideOption))
-        }
-    }
-    res.add(all: appendLinkOption(resolveConfig, buildConfig.requiredForTests, isNativeForCross))
+
+    res.add(all: extractOptionByString(resolveConfig.compileOption))
+    res.add(all: extractOptionByString(resolveConfig.overrideOption))
+    res.add(all: appendLinkOption(resolveConfig, buildConfig.requiredForTests))
     return res
 }
 
@@ -805,7 +793,7 @@ func appendCommandOptionsCommon(buildConfig: BuildConfig) {
     return res
 }
 
-func appendCommandOptions(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool, isCJMPProduct!: Bool = false): ArrayList<String> {
+func appendCommandOptions(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isCJMPProduct!: Bool = false): ArrayList<String> {
     var res: ArrayList<String> = ArrayList<String>()
 
     for (p in buildConfig.globalConfig.cjPathList) {
@@ -814,9 +802,10 @@ func appendCommandOptions(resolveConfig: ResolveConfig, buildConfig: BuildConfig
         }
     }
 
-    if (buildConfig.isCrossCompile && !isNativeForCross) {
-        res.add("--target=${crossCompileTarget}")
+    if (resolveConfig.isCrossCompile) {
+        res.add("--target=${resolveConfig.target}")
     }
+
     if (buildConfig.isDebug) {
         res.add("-g")
     }
@@ -831,51 +820,39 @@ func appendCommandOptions(resolveConfig: ResolveConfig, buildConfig: BuildConfig
     }
 
     if (!isCJMPProduct) {
-        if (!isNativeForCross) {
-            res.add("--output-dir=${Path(resolveConfig.targetPath)}")
-        } else {
-            res.add("--output-dir=${Path(resolveConfig.nativePath)}")
-        }
+        res.add("--output-dir=${Path(resolveConfig.targetPath)}")
     }
 
     return res
 }
 
-func appendLinkOption(resolveConfig: ResolveConfig, requiredForTests: Bool, isNativeForCross: Bool): ArrayList<String> {
+func appendLinkOption(resolveConfig: ResolveConfig, requiredForTests: Bool): ArrayList<String> {
     if (resolveConfig.outputType == Static && !requiredForTests) {
         return ArrayList<String>()
     }
-
-    if (!isNativeForCross) {
-        if (!resolveConfig.linkOption.isEmpty()) {
-            return ArrayList<String>(["--link-options", resolveConfig.linkOption])
-        }
-    } else {
-        if (!resolveConfig.nativeLinkOption.isEmpty()) {
-            return ArrayList<String>(["--link-options", resolveConfig.nativeLinkOption])
-        }
+    if (resolveConfig.linkOption.isEmpty()) {
+        return ArrayList<String>()
     }
-
-    return ArrayList<String>()
+    return ArrayList<String>(["--link-options", resolveConfig.linkOption])
 }
 
-func getDepLinkCommand(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool, features!: HashSet<Feature> = HashSet()): ArrayList<String> {
+func getDepLinkCommand(resolveConfig: ResolveConfig, buildConfig: BuildConfig, features!: HashSet<Feature> = HashSet()): ArrayList<String> {
     let res = ArrayList<String>()
     if (resolveConfig.outputType == Exe || resolveConfig.outputType == Dynamic) {
         if (buildConfig.globalConfig.isProjectCombine &&
             resolveConfig.fullName == buildConfig.globalConfig.rootName) {
-            res.add(all: getLtoCombineBuildArgs(resolveConfig, buildConfig, isNativeForCross))
+            res.add(all: getLtoCombineBuildArgs(resolveConfig, buildConfig))
         } else {
-            res.add(all: getBuildArgs(resolveConfig, buildConfig, isNativeForCross, features))
+            res.add(all: getBuildArgs(resolveConfig, buildConfig, features))
         }
     }
     if (let Some(superPkgCfg) <- resolveConfig.superPkgCfg) {
-        res.add(all: getForcedLibArgs(resolveConfig, superPkgCfg, buildConfig, isNativeForCross))
+        res.add(all: getForcedLibArgs(resolveConfig, superPkgCfg, buildConfig))
     }
     return res
 }
 
-func getTypeCommand(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool): ArrayList<String> {
+func getTypeCommand(resolveConfig: ResolveConfig, buildConfig: BuildConfig): ArrayList<String> {
     let res = ArrayList<String>()
 
     if (buildConfig.globalConfig.isAnalysisCompilePerformance) {
@@ -896,7 +873,7 @@ func getTypeCommand(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNa
 
     match (resolveConfig.outputType) {
         case Static => recordStaticLibCommand()
-        case Dynamic => res.add(all: makeDylibCommand(resolveConfig.fullName, buildConfig, isNativeForCross))
+        case Dynamic => res.add(all: makeDylibCommand(resolveConfig.fullName, resolveConfig, buildConfig))
         case Exe =>
             if (buildConfig.requiredForTests) {
                 // to be included in tests as a dependency, the package should be compiled as a library anyway
@@ -968,27 +945,27 @@ func getcLibLinkStr(cLibLinkMap: HashMap<String, ArrayList<String>>, cLibNameLis
     return res
 }
 
-func makeDylibCommand(fullName: String, buildConfig: BuildConfig, isNativeForCross: Bool): ArrayList<String> {
+func makeDylibCommand(fullName: String, resolveConfig: ResolveConfig, buildConfig: BuildConfig): ArrayList<String> {
     var res = ArrayList<String>()
     if (buildConfig.packageList.macros.contains(fullName)) {
         res.add("--compile-macro")
     } else {
         res.add("--output-type=dylib")
-        res.add("-o=${getDylibOutputName(fullName, buildConfig, isNativeForCross)}")
+        res.add("-o=${getDylibOutputName(fullName, resolveConfig)}")
     }
     return res
 }
 
 func appendCLibLinkStr(buildConfig: BuildConfig, cLibNameList: ArrayList<String>, res: ArrayList<String>, isCross: Bool): Unit {
-    var cLibLinkStr = ArrayList<String>()
-    if (isCross) {
-        cLibLinkStr = getcLibLinkStr(buildConfig.globalConfig.crossCLibLinkMap, cLibNameList)
+    let cLibLinkStr = if (isCross) {
+        getcLibLinkStr(buildConfig.globalConfig.crossCLibLinkMap, cLibNameList)
     } else {
-        cLibLinkStr = getcLibLinkStr(buildConfig.globalConfig.cLibLinkMap, cLibNameList)
+        getcLibLinkStr(buildConfig.globalConfig.cLibLinkMap, cLibNameList)
     }
+
     var index: Int64 = 0
-    var cLibPathSet: HashSet<String> = HashSet<String>()
-    var cLibNameSet: HashSet<String> = HashSet<String>()
+    let cLibPathSet: HashSet<String> = HashSet<String>()
+    let cLibNameSet: HashSet<String> = HashSet<String>()
     while (index < cLibLinkStr.size) {
         if (cLibLinkStr[index] == "-L") {
             if (!cLibPathSet.contains(cLibLinkStr[index + 1])) {
@@ -1010,7 +987,7 @@ func appendCLibLinkStr(buildConfig: BuildConfig, cLibNameList: ArrayList<String>
     }
 }
 
-func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool):
+func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig):
     ArrayList<String> {
     let res = ArrayList<String>()
     var cLibNameList = ArrayList<String>([resolveConfig.rootPkgName]) // Record dependent root packages
@@ -1031,12 +1008,9 @@ func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConf
         if (buildConfig.packageList.macros.contains(depName) || buildConfig.packageList.test.contains(depName)) {
             continue
         }
-        var libPath: String
-        if (!isNativeForCross) {
-            libPath = Path(buildConfig.globalConfig.targetDir).join(swapOrgName(depRootName)).toString()
-        } else {
-            libPath = Path(buildConfig.globalConfig.nativeDir).join(swapOrgName(depRootName)).toString()
-        }
+
+        var libPath = Path(resolveConfig.targetDir).join(swapOrgName(depRootName)).toString()
+
         let linkArray: ArrayList<String> = linkPackage(depName, libPath, buildConfig.isLto)
         if (linkArray.size <= 1) {
             allOptions.add(all: linkArray)
@@ -1062,12 +1036,9 @@ func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConf
     // link all binary dependencies depended by other packages which are not depended by root package
     let otherBinOptions = ArrayList<String>()
     binDepSet.remove(all: linkSort)
-    otherBinOptions.add(all: getForcedBinDep(buildConfig, binDepSet, cLibNameList, isNativeForCross))
+    otherBinOptions.add(all: getForcedBinDep(resolveConfig, buildConfig, binDepSet, cLibNameList))
 
-    var compileTarget: String = targetConfigName
-    if (!crossCompileTarget.isEmpty() && !isNativeForCross) {
-        compileTarget = crossCompileTarget
-    }
+    let compileTarget = resolveConfig.target
     addForcedLibArgs(res, otherBinOptions, compileTarget)
 
     // forced-add std dynamic libs
@@ -1078,20 +1049,20 @@ func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConf
             "from $CANGJIE_HOME/runtime/lib while compiling combine package ${resolveConfig.fullName}, " +
             "output may be invalid if sub packages import std libraries")
     }
-    appendCLibLinkStr(buildConfig, cLibNameList, res, buildConfig.isCrossCompile && !isNativeForCross)
+    appendCLibLinkStr(buildConfig, cLibNameList, res, resolveConfig.isCrossCompile)
     res.add("--lto=${buildConfig.ltoValue}")
     
     return res
 }
 
-func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNativeForCross: Bool, features: HashSet<Feature>): ArrayList<String> {
+func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, features: HashSet<Feature>): ArrayList<String> {
     let res = ArrayList<String>()
     var cLibNameList = ArrayList<String>([resolveConfig.rootPkgName]) // Record dependent root packages
     var linkSort: HashSet<String> = getDepSet(resolveConfig.fullName, buildConfig.requiresMap,
         buildConfig.superPkgSubMap) // Record dependent package names
 
     if (linkSort.size == 0) {
-        appendCLibLinkStr(buildConfig, cLibNameList, res, buildConfig.isCrossCompile && !isNativeForCross)
+        appendCLibLinkStr(buildConfig, cLibNameList, res, resolveConfig.isCrossCompile)
         return res
     }
 
@@ -1109,12 +1080,7 @@ func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNati
         if (buildConfig.packageList.macros.contains(depName) || buildConfig.packageList.test.contains(depName)) {
             continue
         }
-        var libPath: String
-        if (!isNativeForCross) {
-            libPath = Path(buildConfig.globalConfig.targetDir).join(swapOrgName(depRootName)).toString()
-        } else {
-            libPath = Path(buildConfig.globalConfig.nativeDir).join(swapOrgName(depRootName)).toString()
-        }
+        var libPath: String = Path(resolveConfig.targetDir).join(swapOrgName(depRootName)).toString()
 
         if (let Some(suffix) <- buildConfig.packageList.bestFitFeatures(features).get(depName)) {
             libPath = getPath(libPath.toString(), suffix.toString())
@@ -1140,13 +1106,12 @@ func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, isNati
     binOptions.add(all: appendOptionForBindep(buildConfig.binDepMap, linkSort, buildConfig.isLto), at: 0)
     binOptions.add(all: appendOptionForBindep(buildConfig.crossBinDepMap, linkSort, buildConfig.isLto), at: 0)
     res.add(all: binOptions)
-    appendCLibLinkStr(buildConfig, cLibNameList, res, buildConfig.isCrossCompile && !isNativeForCross)
+    appendCLibLinkStr(buildConfig, cLibNameList, res, resolveConfig.isCrossCompile)
 
     return res
 }
 
-func getForcedLibArgs(resolveConfig: ResolveConfig, superPkgCfg: SuperPackageConfig, buildConfig: BuildConfig,
-    isNativeForCross: Bool): ArrayList<String> {
+func getForcedLibArgs(resolveConfig: ResolveConfig, superPkgCfg: SuperPackageConfig, buildConfig: BuildConfig): ArrayList<String> {
     let res = ArrayList<String>()
     var cLibNameList = ArrayList<String>([resolveConfig.rootPkgName]) // Record dependent root packages
     var linkSort: HashSet<String> = getDepSet(resolveConfig.fullName, buildConfig.requiresMap,
@@ -1176,12 +1141,7 @@ func getForcedLibArgs(resolveConfig: ResolveConfig, superPkgCfg: SuperPackageCon
         if (buildConfig.packageList.macros.contains(depName) || buildConfig.packageList.test.contains(depName)) {
             continue
         }
-        var libPath: String
-        if (!isNativeForCross) {
-            libPath = Path(buildConfig.globalConfig.targetDir).join(depRootName).toString()
-        } else {
-            libPath = Path(buildConfig.globalConfig.nativeDir).join(depRootName).toString()
-        }
+        let libPath = Path(resolveConfig.targetDir).join(depRootName).toString()
         let linkArray: ArrayList<String> = forcedLinkPackage(depName, libPath, buildConfig.isLto)
         if (linkArray.size <= 1) {
             allOptions.add(all: linkArray)
@@ -1198,18 +1158,12 @@ func getForcedLibArgs(resolveConfig: ResolveConfig, superPkgCfg: SuperPackageCon
         binDepSet.add(all: getDepSet(depName, buildConfig.requiresMap, buildConfig.superPkgSubMap))
     }
 
-    allOptions.add(all: getForcedBinDep(buildConfig, binDepSet, cLibNameList, isNativeForCross))
-
-    var compileTarget: String = targetConfigName
-    if (!crossCompileTarget.isEmpty() && !isNativeForCross) {
-        compileTarget = crossCompileTarget
-    }
-
-    addForcedLibArgs(res, allOptions, compileTarget)
-    if (let Some(stdLinks) <- addStdLibsLink(compileTarget)) {
+    allOptions.add(all: getForcedBinDep(resolveConfig, buildConfig, binDepSet, cLibNameList))
+    addForcedLibArgs(res, allOptions, resolveConfig.target)
+    if (let Some(stdLinks) <- addStdLibsLink(resolveConfig.target)) {
         res.add(all: stdLinks)
     } else {
-        println("Warning: cannot find std dynamic libraries for target '${compileTarget}' " +
+        println("Warning: cannot find std dynamic libraries for target '${resolveConfig.target}' " +
             "from $CANGJIE_HOME/runtime/lib while compiling combined package ${resolveConfig.fullName}, " +
             "output may be invalid if sub packages import std libraries")
     }
@@ -1218,31 +1172,28 @@ func getForcedLibArgs(resolveConfig: ResolveConfig, superPkgCfg: SuperPackageCon
 }
 
 @When[os == "Linux" || os == "Windows"]
-func getForcedBinDep(buildConfig: BuildConfig, binDepSet: HashSet<String>, cLibNameList: ArrayList<String>,
-    isNativeForCross: Bool): ArrayList<String> {
+func getForcedBinDep(resolveConfig: ResolveConfig, buildConfig: BuildConfig, binDepSet: HashSet<String>, cLibNameList: ArrayList<String>): ArrayList<String> {
     var binOptions = ArrayList<String>()
     binOptions.add(all: appendOptionForBindep(buildConfig.binDepMap, binDepSet, buildConfig.isLto), at: 0)
     binOptions.add(all: appendOptionForBindep(buildConfig.crossBinDepMap, binDepSet, buildConfig.isLto), at: 0)
-    appendCLibLinkStr(buildConfig, cLibNameList, binOptions, buildConfig.isCrossCompile && !isNativeForCross)
+    appendCLibLinkStr(buildConfig, cLibNameList, binOptions, resolveConfig.isCrossCompile)
     return binOptions
 }
 
 @When[os == "macOS"]
-func getForcedBinDep(buildConfig: BuildConfig, binDepSet: HashSet<String>, cLibNameList: ArrayList<String>,
-    isNativeForCross: Bool): ArrayList<String> {
+func getForcedBinDep(resolveConfig: ResolveConfig, buildConfig: BuildConfig, binDepSet: HashSet<String>, cLibNameList: ArrayList<String>): ArrayList<String> {
     var binOptions = ArrayList<String>()
     if (crossCompileTarget.contains("linux") && !crossCompileTarget.contains("android")) {
         binOptions.add(all: appendOptionForBindep(buildConfig.binDepMap, binDepSet, buildConfig.isLto), at: 0)
         binOptions.add(all: appendOptionForBindep(buildConfig.crossBinDepMap, binDepSet, buildConfig.isLto), at: 0)
-        appendCLibLinkStr(buildConfig, cLibNameList, binOptions, buildConfig.isCrossCompile && !isNativeForCross)
+        appendCLibLinkStr(buildConfig, cLibNameList, binOptions, resolveConfig.isCrossCompile)
     } else {
         binOptions.add(all: getForcedBinDepPath(buildConfig.binDepMap, binDepSet, buildConfig.isLto), at: 0)
         binOptions.add(all: getForcedBinDepPath(buildConfig.crossBinDepMap, binDepSet, buildConfig.isLto), at: 0)
-        var cLibLinkStr = ArrayList<String>()
-        if (isNativeForCross) {
-            cLibLinkStr = getcLibLinkStr(buildConfig.globalConfig.crossCLibLinkMap, cLibNameList)
+        let cLibLinkStr = if (resolveConfig.isCrossCompile) {
+            getcLibLinkStr(buildConfig.globalConfig.crossCLibLinkMap, cLibNameList)
         } else {
-            cLibLinkStr = getcLibLinkStr(buildConfig.globalConfig.cLibLinkMap, cLibNameList)
+            getcLibLinkStr(buildConfig.globalConfig.cLibLinkMap, cLibNameList)
         }
 
         var libName = ""
@@ -1318,11 +1269,8 @@ func addForcedLibArgs(res: ArrayList<String>, allOptions: ArrayList<String>, com
     }
 }
 
-func getDylibOutputName(fullName: String, buildConfig: BuildConfig, isNativeForCross: Bool): String {
-    if (buildConfig.isCrossCompile && !isNativeForCross) {
-        return makeTargetDylibName(fullName)
-    }
-    return makeDylibName(fullName)
+func getDylibOutputName(fullName: String, resolveConfig: ResolveConfig): String {
+    return makeTargetDylibName(fullName, resolveConfig.target)
 }
 
 public func getDepSet(fullName: String, requiresMap: HashMap<String, HashSet<String>>,
