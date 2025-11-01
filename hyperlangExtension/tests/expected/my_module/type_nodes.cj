@@ -11,6 +11,7 @@ import ohos.ark_interop_helper.*
 import ohos.base.*
 import std.math.numeric.*
 import std.collection.{ HashMap }
+
 /***********OBJECT***********/
 // These interfaces are used for testing type syntax of the typescript compiler.
 // Properties are named after the syntax kinds as in tsc.

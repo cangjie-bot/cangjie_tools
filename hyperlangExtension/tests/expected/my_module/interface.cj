@@ -11,6 +11,7 @@ import ohos.ark_interop_helper.*
 import ohos.base.*
 import tpc.AbilityKit.common
 import std.collection.{ HashMap }
+
 /***********OBJECT***********/
 // 可选属性
 /*interface Product {
@@ -594,20 +595,22 @@ public open class BasePlugin {
     /**
 	 * @brief agree(): Promise<void>
 	 */
-    public func agree(callback: AsyncCallback < Unit >): Unit {
-        jsObjApiCallPromise < Unit >( arkts_object, "agree", callback, emptyArg)
+    public func agree(callback: AsyncCallback < JSValue/* FIXME: `Promise<void>` */ >): Unit {
+        jsObjApiCallPromise < JSValue/* FIXME: `Promise<void>` */ >( arkts_object, "agree", callback, emptyArg) {
+            ctx, info => info
+        }
     }
     /**
 	 * @brief write(x11: string, y11: Record<string, string | number>, z11: number, a12?: string): void
 	 */
-    public func write(x11: String, y11: HashMap<String, JSValue/* FIXME: `string | number` */>, z11: Float64, a12!: Option < String >= None): Unit {
-        jsObjApiCall < Unit >( arkts_object, "write", { ctx =>[x11.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, y11, { context, i => i.toJSValue(context) }), z11.toJSValue(ctx), a12.toJSValue(ctx)] })
+    public func write(x11: String, y11: HashMap<String, Union_2_Members<String, Float64>>, z11: Float64, a12!: Option < String >= None): Unit {
+        jsObjApiCall < Unit >( arkts_object, "write", { ctx =>[x11.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, y11, { context, i => i.toJSValue(context) }), z11.toJSValue(ctx), a12.toJSValue(ctx)] })
     }
     /**
 	 * @brief beforeEncode(w11: buffer.Buffer): Promise<buffer.Buffer>
 	 */
-    public func beforeEncode(callback: AsyncCallback < JSValue/* FIXME: `buffer.Buffer` */ >, w11: JSValue/* FIXME: `buffer.Buffer` */): Unit {
-        jsObjApiCallPromise < JSValue/* FIXME: `buffer.Buffer` */ >( arkts_object, "beforeEncode", callback, { ctx =>[w11] }) {
+    public func beforeEncode(callback: AsyncCallback < JSValue/* FIXME: `Promise<buffer.Buffer>` */ >, w11: JSValue/* FIXME: `buffer.Buffer` */): Unit {
+        jsObjApiCallPromise < JSValue/* FIXME: `Promise<buffer.Buffer>` */ >( arkts_object, "beforeEncode", callback, { ctx =>[w11] }) {
             ctx, info => info
         }
     }

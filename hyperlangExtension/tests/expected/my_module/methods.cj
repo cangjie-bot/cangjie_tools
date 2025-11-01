@@ -13,6 +13,49 @@ import std.math.numeric.*
 import tpc.AbilityKit.common
 import std.collection.{ HashMap }
 
+public enum AutoGenType0 {
+    | STRING(String)
+    | NUMBER(Float64)
+    
+    public func toJSValue(context: JSContext): JSValue {
+        match(this) {
+            case STRING(x) => context.string(x).toJSValue()
+            case NUMBER(x) => context.number(x).toJSValue()
+        }
+    }
+    public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType0 {
+        
+        if(input.isString()) {
+            return STRING(String.fromJSValue(context, input))
+        } 
+        if(input.isNumber()) {
+            return NUMBER(Float64.fromJSValue(context, input))
+        } 
+    }
+}
+
+public enum AutoGenType1 {
+    | STRING(String)
+    | NUMBER(Float64)
+    
+    public func toJSValue(context: JSContext): JSValue {
+        match(this) {
+            case STRING(x) => context.string(x).toJSValue()
+            case NUMBER(x) => context.number(x).toJSValue()
+        }
+    }
+    public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType1 {
+        
+        if(input.isString()) {
+            return STRING(String.fromJSValue(context, input))
+        } 
+        if(input.isNumber()) {
+            return NUMBER(Float64.fromJSValue(context, input))
+        } 
+    }
+}
+
+
 public type Callback = (arg: T) -> Unit/* FIXME: `<T>(arg: T) => void` */
 
 
@@ -168,9 +211,9 @@ public open class IM {
     /**
 	 * @brief f4(e: EMStr): (s: String) => void
 	 */
-    public func f4(e: EMStr): (String)->Unit {
-        jsObjApiCall < (String)->Unit >( arkts_object, "f4", { ctx =>[e.get().toJSValue(ctx)] }) {
-            ctx, info => (String)->Unit.fromJSValue(ctx, info)
+    public func f4(e: EMStr): (s: String) -> Unit {
+        jsObjApiCall < (s: String) -> Unit >( arkts_object, "f4", { ctx =>[e.get().toJSValue(ctx)] }) {
+            ctx, info => (s: String) -> Unit.fromJSValue(ctx, info)
         }
     }
     /**
@@ -386,9 +429,9 @@ public class CM {
     /**
 	 * @brief f4(e: EMStr): (s: String) => void
 	 */
-    public func f4(e: EMStr): (String)->Unit {
-        jsObjApiCall < (String)->Unit >( arkts_object, "f4", { ctx =>[e.get().toJSValue(ctx)] }) {
-            ctx, info => (String)->Unit.fromJSValue(ctx, info)
+    public func f4(e: EMStr): (s: String) -> Unit {
+        jsObjApiCall < (s: String) -> Unit >( arkts_object, "f4", { ctx =>[e.get().toJSValue(ctx)] }) {
+            ctx, info => (s: String) -> Unit.fromJSValue(ctx, info)
         }
     }
     /**
@@ -481,14 +524,18 @@ public class TE {
     /**
 	 * @brief f1(result: string | Promise<string>): Promise<String>
 	 */
-    public func f1(callback: AsyncCallback < String >, result: string|Promise<String>): Unit {
-        jsObjApiCallPromise < String >( arkts_object, "f1", callback, { ctx =>[result.toJSValue(ctx)] })
+    public func f1(callback: AsyncCallback < JSValue/* FIXME: `Promise<string>` */ >, result: string|Promise<String>): Unit {
+        jsObjApiCallPromise < JSValue/* FIXME: `Promise<string>` */ >( arkts_object, "f1", callback, { ctx =>[result.toJSValue(ctx)] }) {
+            ctx, info => info
+        }
     }
     /**
 	 * @brief f1(result: string | Promise<string>): Promise<String>
 	 */
-    public func f1(callback: AsyncCallback < String >, result: string|Promise<String>): Unit {
-        jsObjApiCallPromise < String >( arkts_object, "f1", callback, { ctx =>[result] })
+    public func f1(callback: AsyncCallback < JSValue/* FIXME: `Promise<string>` */ >, result: string|Promise<String>): Unit {
+        jsObjApiCallPromise < JSValue/* FIXME: `Promise<string>` */ >( arkts_object, "f1", callback, { ctx =>[result] }) {
+            ctx, info => info
+        }
     }
     
     func toJSValue(context: JSContext): JSValue {
@@ -1001,15 +1048,15 @@ public class RecordTest {
         
     }
     
-    public mut prop recordTest1: HashMap<String, JSValue/* FIXME: `string | number` */> {
+    public mut prop recordTest1: HashMap<String, Union_2_Members<String, Float64>> {
         get() {
-            checkThreadAndCall < HashMap<String, JSValue/* FIXME: `string | number` */> >(getMainContext()) {
-                ctx: JSContext => record2Hashmap<JSValue/* FIXME: `string | number` */>(ctx, arkts_object["recordTest1"], { context, i => JSValue/* FIXME: `string | number` */.fromJSValue(context, i) })
+            checkThreadAndCall < HashMap<String, Union_2_Members<String, Float64>> >(getMainContext()) {
+                ctx: JSContext => record2Hashmap<Union_2_Members<String, Float64>>(ctx, arkts_object["recordTest1"], { context, i => Union_2_Members<String, Float64>.fromJSValue(context, i) })
             }
         }
         set(v) {
             checkThreadAndCall < Unit >(getMainContext()) {
-                ctx: JSContext => arkts_object["recordTest1"] = hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, v, { context, i => i.toJSValue(context) })
+                ctx: JSContext => arkts_object["recordTest1"] = hashmap2Record<Union_2_Members<String, Float64>>(ctx, v, { context, i => i.toJSValue(context) })
             }
         }
         
@@ -1029,15 +1076,15 @@ public class RecordTest {
         
     }
     
-    public mut prop recordTest3: Option<HashMap<String, JSValue/* FIXME: `string | number` */>> {
+    public mut prop recordTest3: Option<HashMap<String, Union_2_Members<String, Float64>>> {
         get() {
-            checkThreadAndCall < Option<HashMap<String, JSValue/* FIXME: `string | number` */>> >(getMainContext()) {
-                ctx: JSContext => record2Hashmap<JSValue/* FIXME: `string | number` */>(ctx, arkts_object["recordTest3"], { context, i => JSValue/* FIXME: `string | number` */.fromJSValue(context, i) })
+            checkThreadAndCall < Option<HashMap<String, Union_2_Members<String, Float64>>> >(getMainContext()) {
+                ctx: JSContext => record2Hashmap<Union_2_Members<String, Float64>>(ctx, arkts_object["recordTest3"], { context, i => Union_2_Members<String, Float64>.fromJSValue(context, i) })
             }
         }
         set(v) {
             checkThreadAndCall < Unit >(getMainContext()) {
-                ctx: JSContext => arkts_object["recordTest3"] = hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, v, { context, i => i.toJSValue(context) })
+                ctx: JSContext => arkts_object["recordTest3"] = hashmap2Record<Union_2_Members<String, Float64>>(ctx, v, { context, i => i.toJSValue(context) })
             }
         }
         
@@ -1057,8 +1104,10 @@ public class RecordTest {
 /**
 	 * @brief test(): Promise<String>
 	 */
-public func test(callback: AsyncCallback < String >): Unit {
-    hmsGlobalApiCallPromise < String >( "my_module_methods", "test", callback, emptyArg)
+public func test(callback: AsyncCallback < JSValue/* FIXME: `Promise<string>` */ >): Unit {
+    hmsGlobalApiCallPromise < JSValue/* FIXME: `Promise<string>` */ >( "my_module_methods", "test", callback, emptyArg) {
+        ctx, info => info
+    }
 }
 
 /**
@@ -1124,15 +1173,19 @@ public func getFavoriteNumber < T >(t: T): T where T <: JSInteropType<T> {
 /**
 	 * @brief test(): Promise<void>
 	 */
-public func test(callback: AsyncCallback < Unit >): Unit {
-    hmsGlobalApiCallPromise < Unit >( "my_module_methods", "test", callback, emptyArg)
+public func test(callback: AsyncCallback < JSValue/* FIXME: `Promise<void>` */ >): Unit {
+    hmsGlobalApiCallPromise < JSValue/* FIXME: `Promise<void>` */ >( "my_module_methods", "test", callback, emptyArg) {
+        ctx, info => info
+    }
 }
 
 /**
 	 * @brief test1(name:string): Promise<void>
 	 */
-public func test1(callback: AsyncCallback < Unit >, name: String): Unit {
-    hmsGlobalApiCallPromise < Unit >( "my_module_methods", "test1", callback, { ctx =>[name.toJSValue(ctx)] })
+public func test1(callback: AsyncCallback < JSValue/* FIXME: `Promise<void>` */ >, name: String): Unit {
+    hmsGlobalApiCallPromise < JSValue/* FIXME: `Promise<void>` */ >( "my_module_methods", "test1", callback, { ctx =>[name.toJSValue(ctx)] }) {
+        ctx, info => info
+    }
 }
 
 /**
@@ -1181,36 +1234,36 @@ public func testUnion4(t: Option<HashMap<String, Array<UInt8>>>): Unit {
 /**
 	 * @brief RecordAndOptionalTest(eventID: string, params?: Record<string, string | number>): void
 	 */
-public func RecordAndOptionalTest(eventID: String, params!: Option < HashMap<String, JSValue/* FIXME: `string | number` */> >= None): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) })] })
+public func RecordAndOptionalTest(eventID: String, params!: Option < HashMap<String, Union_2_Members<String, Float64>> >= None): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) })] })
 }
 
 /**
 	 * @brief RecordTest(eventID: string, params: Record<string, string | number>): void
 	 */
-public func RecordTest(eventID: String, params: HashMap<String, JSValue/* FIXME: `string | number` */>): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordTest", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) })] })
+public func RecordTest(eventID: String, params: HashMap<String, Union_2_Members<String, Float64>>): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordTest", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) })] })
 }
 
 /**
 	 * @brief RecordAndOptionalTest1(eventID: string, params?: Record<string, string | number>, params1?: Record<string, string | number>): void
 	 */
-public func RecordAndOptionalTest1(eventID: String, params!: Option < HashMap<String, JSValue/* FIXME: `string | number` */> >= None, params1!: Option < HashMap<String, JSValue/* FIXME: `string | number` */> >= None): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest1", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params1, { context, i => i.toJSValue(context) })] })
+public func RecordAndOptionalTest1(eventID: String, params!: Option < HashMap<String, Union_2_Members<String, Float64>> >= None, params1!: Option < HashMap<String, Union_2_Members<String, Float64>> >= None): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest1", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params1, { context, i => i.toJSValue(context) })] })
 }
 
 /**
 	 * @brief RecordTest1(eventID: string, params: Record<string, string | number>, params1: Record<string, string | number>): void
 	 */
-public func RecordTest1(eventID: String, params: HashMap<String, JSValue/* FIXME: `string | number` */>, params1: HashMap<String, JSValue/* FIXME: `string | number` */>): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordTest1", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params1, { context, i => i.toJSValue(context) })] })
+public func RecordTest1(eventID: String, params: HashMap<String, Union_2_Members<String, Float64>>, params1: HashMap<String, Union_2_Members<String, Float64>>): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordTest1", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params1, { context, i => i.toJSValue(context) })] })
 }
 
 /**
 	 * @brief RecordAndOptionalTest2(eventID: string, params?: Record<string, string | number>, params1?: Record<string, string | number>): void
 	 */
-public func RecordAndOptionalTest2(eventID: String, params!: Option < HashMap<String, JSValue/* FIXME: `string | number` */> >= None, params1!: Option < HashMap<String, JSValue/* FIXME: `string | number` */> >= None): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest2", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params1, { context, i => i.toJSValue(context) })] })
+public func RecordAndOptionalTest2(eventID: String, params!: Option < HashMap<String, Union_2_Members<String, Float64>> >= None, params1!: Option < HashMap<String, Union_2_Members<String, Float64>> >= None): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest2", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params1, { context, i => i.toJSValue(context) })] })
 }
 
 /**
@@ -1223,8 +1276,8 @@ public func RecordTest2(eventID: String, params: HashMap<String, Float64>, param
 /**
 	 * @brief RecordAndOptionalTest3(eventID: string, params: Record<string, string | number> | null, params1: Record<string, string | number>|undefined): void
 	 */
-public func RecordAndOptionalTest3(eventID: String, params: Option<HashMap<String, JSValue/* FIXME: `string | number` */>>, params1: Option<HashMap<String, JSValue/* FIXME: `string | number` */>>): Unit {
-    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest3", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params1, { context, i => i.toJSValue(context) })] })
+public func RecordAndOptionalTest3(eventID: String, params: Option<HashMap<String, Union_2_Members<String, Float64>>>, params1: Option<HashMap<String, Union_2_Members<String, Float64>>>): Unit {
+    hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest3", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<Union_2_Members<String, Float64>>(ctx, params1, { context, i => i.toJSValue(context) })] })
 }
 
 

@@ -9,6 +9,7 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
+
 //简单元组类型
 public type BasicTuple = (Float64, String, Bool)
 
@@ -31,6 +32,6 @@ public type TupleArray = Array<(Float64, String)>
 public type TwoDimensionalTuple = ((Float64, String), (Bool, JSValue/* FIXME: `Date` */))
 
 //元组与联合类型结合
-public type UnionTuple = (JSValue/* FIXME: `string | number` */, Bool, JSValue/* FIXME: `Date` */)
+public type UnionTuple = (Union_2_Members<String, Float64>, Bool, JSValue/* FIXME: `Date` */)
 
 

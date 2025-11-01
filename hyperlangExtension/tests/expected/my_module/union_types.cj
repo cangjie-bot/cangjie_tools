@@ -9,6 +9,175 @@ package my_module
 import ohos.ark_interop.*
 import ohos.ark_interop_helper.*
 import ohos.base.*
+import std.math.numeric.*
+
+public enum AutoGenType0 {
+    | BOOLEAN(Bool)
+    | STRING(String)
+    
+    public func toJSValue(context: JSContext): JSValue {
+        match(this) {
+            case BOOLEAN(x) => context.boolean(x).toJSValue()
+            case STRING(x) => context.string(x).toJSValue()
+        }
+    }
+    public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType0 {
+        
+        if (input.isBoolean()) {
+            return BOOLEAN(Bool.fromJSValue(context, input))
+        } 
+        if(input.isString()) {
+            return STRING(String.fromJSValue(context, input))
+        }
+    }
+}
+
+public enum AutoGenType1 {
+    | NUMBER(Float64)
+    | STRING(String)
+    | BOOLEAN(Bool)
+    
+    public func toJSValue(context: JSContext): JSValue {
+        match(this) {
+            case NUMBER(x) => context.number(x).toJSValue()
+            case STRING(x) => context.string(x).toJSValue()
+            case BOOLEAN(x) => context.boolean(x).toJSValue()
+        }
+    }
+    public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType1 {
+        
+        if(input.isNumber()) {
+            return NUMBER(Float64.fromJSValue(context, input))
+        }  
+        if(input.isString()) {
+            return STRING(String.fromJSValue(context, input))
+        } 
+        if (input.isBoolean()) {
+            return BOOLEAN(Bool.fromJSValue(context, input))
+        }
+    }
+}
+
+public enum AutoGenType2 {
+    | NUMBER(Float64)
+    | STRING(String)
+    | BOOLEAN(Bool)
+    | NULL
+    | UNDEFINED
+    
+    public func toJSValue(context: JSContext): JSValue {
+        match(this) {
+            case NUMBER(x) => context.number(x).toJSValue()
+            case STRING(x) => context.string(x).toJSValue()
+            case BOOLEAN(x) => context.boolean(x).toJSValue()
+            case NULL => context.null().toJSValue()
+            case UNDEFINED => context.undefined().toJSValue()
+        }
+    }
+    public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType2 {
+        
+        if(input.isNumber()) {
+            return NUMBER(Float64.fromJSValue(context, input))
+        }  
+        if(input.isString()) {
+            return STRING(String.fromJSValue(context, input))
+        } 
+        if (input.isBoolean()) {
+            return BOOLEAN(Bool.fromJSValue(context, input))
+        } 
+        if (input.isNull()) {
+            return NULL
+        } 
+        if (input.isUndefined()) {
+            return UNDEFINED
+        }
+    }
+}
+
+public enum AutoGenType3 {
+    | NUMBER(Float64)
+    | STRING(String)
+    
+    public func toJSValue(context: JSContext): JSValue {
+        match(this) {
+            case NUMBER(x) => context.number(x).toJSValue()
+            case STRING(x) => context.string(x).toJSValue()
+        }
+    }
+    public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType3 {
+        
+        if(input.isNumber()) {
+            return NUMBER(Float64.fromJSValue(context, input))
+        }  
+        if(input.isString()) {
+            return STRING(String.fromJSValue(context, input))
+        }
+    }
+}
+
+public enum AutoGenType4 {
+    | NUMBER(Float64)
+    | BOOLEAN(Bool)
+    
+    public func toJSValue(context: JSContext): JSValue {
+        match(this) {
+            case NUMBER(x) => context.number(x).toJSValue()
+            case BOOLEAN(x) => context.boolean(x).toJSValue()
+        }
+    }
+    public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType4 {
+        
+        if(input.isNumber()) {
+            return NUMBER(Float64.fromJSValue(context, input))
+        }  
+        if (input.isBoolean()) {
+            return BOOLEAN(Bool.fromJSValue(context, input))
+        }
+    }
+}
+
+public enum AutoGenType5 {
+    | BOOLEAN(Bool)
+    | STRING(String)
+    
+    public func toJSValue(context: JSContext): JSValue {
+        match(this) {
+            case BOOLEAN(x) => context.boolean(x).toJSValue()
+            case STRING(x) => context.string(x).toJSValue()
+        }
+    }
+    public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType5 {
+        
+        if (input.isBoolean()) {
+            return BOOLEAN(Bool.fromJSValue(context, input))
+        } 
+        if(input.isString()) {
+            return STRING(String.fromJSValue(context, input))
+        }
+    }
+}
+
+public enum AutoGenType6 {
+    | BOOLEAN(Bool)
+    | STRING(String)
+    
+    public func toJSValue(context: JSContext): JSValue {
+        match(this) {
+            case BOOLEAN(x) => context.boolean(x).toJSValue()
+            case STRING(x) => context.string(x).toJSValue()
+        }
+    }
+    public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType6 {
+        
+        if (input.isBoolean()) {
+            return BOOLEAN(Bool.fromJSValue(context, input))
+        } 
+        if(input.isString()) {
+            return STRING(String.fromJSValue(context, input))
+        }
+    }
+}
+
 
 /*class ExportKeyword UnionTypes {
     t_null: number | null;
@@ -16,13 +185,18 @@ import ohos.base.*
     t1_t2: boolean | String;
     t_undefined: number | undefined;
     undefined: undefined | String;
+    t3: number | String | boolean;
+    t4: number | String | boolean | null | undefined;
+    t5: number | String | boolean | bigint| void;
+    getValueOrError(): number | String
+    setValue(value: string): number | boolean
     }*/
 
 public class UnionTypes {
     
     protected UnionTypes(var arkts_object: JSObject) {}
     
-    
+    // Properties with union types
     public mut prop t_null: Option<Float64> {
         get() {
             checkThreadAndCall < Option<Float64> >(getMainContext()) {
@@ -51,15 +225,15 @@ public class UnionTypes {
         
     }
     
-    public mut prop t1_t2: JSValue/* FIXME: `boolean | string` */ {
+    public mut prop t1_t2: AutoGenType0 {
         get() {
-            checkThreadAndCall < JSValue/* FIXME: `boolean | string` */ >(getMainContext()) {
-                ctx: JSContext => arkts_object["t1_t2"]
+            checkThreadAndCall < AutoGenType0 >(getMainContext()) {
+                ctx: JSContext => AutoGenType0.fromJSValue(ctx, arkts_object["t1_t2"])
             }
         }
         set(v) {
             checkThreadAndCall < Unit >(getMainContext()) {
-                ctx: JSContext => arkts_object["t1_t2"] = v
+                ctx: JSContext => arkts_object["t1_t2"] = v.toJSValue(ctx)
             }
         }
         
@@ -93,6 +267,66 @@ public class UnionTypes {
         
     }
     
+    public mut prop t3: AutoGenType1 {
+        get() {
+            checkThreadAndCall < AutoGenType1 >(getMainContext()) {
+                ctx: JSContext => AutoGenType1.fromJSValue(ctx, arkts_object["t3"])
+            }
+        }
+        set(v) {
+            checkThreadAndCall < Unit >(getMainContext()) {
+                ctx: JSContext => arkts_object["t3"] = v.toJSValue(ctx)
+            }
+        }
+        
+    }
+    
+    public mut prop t4: AutoGenType2 {
+        get() {
+            checkThreadAndCall < AutoGenType2 >(getMainContext()) {
+                ctx: JSContext => AutoGenType2.fromJSValue(ctx, arkts_object["t4"])
+            }
+        }
+        set(v) {
+            checkThreadAndCall < Unit >(getMainContext()) {
+                ctx: JSContext => arkts_object["t4"] = v.toJSValue(ctx)
+            }
+        }
+        
+    }
+    
+    public mut prop t5: JSValue/* FIXME: `number | string | boolean | bigint | void` */ {
+        get() {
+            checkThreadAndCall < JSValue/* FIXME: `number | string | boolean | bigint | void` */ >(getMainContext()) {
+                ctx: JSContext => arkts_object["t5"]
+            }
+        }
+        set(v) {
+            checkThreadAndCall < Unit >(getMainContext()) {
+                ctx: JSContext => arkts_object["t5"] = v
+            }
+        }
+        
+    }
+    
+    /**
+	 * @brief getValueOrError(): number | String
+	 */
+	// Method returning a union type
+    public func getValueOrError(): AutoGenType3 {
+        jsObjApiCall < AutoGenType3 >( arkts_object, "getValueOrError", emptyArg) {
+            ctx, info => AutoGenType3.fromJSValue(ctx, info)
+        }
+    }
+    /**
+	 * @brief setValue(value: string): number | boolean
+	 */
+	// Method with union type parameter
+    public func setValue(value: String): AutoGenType4 {
+        jsObjApiCall < AutoGenType4 >( arkts_object, "setValue", { ctx =>[value.toJSValue(ctx)] }) {
+            ctx, info => AutoGenType4.fromJSValue(ctx, info)
+        }
+    }
     
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
@@ -102,4 +336,33 @@ public class UnionTypes {
         UnionTypes(input.asObject())
     }
 }
+
+/***********METHOD***********/
+/**
+	 * @brief testUnion(s: string): boolean | String
+	 */
+public func testUnion(s: String): AutoGenType5 {
+    hmsGlobalApiCall < AutoGenType5 >( "my_module_unionTypes", "testUnion", { ctx =>[s.toJSValue(ctx)] }) {
+        ctx, info => AutoGenType5.fromJSValue(ctx, info)
+    }
+}
+
+/**
+	 * @brief testUnion1(s: string | number): boolean | String
+	 */
+public func testUnion1(s: String): AutoGenType6 {
+    hmsGlobalApiCall < AutoGenType6 >( "my_module_unionTypes", "testUnion1", { ctx =>[s.toJSValue(ctx)] }) {
+        ctx, info => AutoGenType6.fromJSValue(ctx, info)
+    }
+}
+
+/**
+	 * @brief testUnion1(s: string | number): boolean | String
+	 */
+public func testUnion1(s: Float64): AutoGenType6 {
+    hmsGlobalApiCall < AutoGenType6 >( "my_module_unionTypes", "testUnion1", { ctx =>[s.toJSValue(ctx)] }) {
+        ctx, info => AutoGenType6.fromJSValue(ctx, info)
+    }
+}
+
 
