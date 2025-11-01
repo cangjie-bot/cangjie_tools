@@ -36,7 +36,7 @@
 
 namespace ark {
 const unsigned int TEST_LRU_SIZE = 8;
-const unsigned int LRU_SIZE = 1;
+const unsigned int LRU_SIZE = 3;
 
 class CompilerCangjieProject;
 
@@ -96,7 +96,7 @@ public:
         useDB = flag;
     }
     static void InitInstance(Callbacks *cb, lsp::IndexDatabase *arkIndexDB);
-    void UpdateBuffCache(const std::string &file);
+    void UpdateBuffCache(const std::string &file, bool isContentsChange = false);
     void GetRealPath(std::string &path);
     std::string GetFilePathByID(const std::string &curFilePath, unsigned int fileID);
     std::string GetFilePathByID(const Node &node, unsigned int fileID);
@@ -175,8 +175,6 @@ public:
 
     std::vector<std::string> GetIncTopologySort(const std::string &pkgName);
 
-    void ReportDiagForCirclePackages(const std::vector<std::vector<std::string>> &cycles);
-
     void ReportCircularDeps(const std::vector<std::vector<std::string>> &cycles);
 
     std::vector<std::vector<std::string>> ResolveDependence();
@@ -201,6 +199,8 @@ public:
     void CheckPackageNameByAbsName(const Cangjie::AST::File& needCheckedFile, const std::string &fullPackageName);
 
     std::string GetFullPkgName(const std::string &filePath) const;
+
+    std::string GetFullPkgByDir(const std::string &dirPath) const;
 
     Ptr<Package> GetSourcePackagesByPkg(const std::string &fullPkgName);
 
@@ -330,7 +330,7 @@ public:
     void IncrementForFileDelete(const std::string &fileName);
 
     // after workspace init, can use it. pair::second = ModulePath
-    std::pair<CangjieFileKind, std::string> GetCangjieFileKind(const std::string &filePath) const;
+    std::pair<CangjieFileKind, std::string> GetCangjieFileKind(const std::string &filePath, bool isPkg = false) const;
 
     int GetFileID(const std::string &fileName);
 
@@ -470,7 +470,12 @@ public:
 
     std::unique_ptr<LSPCompilerInstance> GetCIForDotComplete(const std::string &filePath, Position pos,
                                                              std::string &contents);
+
+    std::unique_ptr<LSPCompilerInstance> GetCIForFileRefactor(const std::string &filePath);
+
     void StoreAllPackagesCache();
+    
+    void EmitDiagsOfFile(const std::string &filePath);
 
 private:
     CompilerCangjieProject(Callbacks *cb, lsp::IndexDatabase *arkIndexDB);

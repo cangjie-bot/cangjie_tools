@@ -131,6 +131,8 @@ private:
 
     void CreateNamedArgRef(const CallExpr& ce);
 
+    void CreateImportRef(const File &fileNode);
+
     void CreateExtend(const Decl& decl, const std::string& filePath);
 
     void CreateCrossSymbolByInterop(const Decl &decl);
@@ -239,7 +241,8 @@ private:
 
     std::vector<std::pair<Ptr<const Node>, std::pair<CrossRegisterType, std::string>>> crossRegisterScopes;
 
-    std::unordered_map<SymbolID, std::vector<std::pair<std::string, SymbolLocation>>> crossRegisterDecls;
+    std::unordered_map<SymbolID, std::vector<std::tuple<std::string, SymbolLocation, SymbolID, SymbolLocation>>>
+        crossRegisterDecls;
 
     /**
      * import pkg.item as alias

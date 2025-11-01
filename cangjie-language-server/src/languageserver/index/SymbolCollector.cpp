@@ -253,6 +253,7 @@ const std::unordered_set<ASTKind> G_IGNORE_KINDS{ASTKind::MAIN_DECL, ASTKind::MA
                                                  ASTKind::VAR_WITH_PATTERN_DECL,
                                                  ASTKind::PRIMARY_CTOR_DECL, ASTKind::INVALID_DECL};
 
+enum class ElementIndex { NAME = 0, LOCATION = 1, ID = 2, DECLARATION = 3 };
 void SymbolCollector::Preamble(const Package &package)
 {
     for (const auto &file : package.files) {
@@ -340,6 +341,9 @@ void SymbolCollector::Build(const Package &package)
                 }
                 return VisitAction::WALK_CHILDREN;
             }).Walk();
+        }
+        if (!CjdIndexer::GetInstance() || !CjdIndexer::GetInstance()->GetRunningState()) {
+           CreateImportRef(*file); 
         }
     }
     scopes.pop_back();
@@ -576,14 +580,16 @@ void SymbolCollector::DealRegisterModule(const CallExpr &callExpr)
             return;
         }
         for (const auto &item : crossRegisterDecls[targetSymbolId]) {
-            std::string name = remove_quotes(item.first);
+            std::string name = remove_quotes(std::get<static_cast<size_t>(ElementIndex::NAME)>(item));
             if (name.empty()) {
                 continue;
             }
             CrossSymbol sym;
             sym.name = name;
             sym.crossType = CrossType::ARK_TS_WITH_REGISTER;
-            sym.location = item.second;
+            sym.location = std::get<static_cast<size_t>(ElementIndex::LOCATION)>(item);
+            sym.id = std::get<static_cast<size_t>(ElementIndex::ID)>(item);
+            sym.declaration = std::get<static_cast<size_t>(ElementIndex::DECLARATION)>(item);
             (void) crsSymsMap.emplace_back(sym);
         }
     }
@@ -617,13 +623,14 @@ void SymbolCollector::DealRegisterClass(const FuncArg &registerIdentify, const F
             crossSym.crossType = CrossType::ARK_TS_WITH_REGISTER;
             crossSym.location = {argTarget->GetIdentifierPos(),
                 argTarget->GetIdentifierPos() + CountUnicodeCharacters(identifier), argTarget->curFile->filePath};
+            crossSym.declaration = {registerIdentify.begin, registerIdentify.end, argTarget->curFile->filePath};
             (void) crsSymsMap.emplace_back(crossSym);
             const auto targetSymbolId = GetDeclSymbolID(*argTarget);
             if (crossRegisterDecls.find(targetSymbolId) == crossRegisterDecls.end()) {
                 return;
             }
             for (const auto &item : crossRegisterDecls[targetSymbolId]) {
-                std::string name = remove_quotes(item.first);
+                std::string name = remove_quotes(std::get<static_cast<size_t>(ElementIndex::NAME)>(item));
                 if (name.empty()) {
                     continue;
                 }
@@ -631,7 +638,9 @@ void SymbolCollector::DealRegisterClass(const FuncArg &registerIdentify, const F
                 sym.name = name;
                 sym.containerName = clazName;
                 sym.crossType = CrossType::ARK_TS_WITH_REGISTER;
-                sym.location = item.second;
+                sym.location = std::get<static_cast<size_t>(ElementIndex::LOCATION)>(item);
+                sym.id = std::get<static_cast<size_t>(ElementIndex::ID)>(item);
+                sym.declaration = std::get<static_cast<size_t>(ElementIndex::DECLARATION)>(item);
                 (void) crsSymsMap.emplace_back(sym);
             }
         }
@@ -680,6 +689,7 @@ void SymbolCollector::DealRegisterFunc(const FuncArg &registerIdentify, const Fu
             crossSym.id = GetDeclSymbolID(*argTarget);
             crossSym.name = remove_quotes(registerIdentify.ToString());
             crossSym.crossType = CrossType::ARK_TS_WITH_REGISTER;
+            crossSym.declaration = {registerIdentify.begin, registerIdentify.end, argTarget->curFile->filePath};
             crossSym.location = {argTarget->GetIdentifierPos(),
                 argTarget->GetIdentifierPos() + CountUnicodeCharacters(identifier), argTarget->curFile->filePath};
             (void) crsSymsMap.emplace_back(crossSym);
@@ -885,6 +895,8 @@ void SymbolCollector::DealFunctionSymbolInRegisterClass(const NameReferenceExpr 
             crossSym.crossType = CrossType::ARK_TS_WITH_REGISTER;
             crossSym.location = {argTarget->GetIdentifierPos(),
                 argTarget->GetIdentifierPos() + CountUnicodeCharacters(identifier), argTarget->curFile->filePath};
+            crossSym.declaration = {crossRegisterScopes.back().first->begin, crossRegisterScopes.back().first->end,
+                argTarget->curFile->filePath};
             (void) crsSymsMap.emplace_back(crossSym);
         }
         if (registerTarget->astKind == ASTKind::LAMBDA_EXPR) {
@@ -929,6 +941,8 @@ void SymbolCollector::DealFunctionSymbolInRegisterModule(const NameReferenceExpr
         crossSym.crossType = CrossType::ARK_TS_WITH_REGISTER;
         crossSym.location = {argTarget->GetIdentifierPos(),
             argTarget->GetIdentifierPos() + CountUnicodeCharacters(identifier), argTarget->curFile->filePath};
+        crossSym.declaration = {crossRegisterScopes.back().first->begin, crossRegisterScopes.back().first->end,
+            argTarget->curFile->filePath};
         (void) crsSymsMap.emplace_back(crossSym);
     }
     if (registerTarget->astKind == ASTKind::LAMBDA_EXPR) {
@@ -979,10 +993,15 @@ void SymbolCollector::DealFunctionSymbolInFunc(const NameReferenceExpr &function
         }
         SymbolLocation location = {argTarget->GetIdentifierPos(),
             argTarget->GetIdentifierPos() + CountUnicodeCharacters(identifier), argTarget->curFile->filePath};
+        SymbolID registerFuncDeclId = GetDeclSymbolID(*argTarget);
+        SymbolLocation declaration = {crossRegisterScopes.back().first->begin, crossRegisterScopes.back().first->end,
+            argTarget->curFile->filePath};
         if (crossRegisterDecls.find(declId) != crossRegisterDecls.end()) {
-            crossRegisterDecls[declId].emplace_back(std::make_pair(remove_quotes(registerFuncName), location));
+            crossRegisterDecls[declId].emplace_back(
+                std::make_tuple(remove_quotes(registerFuncName), location, registerFuncDeclId, declaration));
         } else {
-            crossRegisterDecls[declId] = {std::make_pair(remove_quotes(registerFuncName), location)};
+            crossRegisterDecls[declId] = {
+                std::make_tuple(remove_quotes(registerFuncName), location, registerFuncDeclId, declaration)};
         }
     }
     if (registerTarget->astKind == ASTKind::LAMBDA_EXPR) {
@@ -991,10 +1010,14 @@ void SymbolCollector::DealFunctionSymbolInFunc(const NameReferenceExpr &function
             return;
         }
         SymbolLocation location = {registerTarget->begin, registerTarget->begin + 1, functionRef.curFile->filePath};
+        SymbolLocation declaration = {crossRegisterScopes.back().first->begin, crossRegisterScopes.back().first->end,
+            functionRef.curFile->filePath};
         if (crossRegisterDecls.find(declId) != crossRegisterDecls.end()) {
-            crossRegisterDecls[declId].emplace_back(std::make_pair(remove_quotes(registerFuncName), location));
+            crossRegisterDecls[declId].emplace_back(std::make_tuple(
+                remove_quotes(registerFuncName), location, 0, declaration));
         } else {
-            crossRegisterDecls[declId] = {std::make_pair(remove_quotes(registerFuncName), location)};
+            crossRegisterDecls[declId] = {std::make_tuple(
+                remove_quotes(registerFuncName), location, 0, declaration)};
         }
     }
 }
@@ -1108,9 +1131,9 @@ void SymbolCollector::DealClassSymbolInFunc(const Decl &decl, const NameReferenc
         }
     }
     if (crossRegisterDecls.find(containerId) != crossRegisterDecls.end()) {
-        crossRegisterDecls[containerId].emplace_back(std::make_pair(name, location));
+        crossRegisterDecls[containerId].emplace_back(std::make_tuple(name, location, 0, location));
     } else {
-        crossRegisterDecls[containerId] = {std::make_pair(name, location)};
+        crossRegisterDecls[containerId] = {std::make_tuple(name, location, 0, location)};
     }
 }
 
@@ -1315,6 +1338,52 @@ void SymbolCollector::CreateTypeRef(const Type &type, const std::string &filePat
     (void)symbolRefMap[GetDeclSymbolID(*target)].emplace_back(refInfo);
 }
 
+void SymbolCollector::CreateImportRef(const File &fileNode)
+{
+    if (!fileNode.curFile || !fileNode.curPackage) {
+        return;
+    }
+    auto filePath = fileNode.curFile->filePath;
+    auto GetPackagePrefixWithPaths = [](const std::vector<std::string> &prefixPaths)-> std::string {
+        std::stringstream ss;
+        for (const auto &prefix : prefixPaths) {
+            ss << prefix << ".";
+        }
+        return ss.str().substr(0, ss.str().size() - 1);
+    };
+    auto ProcImport = [&fileNode, &GetPackagePrefixWithPaths, &filePath, this](
+                            ImportSpec &importSpec, ImportContent &importContent, bool isAllImport) {
+        const auto srcPkgName = fileNode.curPackage->fullPackageName;
+        std::string packagePrefix = GetPackagePrefixWithPaths(importContent.prefixPaths);
+        const auto targetPkg = this->importMgr.GetPackageDecl(packagePrefix);
+        if (!targetPkg) {
+            return;
+        }
+        const auto members = this->importMgr.GetPackageMembers(srcPkgName, targetPkg->fullPackageName);
+        for (const auto &memberDecl : members) {
+            if (const auto declPtr = dynamic_cast<const Decl *>(memberDecl.get());
+                declPtr == nullptr || (!isAllImport && declPtr->identifier != importContent.identifier)) {
+                    continue;
+                }
+            SymbolLocation loc{importSpec.begin, importSpec.end, filePath};
+            Ref refInfo{.location = loc, .kind = RefKind::IMPORT};
+            UpdatePos(refInfo.location, importSpec, filePath);
+            (void)symbolRefMap[GetDeclSymbolID(*memberDecl)].emplace_back(refInfo);
+        }
+    };
+
+    for (const auto &importSpec : fileNode.imports) {
+        if (!importSpec || importSpec->IsImportMulti() || importSpec->end.IsZero()) {
+            continue;
+        }
+        auto importContent = importSpec.get()->content;
+        if (importContent.end.IsZero()) {
+            continue;
+        }
+        ProcImport(*importSpec, importContent, importSpec->IsImportAll());
+    }
+}
+
 void SymbolCollector::CreateMacroRef(const Node &node, const MacroInvocation &invocation)
 {
     if (!invocation.target) {
@@ -1406,9 +1475,15 @@ void SymbolCollector::CollectRelations(
         }
 
         for (auto &member : id->GetMemberDecls()) {
+            if (!Ty::IsTyCorrect(member->ty)) {
+                continue;
+            }
+            (void)relations.emplace_back(Relation{.subject = GetDeclSymbolID(*member),
+                                                  .predicate = RelationKind::CONTAINED_BY,
+                                                  .object = GetDeclSymbolID(*id)});
             bool ignore =
                 member->astKind == ASTKind::VAR_DECL || member->TestAttr(Attribute::CONSTRUCTOR);
-            if (ignore || !Ty::IsTyCorrect(member->ty)) {
+            if (ignore) {
                 continue;
             }
             bool definedOverride = member->TestAttr(Attribute::REDEF, Attribute::STATIC) ||

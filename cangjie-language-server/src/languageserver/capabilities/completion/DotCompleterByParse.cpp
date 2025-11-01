@@ -7,6 +7,8 @@
 #include "DotCompleterByParse.h"
 #include <unordered_set>
 #include <vector>
+#include "cangjie/AST/Node.h"
+#include "cangjie/Utils/CastingTemplate.h"
 
 using namespace Cangjie;
 using namespace Cangjie::AST;
@@ -113,8 +115,12 @@ void DotCompleterByParse::Complete(const ArkAST &input,
 void DotCompleterByParse::FuzzyDotComplete(const ArkAST &input, const Position &pos,
                                            const std::string &prefix, CompletionEnv &env)
 {
-    OwnedPtr<Expr> expr;
+    Ptr<Expr> expr;
     Ptr<Decl> topDecl = FindTopDecl(input, prefix, env, pos);
+    inIfAvailable = CheckInIfAvailable(topDecl, pos);
+    if (inIfAvailable) {
+        topDecl = FindTopDecl(*input.semaCache, prefix, env, pos);
+    }
     std::string scopeName = "a";
     bool isInclude = true;
     DeepFind(topDecl, pos, scopeName, isInclude);
@@ -122,25 +128,7 @@ void DotCompleterByParse::FuzzyDotComplete(const ArkAST &input, const Position &
         env.OutputResult(result);
         return;
     }
-    Walker(topDecl, [&](auto node) {
-        if (auto ma = dynamic_cast<MemberAccess *>(node.get())) {
-            if (ma->dotPos.line == pos.line && ma->dotPos.column == pos.column - 1) {
-                expr = std::move(ma->baseExpr);
-                return VisitAction::STOP_NOW;
-            }
-        }
-        if (auto inv = node->GetInvocation()) {
-            OwnedPtr<Expr> ex = Parser(inv->args, input.diag, *input.sourceManager).ParseExpr();
-            AddCurFile(*ex, node->curFile);
-            if (auto ma = DynamicCast<MemberAccess *>(ex.get())) {
-                if (ma->dotPos.line == pos.line && ma->dotPos.column == pos.column - 1) {
-                    expr = std::move(ma->baseExpr);
-                    return VisitAction::STOP_NOW;
-                }
-            }
-        }
-        return VisitAction::WALK_CHILDREN;
-    }).Walk();
+    FindExprInTopDecl(topDecl, expr, input, pos);
     if (!expr) {
         env.OutputResult(result);
         return;
@@ -148,21 +136,11 @@ void DotCompleterByParse::FuzzyDotComplete(const ArkAST &input, const Position &
     if (expr->astKind == ASTKind::PRIMITIVE_TYPE_EXPR) {
         env.SetValue(FILTER::IS_STATIC, true);
     }
-    std::string comPrefix = prefix;
-    if (comPrefix.empty()) {
-        if (auto tc = DynamicCast<TrailingClosureExpr *>(expr.get())) {
-            if (auto re = DynamicCast<RefExpr *>(tc->expr.get())) {
-                comPrefix = re->ref.identifier;
-            }
-            bool hasLocalDecl = CheckHasLocalDecl(comPrefix, scopeName, tc, pos);
-            Candidate declOrTy = CompilerCangjieProject::GetInstance()->GetGivenReferenceTarget(
-                *context, scopeName, *tc, hasLocalDecl, packageNameForPath);
-            CompleteCandidate(pos, prefix, env, declOrTy);
-            return;
-        }
+    if (CompleteEmptyPrefix(expr, env, prefix, scopeName, pos)) {
+        return;
     }
     // get ty or decl info provider by GetGivenReferenceTy
-    bool hasLocalDecl = CheckHasLocalDecl(comPrefix, scopeName, expr.get(), pos);
+    bool hasLocalDecl = CheckHasLocalDecl(prefix, scopeName, expr.get(), pos);
     Candidate declOrTy = CompilerCangjieProject::GetInstance()->GetGivenReferenceTarget(
         *context, scopeName, *expr, hasLocalDecl, packageNameForPath);
 
@@ -235,25 +213,57 @@ void DotCompleterByParse::NestedMacroComplete(const ArkAST &input, const Positio
     if (!newSemaCache || !newSemaCache->file || newSemaCache->file->originalMacroCallNodes.empty()) {
         return;
     }
-    auto ty = GetTyFromMacroCallNodes(expr, std::move(newSemaCache));
+    Ptr<Ty> ty;
+    Ptr<NameReferenceExpr> resExpr;
+    GetTyFromMacroCallNodes(expr, std::move(newSemaCache), ty, resExpr);
     if (!ty) {
         return;
     }
-    std::unordered_set<Ptr<AST::Ty>> tys = {ty};
-    Candidate candidate(tys);
-    CompleteCandidate(pos, prefix, env, candidate);
+    if (Ty::IsTyCorrect(ty)) {
+        std::unordered_set<Ptr<AST::Ty>> tys = {ty};
+        Candidate candidate(tys);
+        CompleteCandidate(pos, prefix, env, candidate);
+        return;
+    }
+    if (!resExpr) {
+        return;
+    }
+    CompleteByReferenceTarget(pos, prefix, env, expr, resExpr);
 }
 
-Ptr<Ty> DotCompleterByParse::GetTyFromMacroCallNodes(Ptr<Expr> expr, std::unique_ptr<ArkAST> arkAst)
+void DotCompleterByParse::CompleteByReferenceTarget(const Position &pos, const std::string &prefix, CompletionEnv &env,
+    const Ptr<Expr> &expr, const Ptr<NameReferenceExpr> &resExpr)
+{
+    std::string comPrefix = prefix;
+    if (comPrefix.empty()) {
+        if (auto tc = DynamicCast<TrailingClosureExpr *>(expr.get())) {
+            if (auto re = DynamicCast<RefExpr *>(tc->expr.get())) {
+                comPrefix = re->ref.identifier;
+            }
+            bool hasLocalDecl = CheckHasLocalDecl(comPrefix, resExpr->scopeName, tc, pos);
+            Candidate declOrTy = CompilerCangjieProject::GetInstance()->GetGivenReferenceTarget(
+                *context, resExpr->scopeName, *tc, hasLocalDecl, packageNameForPath);
+            CompleteCandidate(pos, prefix, env, declOrTy);
+            return;
+        }
+    }
+    bool hasLocalDecl = CheckHasLocalDecl(comPrefix, resExpr->scopeName, expr.get(), pos);
+    Candidate declOrTy = CompilerCangjieProject::GetInstance()->GetGivenReferenceTarget(
+        *context, resExpr->scopeName, *expr, hasLocalDecl, packageNameForPath);
+    CompleteCandidate(pos, prefix, env, declOrTy);
+}
+
+void DotCompleterByParse::GetTyFromMacroCallNodes(Ptr<Expr> expr, std::unique_ptr<ArkAST> arkAst,
+    Ptr<Ty> &ty, Ptr<NameReferenceExpr> &resExpr)
 {
     Ptr<NameReferenceExpr> semaCacheExpr;
     auto macroCallNodes = &arkAst->file->originalMacroCallNodes;
     if (macroCallNodes->empty()) {
-        return nullptr;
+        return;
     }
     auto visitPre = [&expr, &semaCacheExpr](auto node) {
         if (auto ma = dynamic_cast<NameReferenceExpr *>(node.get())) {
-            if (ma->begin == expr->begin) {
+            if (ma->begin == expr->begin && ma->end == expr->end) {
                 semaCacheExpr = ma;
                 return VisitAction::STOP_NOW;
             }
@@ -269,14 +279,16 @@ Ptr<Ty> DotCompleterByParse::GetTyFromMacroCallNodes(Ptr<Expr> expr, std::unique
         }
     }
     if (!semaCacheExpr) {
-        return nullptr;
+        return;
     }
-    auto macroNewPos = semaCacheExpr->GetMacroCallNewPos(semaCacheExpr->begin);
-    Ptr<Ty> ty;
-    auto searchTy = [&ty, &macroNewPos](auto node) {
+    Position nextTokenPos = GetMacroNodeNextPosition(arkAst, semaCacheExpr);
+    auto macroBeginPos = semaCacheExpr->GetMacroCallNewPos(semaCacheExpr->begin);
+    auto maNextTokenPos = semaCacheExpr->GetMacroCallNewPos(nextTokenPos);
+    auto searchTy = [&ty, &macroBeginPos, &maNextTokenPos, &resExpr](auto node) {
         if (auto ma = dynamic_cast<NameReferenceExpr *>(node.get())) {
-            if (ma->begin == macroNewPos) {
+            if (ma->begin == macroBeginPos && (maNextTokenPos.IsZero() || ma->end <= maNextTokenPos)) {
                 ty = ma->ty;
+                resExpr = ma;
                 return VisitAction::STOP_NOW;
             }
         }
@@ -284,14 +296,30 @@ Ptr<Ty> DotCompleterByParse::GetTyFromMacroCallNodes(Ptr<Expr> expr, std::unique
     };
     auto decls = &arkAst->file->decls;
     if (decls->empty()) {
-        return nullptr;
+        return;
     }
     for (const auto &decl : *decls) {
         if (decl) {
             Walker(decl, searchTy).Walk();
         }
     }
-    return ty;
+}
+
+Position DotCompleterByParse::GetMacroNodeNextPosition(
+    const std::unique_ptr<ArkAST> &arkAst, const Ptr<NameReferenceExpr> &semaCacheExpr) const
+{
+    int index = arkAst->GetCurTokenByPos(semaCacheExpr->end, 0, static_cast<int>(arkAst->tokens.size()) - 1);
+    Position nextTokenPos;
+    if (index != -1 && index < static_cast<int>(arkAst->tokens.size()) - 1) {
+        int temp = index + 1;
+        while (temp <= static_cast<int>(arkAst->tokens.size()) - 1 && arkAst->tokens[temp].kind == TokenKind::NL) {
+            temp++;
+        }
+        if (temp <= static_cast<int>(arkAst->tokens.size()) - 1) {
+            nextTokenPos = arkAst->tokens[temp].Begin();
+        }
+    }
+    return nextTokenPos;
 }
 
 void DotCompleterByParse::CompleteCandidate(const Position &pos, const std::string &prefix,
@@ -913,6 +941,20 @@ void DotCompleterByParse::FindTrailingClosureExpr(Ptr<Cangjie::AST::Node> node, 
     }
 }
 
+void DotCompleterByParse::FindIfAvailableExpr(Ptr<Node> node, const Position &pos,
+                                              std::string &scopeName, bool &isInclude)
+{
+    auto pIfAvailableExpr = dynamic_cast<IfAvailableExpr*>(node.get());
+    if (!pIfAvailableExpr) { return; }
+    if (Contain(pIfAvailableExpr->GetArg(), pos)) {
+        DeepFind(pIfAvailableExpr->GetArg(), pos, scopeName, isInclude);
+    } else if (Contain(pIfAvailableExpr->GetLambda1(), pos)) {
+        DeepFind(pIfAvailableExpr->GetLambda1(), pos, scopeName, isInclude);
+    } else if (Contain(pIfAvailableExpr->GetLambda2(), pos)) {
+        DeepFind(pIfAvailableExpr->GetLambda2(), pos, scopeName, isInclude);
+    }
+}
+
 void DotCompleterByParse::DeepFind(Ptr<Node> node, const Position &pos, std::string &scopeName, bool &isInclude)
 {
     if (!node) { return; }
@@ -959,6 +1001,7 @@ void DotCompleterByParse::InitMap() const
     DotMatcher::GetInstance().RegFunc(ASTKind::PROP_DECL, &ark::DotCompleterByParse::FindPropDecl);
     DotMatcher::GetInstance().RegFunc(ASTKind::SPAWN_EXPR, &ark::DotCompleterByParse::FindSpawnExpr);
     DotMatcher::GetInstance().RegFunc(ASTKind::TRAIL_CLOSURE_EXPR, &ark::DotCompleterByParse::FindTrailingClosureExpr);
+    DotMatcher::GetInstance().RegFunc(ASTKind::IF_AVAILABLE_EXPR, &ark::DotCompleterByParse::FindIfAvailableExpr);
 }
 
 void DotCompleterByParse::AddExtendDeclFromIndex(Ptr<Ty> &extendTy, CompletionEnv &env, const Position &pos) const
@@ -1310,5 +1353,101 @@ bool DotCompleterByParse::IsEnumCtorTy(const std::string &beforePrefix, Ty *cons
         }
     }
     return false;
+}
+
+bool DotCompleterByParse::CheckInIfAvailable(Ptr<Decl> decl, const Position &pos)
+{
+    if (decl == nullptr || decl->astKind != ASTKind::FUNC_DECL) {
+        return false;
+    }
+    auto funcDecl = DynamicCast<FuncDecl*>(decl);
+    if (!funcDecl || !funcDecl->funcBody || !funcDecl->funcBody->body) {
+        return false;
+    }
+    for (auto& node : funcDecl->funcBody->body->body) {
+        if (node->GetBegin() <= pos && node->GetEnd() >= pos) {
+            if (node->astKind != ASTKind::MACRO_EXPAND_EXPR) {
+                return false;
+            }
+            auto expr = DynamicCast<MacroExpandExpr*>(node.get());
+            if (expr && expr->identifier == "IfAvailable") {
+                return true;
+            }
+            return false;
+        }
+    }
+    return false;
+}
+
+bool DotCompleterByParse::CompleteEmptyPrefix(Ptr<Expr> expr, CompletionEnv &env, const std::string &prefix,
+                            const std::string &scopeName, const Position &pos)
+{
+    std::string comPrefix = prefix;
+    if (comPrefix.empty()) {
+        if (auto tc = DynamicCast<TrailingClosureExpr *>(expr.get())) {
+            if (auto re = DynamicCast<RefExpr *>(tc->expr.get())) {
+                comPrefix = re->ref.identifier;
+            }
+            bool hasLocalDecl = CheckHasLocalDecl(comPrefix, scopeName, tc, pos);
+            Candidate declOrTy = CompilerCangjieProject::GetInstance()->GetGivenReferenceTarget(
+                *context, scopeName, *tc, hasLocalDecl, packageNameForPath);
+            CompleteCandidate(pos, prefix, env, declOrTy);
+            return true;
+        }
+    }
+    return false;
+}
+
+void DotCompleterByParse::FindExprInTopDecl(Ptr<Decl> topDecl, Ptr<Expr>& expr,
+                            const ArkAST &input, const Position &pos)
+{
+    WalkForMemberAccess(topDecl, expr, input, pos);
+    if (inIfAvailable && !expr) {
+        WalkForIfAvailable(topDecl, expr, input, pos);
+    }
+}
+
+void DotCompleterByParse::WalkForMemberAccess(Ptr<Decl> topDecl, Ptr<Expr>& expr, const ArkAST &input,
+                        const Position &pos)
+{
+    Walker(topDecl, [&](auto node) {
+        if (auto ma = dynamic_cast<MemberAccess *>(node.get())) {
+            if (ma->dotPos.line == pos.line && ma->dotPos.column == pos.column - 1) {
+                expr = ma->baseExpr.get();
+                return VisitAction::STOP_NOW;
+            }
+        }
+        if (auto inv = node->GetInvocation()) {
+            OwnedPtr<Expr> ex = Parser(inv->args, input.diag, *input.sourceManager).ParseExpr();
+            AddCurFile(*ex, node->curFile);
+            if (auto ma = DynamicCast<MemberAccess *>(ex.get())) {
+                if (ma->dotPos.line == pos.line && ma->dotPos.column == pos.column - 1) {
+                    expr = ma->baseExpr.get();
+                    return VisitAction::STOP_NOW;
+                }
+            }
+        }
+        return VisitAction::WALK_CHILDREN;
+    }).Walk();
+}
+
+void DotCompleterByParse::WalkForIfAvailable(Ptr<Decl> topDecl, Ptr<Expr>& expr, const ArkAST &input,
+                        const Position &pos)
+{
+    Walker(topDecl, [&](auto node) {
+        if (auto refExpr = DynamicCast<RefExpr *>(node.get())) {
+            if (refExpr->GetEnd().line == pos.line && refExpr->GetEnd().column == pos.column - 1) {
+                expr = refExpr;
+                return VisitAction::STOP_NOW;
+            }
+        }
+        if (auto callExpr = DynamicCast<CallExpr *>(node.get())) {
+            if (callExpr->GetEnd().line == pos.line && callExpr->GetEnd().column == pos.column - 1) {
+                expr = callExpr;
+                return VisitAction::STOP_NOW;
+            }
+        }
+        return VisitAction::WALK_CHILDREN;
+    }).Walk();
 }
 }

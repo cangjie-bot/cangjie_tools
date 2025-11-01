@@ -153,6 +153,9 @@ private:
 
     void FindTrailingClosureExpr(Ptr<Node> node, const Position &pos, std::string &scopeName, bool &isInclude);
 
+    void FindIfAvailableExpr(Ptr<Node> node, const Position &pos,
+                                std::string &scopeName, bool &isInclude);
+
     void CompleteQualifiedType(const std::string &beforePrefix, CompletionEnv &env) const;
 
     void FuzzyDotComplete(const ArkAST &input, const Position &pos, const std::string &prefix, CompletionEnv &env);
@@ -165,8 +168,12 @@ private:
 
     Ptr<Decl> FindTopDecl(const ArkAST &input, const std::string &prefix, CompletionEnv &env,
                           const Position &pos);
+
     void CompleteCandidate(const Position &pos, const std::string &prefix, CompletionEnv &env,
                            Candidate &declOrTy);
+
+    Position GetMacroNodeNextPosition(
+        const std::unique_ptr<ArkAST> &arkAst, const Ptr<NameReferenceExpr> &semaCacheExpr) const;
 
     /**
      * complete macro-modified field in macro node, ex:
@@ -182,7 +189,27 @@ private:
     void NestedMacroComplete(const ArkAST &input, const Position &pos, const std::string &prefix,
                               CompletionEnv &env, Ptr<Expr> expr);
 
+    void GetTyFromMacroCallNodes(Ptr<Expr> expr, std::unique_ptr<ArkAST> arkAst,
+        Ptr<Ty> &ty, Ptr<NameReferenceExpr> &resExpr);
+
+    void CompleteByReferenceTarget(const Position &pos, const std::string &prefix, CompletionEnv &env,
+        const Ptr<Expr> &expr, const Ptr<NameReferenceExpr> &resExpr);
+
     Ptr<Ty> GetTyFromMacroCallNodes(Ptr<Expr> expr, std::unique_ptr<ArkAST> arkAst);
+
+    bool CheckInIfAvailable(Ptr<Decl> decl, const Position &pos);
+
+    bool CompleteEmptyPrefix(Ptr<Expr> expr, CompletionEnv &env, const std::string &prefix,
+                                const std::string &scopeName, const Position &pos);
+
+    void FindExprInTopDecl(Ptr<Decl> topDecl, Ptr<Expr>& expr, const ArkAST &input,
+                            const Position &pos);
+
+    void WalkForMemberAccess(Ptr<Decl> topDecl, Ptr<Expr>& expr, const ArkAST &input,
+                            const Position &pos);
+
+    void WalkForIfAvailable(Ptr<Decl> topDecl, Ptr<Expr>& expr, const ArkAST &input,
+                            const Position &pos);
 
     Cangjie::ASTContext *context = nullptr;
 
@@ -199,6 +226,8 @@ private:
     bool isEnumCtor = false;
 
     SyscapCheck syscap;
+
+    bool inIfAvailable = false;
 };
 
 using FindFunc = void (ark::DotCompleterByParse::*)(

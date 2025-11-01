@@ -32,6 +32,49 @@ void FindReferencesImpl::GetCurPkgUesage(Ptr<Decl> decl, const ArkAST &ast, Refe
     }
 }
 
+void FindReferencesImpl::CompileDownStreamPackage(const std::vector<Ptr<Cangjie::AST::Decl>> &decls)
+{
+    if (decls.empty()) {
+        return;
+    }
+    // First verify if the downstream package status is stale
+    auto definedPkg = decls[0]->fullPackageName;
+    // Find all downstream packages
+    auto downPackages = CompilerCangjieProject::GetInstance()->GetDependencyGraph()->GetDependents(definedPkg);
+    // Check the status of all downstream packages
+    auto tasks = CompilerCangjieProject::GetInstance()->GetCjoManager()->CheckStatus(downPackages);\
+    // remove unChanged doc package
+    for (auto it = tasks.begin(); it != tasks.end();) {
+        if (!CompilerCangjieProject::GetInstance()->GetCjoManager()->IsDocChanged(*it)) {
+            it = tasks.erase(it);
+            continue;
+        }
+        ++it;
+    }
+    // Compile all downstream packages before searching for references
+    CompilerCangjieProject::GetInstance()->SubmitTasksToPool(tasks);
+}
+
+std::unordered_set<std::string> FindReferencesImpl::GetSelectedUesScopeNames(Ptr<Decl> decl,
+    const ArkAST &ast, Range &range)
+{
+    std::unordered_set<std::string> scopeNames;
+    if (!decl || !ast.file || !ast.file->curPackage) {
+        return scopeNames;
+    }
+    auto user = FindDeclUsage(*decl, *ast.file->curPackage);
+    for (const auto &U : user) {
+        if (U->astKind == ASTKind::MEMBER_ACCESS) {
+            continue;
+        }
+        auto refRange = GetProperRange(U, ast.tokens);
+        if (refRange.start >= range.start && refRange.end <= range.end) {
+            scopeNames.insert(U->scopeName);
+        }
+    }
+    return scopeNames;
+}
+
 void FindReferencesImpl::FindReferences(const ArkAST &ast, ReferencesResult &result, Position pos)
 {
     Logger &logger = Logger::Instance();
@@ -63,16 +106,8 @@ void FindReferencesImpl::FindReferences(const ArkAST &ast, ReferencesResult &res
         return;
     }
 
-    if (!decls.empty()) {
-        // First verify if the downstream package status is stale
-        auto definedPkg = decls[0]->fullPackageName;
-        // Find all downstream packages
-        auto downPackages = CompilerCangjieProject::GetInstance()->GetDependencyGraph()->GetDependents(definedPkg);
-        // Check the status of all downstream packages
-        auto tasks = CompilerCangjieProject::GetInstance()->GetCjoManager()->CheckStatus(downPackages);
-        // Compile all downstream packages before searching for references
-        CompilerCangjieProject::GetInstance()->SubmitTasksToPool(tasks);
-    }
+    // check down stream package
+    CompileDownStreamPackage(decls);
 
     lsp::SymbolIndex *index = ark::CompilerCangjieProject::GetInstance()->GetIndex();
     if (!index) {
@@ -130,6 +165,15 @@ void FindReferencesImpl::FindReferences(const ArkAST &ast, ReferencesResult &res
                 result.References.erase(it);
             }
         }
+    }
+}
+
+void FindReferencesImpl::FindFileReferences(const ArkAST &ast, ReferencesResult &result)
+{
+    Logger &logger = Logger::Instance();
+    logger.LogMessage(MessageType::MSG_LOG, "FindReferencesImpl::FindFileReferences in.");
+    for (auto& decl: ast.file->decls) {
+        FindReferences(ast, result, decl->GetIdentifierPos() + DEFAULT_POSITION);
     }
 }
 
