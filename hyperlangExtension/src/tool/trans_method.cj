@@ -85,12 +85,12 @@ public class TransMethod {
             this.arkParaType.add(paraType)
             optionFlag = item.optional
             this.cjParaName.add(dedupVarName(paraName))
-            this.cjParaType.add(item.ty.toCJType())
+            this.cjParaType.add(item.ty.toCJType(gconfig))
         }
         let arkR = methodType.returns
         this.arkRetType = arkR
         // Use TsType-based conversion for better union type support
-        this.cjRetType = methodType.returnTypeNode.toCJType()
+        this.cjRetType = methodType.returnTypeNode.toCJType(gconfig)
         if (promiseNeedGen) {
             callbackInnerType = cjRetType
         }
@@ -294,7 +294,7 @@ public class TransMethod {
             .parameters |> map {
                 p =>
                 let pName = Token(TokenKind.IDENTIFIER, checkCangjieKeyword(p.name))
-                let pType = p.ty.toCJTypeTokens()
+                let pType = p.ty.toCJTypeTokens(gconfig)
                 if (p.optional) {
                     quote($(pName)!: Option<$(pType)> = None)
                 } else {
