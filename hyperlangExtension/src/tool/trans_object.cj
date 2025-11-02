@@ -94,7 +94,7 @@ public class TransObject {
         for (i in 0..totalProperties.size) {
             let (arkProp, fromParent) = totalProperties[i]
             var proName = Token(TokenKind.IDENTIFIER, arkProp.cjKey)
-            let proType = arkProp.typeNode.toCJTypeTokens()
+            let proType = arkProp.typeNode.toCJTypeTokens(gconfig)
             let tsType = arkProp.typeNode
             let ctxToken = Tokens(Token(TokenKind.IDENTIFIER, "context"))
 
@@ -291,6 +291,7 @@ public class TransObject {
         tokens.append(template1)
         tokens.append(brackets)
         tokens.append(template2)
+        tokens
     }
 
     public func generate(): Tokens {
@@ -371,7 +372,7 @@ public class TransObject {
         let arkProp = arkProperties[i]
         propertyMethod.append(Token(TokenKind.COMMENT, arkProp.comment))
         let propName = Token(TokenKind.IDENTIFIER, arkProp.propKey)
-        let propType = arkProp.typeNode.toCJTypeTokens()
+        let propType = arkProp.typeNode.toCJTypeTokens(gconfig)
         let propAccess = if (arkProp.isStatic()) {
             quote(getClassConstructorObj($(gconfig.requireModuleName), $(arkName))[$(arkProp.propKey)])
         } else {
