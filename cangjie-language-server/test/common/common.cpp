@@ -601,54 +601,132 @@ namespace test::common {
         if (FileExist(dbPath)) {
             (void)Remove(dbPath);
         }
+
+        int retryCount = 3;
+        int timeoutSeconds = 1;
+
+        while (retryCount > 0) {
 #ifdef _WIN32
-        std::string cmdLine = "cmd.exe /c " + p->pathPwd + "\\LSPServer.exe --test --enable-log true < " +
-                              p->testFolder + "_freopen.in > " + p->testFolder + "_freopen.out";
-        if (useDb) {
-            cmdLine = "cmd.exe /c " + p->pathPwd + "\\LSPServer.exe --test --enable-log true --cache-path=" +
-                      cachePath + " < " + p->testFolder + "_freopen.in > " + p->testFolder + "_freopen.out";
-        }
+            std::string cmdLine = "cmd.exe /c " + p->pathPwd + "\\LSPServer.exe --test --enable-log true < " +
+                                  p->testFolder + "_freopen.in > " + p->testFolder + "_freopen.out";
+            if (useDb) {
+                cmdLine = "cmd.exe /c " + p->pathPwd + "\\LSPServer.exe --test --enable-log true --cache-path=" +
+                          cachePath + " < " + p->testFolder + "_freopen.in > " + p->testFolder + "_freopen.out";
+            }
 
-        STARTUPINFO si;
-        PROCESS_INFORMATION pi;
+            STARTUPINFO si;
+            PROCESS_INFORMATION pi;
 
-        ZeroMemory(&si, sizeof(si));
-        si.cb = sizeof(si);
-        ZeroMemory(&pi, sizeof(pi));
+            ZeroMemory(&si, sizeof(si));
+            si.cb = sizeof(si);
+            ZeroMemory(&pi, sizeof(pi));
 
-        // Start the child process.
-        if (!CreateProcess(NULL, (TCHAR *) cmdLine.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-            printf(cmdLine.c_str());
-            printf("StartLspServer fisrt failed (%d).\n", GetLastError());
+            // Start the child process.
             if (!CreateProcess(NULL, (TCHAR *) cmdLine.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
                 printf(cmdLine.c_str());
-                printf("\n");
-                printf("StartLspServer failed (%d).\n", GetLastError());
-                return;
+                printf("StartLspServer fisrt failed (%d).\n", GetLastError());
+                retryCount--;
+                if (retryCount <= 0) {
+                    printf(cmdLine.c_str());
+                    printf("\n");
+                    printf("StartLspServer failed after retries (%d).\n", GetLastError());
+                    return;
+                }
+                continue;
             }
-        }
 
-        // Wait until child process exits.
-        WaitForSingleObject(pi.hProcess, INFINITE);
+            // Wait until child process exits with timeout.
+            DWORD waitResult = WaitForSingleObject(pi.hProcess, timeoutSeconds * 1000);
+            if (waitResult == WAIT_TIMEOUT) {
+                // Process did not finish within timeout, terminate it
+                TerminateProcess(pi.hProcess, 1);
+                CloseHandle(pi.hProcess);
+                CloseHandle(pi.hThread);
+                retryCount--;
+                if (retryCount <= 0) {
+                    printf("StartLspServer timed out and failed after retries.\n");
+                    return;
+                }
+                continue;
+            }
 
-        // Close process and thread handles.
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
+            // Close process and thread handles.
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+            break; // Success, exit retry loop
 #else
-        std::string cmd =
-            p->pathPwd + "/LSPServer --test --enable-log true < " + p->testFolder + "_freopen.in > " +
-            p->testFolder + "_freopen.out";
-        if (useDb) {
-            cmd =  p->pathPwd + "/LSPServer --test --enable-log true --cache-path=" + cachePath + " < " +
-                              p->testFolder + "_freopen.in > " + p->testFolder + "_freopen.out";
-        }
+            std::string cmd =
+                p->pathPwd + "/LSPServer --test --enable-log true < " + p->testFolder + "_freopen.in > " +
+                p->testFolder + "_freopen.out";
+            if (useDb) {
+                cmd =  p->pathPwd + "/LSPServer --test --enable-log true --cache-path=" + cachePath + " < " +
+                                  p->testFolder + "_freopen.in > " + p->testFolder + "_freopen.out";
+            }
 
-    int status = system(cmd.c_str());
-    if (-1 == status) {
-        perror("Failed to wait for the subprocess to end.");
-    }
-    return;
+            // Use fork and exec instead of system to enable timeout control
+            pid_t pid = fork();
+            if (pid == -1) {
+                perror("Failed to fork process");
+                retryCount--;
+                if (retryCount <= 0) {
+                    perror("StartLspServer failed after retries.");
+                    return;
+                }
+                continue;
+            } else if (pid == 0) {
+                // Child process
+                execl("/bin/sh", "sh", "-c", cmd.c_str(), (char *)NULL);
+                perror("Failed to execute command");
+                _exit(1);
+            } else {
+                // Parent process
+                int status;
+                pid_t result = waitpid(pid, &status, WNOHANG);
+                time_t startTime = time(nullptr);
+
+                // Wait for the process to complete or timeout
+                while (result == 0) {
+                    if (time(nullptr) - startTime >= timeoutSeconds) {
+                        // Timeout reached, terminate the process
+                        kill(pid, SIGTERM);
+                        sleep(1); // Give it a moment to terminate gracefully
+
+                        // Check if it's still running
+                        result = waitpid(pid, &status, WNOHANG);
+                        if (result == 0) {
+                            // Force kill if it didn't terminate gracefully
+                            kill(pid, SIGKILL);
+                            waitpid(pid, &status, 0); // Clean up zombie process
+                        }
+
+                        retryCount--;
+                        if (retryCount <= 0) {
+                            perror("StartLspServer timed out and failed after retries.");
+                            return;
+                        }
+                        break;
+                    }
+
+                    result = waitpid(pid, &status, WNOHANG);
+                }
+
+                if (result == pid) {
+                    // Process completed normally
+                    if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
+                        break; // Success, exit retry loop
+                    } else {
+                        // Process exited with error
+                        retryCount--;
+                        if (retryCount <= 0) {
+                            perror("StartLspServer failed after retries.");
+                            return;
+                        }
+                        continue;
+                    }
+                }
+            }
 #endif
+        }
     }
 
     void ShowDiff(const nlohmann::json &inBase, const nlohmann::json &result, const TestParam &param,
