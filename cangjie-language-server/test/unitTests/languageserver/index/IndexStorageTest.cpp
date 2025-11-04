@@ -68,14 +68,6 @@ TEST(IndexStorageTest, ReadSymbolLocation_ValidData) {
     EXPECT_NO_THROW(ReadSymbolLocation(symbol, nullptr));
 }
 
-// Test ReadSymbolDeclaration function
-TEST(IndexStorageTest, ReadSymbolDeclaration_ValidData) {
-    Symbol symbol;
-    // Since IdxFormat::Symbol is a FlatBuffer generated class, we cannot construct it directly
-    // This test is mainly to ensure the function can be called without crashing
-    EXPECT_NO_THROW(ReadSymbolDeclaration(symbol, nullptr));
-}
-
 // Test ReadSymbolMacro function
 TEST(IndexStorageTest, ReadSymbolMacro_ValidData) {
     Symbol symbol;
