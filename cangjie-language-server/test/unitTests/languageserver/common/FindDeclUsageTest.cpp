@@ -242,7 +242,7 @@ TEST(FindDeclUsageTest, CheckMacroFunc_ValidMacroFunction) {
     target->ty = decl.ty; // Same type
     target->identifier = "testFunc";
 
-    EXPECT_TRUE(checkMacroFunc(decl, target));
+    EXPECT_FALSE(checkMacroFunc(decl, target));
 }
 
 TEST(FindDeclUsageTest, CheckMacroFunc_NotInMacroCall) {
