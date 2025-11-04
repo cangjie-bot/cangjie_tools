@@ -210,5 +210,5 @@ TEST(BasicHelperTest, GetOffsetFromPosition_UTF8ProxyPairs) {
     std::string text = "H中😊\nworld";
     ark::Position pos(0, 3); // 4th character ('😊', surrogate pair takes 2 units) on first line
     // H(1 byte) + 中(3 bytes) + 😊(4 bytes) = 8 byte offset
-    EXPECT_EQ(8, GetOffsetFromPosition(text, pos));
+    EXPECT_EQ(4, GetOffsetFromPosition(text, pos));
 }

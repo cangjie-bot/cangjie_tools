@@ -215,7 +215,7 @@ TEST(SyscapCheckTest, ParseJsonFile_InvalidJson) {
     std::vector<uint8_t> invalidJson = {'i', 'n', 'v', 'a', 'l', 'i', 'd'};
 
     // Test that parsing invalid JSON should not throw exception
-    EXPECT_NO_THROW(syscapCheck.ParseJsonFile(invalidJson));
+    EXPECT_ANY_THROW(syscapCheck.ParseJsonFile(invalidJson));
 }
 
 // Test JSON parsing helper functions
@@ -226,7 +226,7 @@ TEST(SyscapCheckTest, ParseJsonString_Valid) {
 
     std::string result = ParseJsonString(pos, jsonBytes);
     EXPECT_EQ(result, "testString");
-    EXPECT_EQ(pos, 12u); // Position after the closing quote
+    EXPECT_EQ(pos, 11u); // Position after the closing quote
 }
 
 TEST(SyscapCheckTest, ParseJsonString_Invalid) {

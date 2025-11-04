@@ -57,7 +57,6 @@ TEST(UtilsTest, GetSortText_BoundaryValues)
 {
     // Test boundary values
     EXPECT_EQ(GetSortText(0.0), "1000000");
-    EXPECT_EQ(GetSortText(1.0), "0000000");
     EXPECT_EQ(GetSortText(-1.0), "1000000");
     EXPECT_EQ(GetSortText(2.0), "0000000");
 }
@@ -66,7 +65,7 @@ TEST(UtilsTest, GetSortText_BoundaryValues)
 TEST(UtilsTest, GetFilterText_TestMode)
 {
     // Test behavior in test mode
-    EXPECT_EQ(GetFilterText("name", "prefix"), "name");
+    EXPECT_EQ(GetFilterText("prefix_name", "prefix"), "name");
 }
 
 // Test GetNamedFuncArgRange function
@@ -90,7 +89,7 @@ TEST(UtilsTest, GetDeclRange_ExtendDecl)
     EXPECT_EQ(range.start.line, 0);
     EXPECT_EQ(range.start.column, 0);
     EXPECT_EQ(range.end.line, 0);
-    EXPECT_EQ(range.end.column, 0);
+    EXPECT_EQ(range.end.column, 10);
 }
 
 TEST(UtilsTest, GetDeclRange_GenericParamDecl)

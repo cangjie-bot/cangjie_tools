@@ -15,7 +15,7 @@ using namespace Cangjie::AST;
 TEST(ItemResolverUtilTest, ResolveNameByNode_MacroExpandDeclWithInvocation) {
     // Create MacroExpandDecl node with invocation declaration
     auto macroExpandDecl = Ptr<MacroExpandDecl>();
-    auto invocationDecl = OwnedPtr<Decl>();
+    auto invocationDecl = OwnedPtr<FuncDecl>();
     invocationDecl->identifier = "testFunction";
     macroExpandDecl->invocation.decl = std::move(invocationDecl);
 
@@ -25,7 +25,7 @@ TEST(ItemResolverUtilTest, ResolveNameByNode_MacroExpandDeclWithInvocation) {
 
 TEST(ItemResolverUtilTest, ResolveNameByNode_MacroExpandDeclWithoutInvocation) {
     // Create MacroExpandDecl node without invocation declaration
-    auto macroExpandDecl = Ptr<MacroExpandDecl>();
+    auto macroExpandDecl = OwnedPtr<MacroExpandDecl>(new MacroExpandDecl());
     macroExpandDecl->invocation.decl = nullptr;
 
     std::string result = ItemResolverUtil::ResolveNameByNode(*macroExpandDecl);
@@ -34,7 +34,7 @@ TEST(ItemResolverUtilTest, ResolveNameByNode_MacroExpandDeclWithoutInvocation) {
 
 TEST(ItemResolverUtilTest, ResolveNameByNode_DeclNode) {
     // Create Decl node
-    auto decl = Ptr<FuncDecl>();
+    auto decl = OwnedPtr<FuncDecl>(new FuncDecl());
     decl->identifier = "testFunction";
 
     std::string result = ItemResolverUtil::ResolveNameByNode(*decl);
@@ -43,7 +43,7 @@ TEST(ItemResolverUtilTest, ResolveNameByNode_DeclNode) {
 
 TEST(ItemResolverUtilTest, ResolveNameByNode_PackageNode) {
     // Create Package node
-    auto package = Ptr<Package>();
+    auto package = OwnedPtr<Package>(new Package());
     package->fullPackageName = "test.package";
 
     std::string result = ItemResolverUtil::ResolveNameByNode(*package);
@@ -52,7 +52,7 @@ TEST(ItemResolverUtilTest, ResolveNameByNode_PackageNode) {
 
 TEST(ItemResolverUtilTest, ResolveNameByNode_UnknownNode) {
     // Create unknown type node
-    auto node = Ptr<Node>();
+    auto node = OwnedPtr<Node>(new Node());
 
     std::string result = ItemResolverUtil::ResolveNameByNode(*node);
     EXPECT_EQ("", result);
@@ -61,7 +61,7 @@ TEST(ItemResolverUtilTest, ResolveNameByNode_UnknownNode) {
 // Test ResolveKindByNode function
 TEST(ItemResolverUtilTest, ResolveKindByNode_VarDecl) {
     // Create VarDecl node
-    auto varDecl = Ptr<VarDecl>();
+    auto varDecl = OwnedPtr<VarDecl>(new VarDecl());
 
     CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*varDecl);
     EXPECT_EQ(CompletionItemKind::CIK_VARIABLE, result);
@@ -69,7 +69,7 @@ TEST(ItemResolverUtilTest, ResolveKindByNode_VarDecl) {
 
 TEST(ItemResolverUtilTest, ResolveKindByNode_FuncDeclConstructor) {
     // Create constructor FuncDecl node
-    auto funcDecl = Ptr<FuncDecl>();
+    auto funcDecl = OwnedPtr<FuncDecl>(new FuncDecl());
     funcDecl->EnableAttr(Attribute::CONSTRUCTOR);
 
     CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*funcDecl);
@@ -78,7 +78,7 @@ TEST(ItemResolverUtilTest, ResolveKindByNode_FuncDeclConstructor) {
 
 TEST(ItemResolverUtilTest, ResolveKindByNode_FuncDeclMethod) {
     // Create normal function FuncDecl node
-    auto funcDecl = Ptr<FuncDecl>();
+    auto funcDecl = OwnedPtr<FuncDecl>(new FuncDecl());
 
     CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*funcDecl);
     EXPECT_EQ(CompletionItemKind::CIK_METHOD, result);
@@ -86,7 +86,7 @@ TEST(ItemResolverUtilTest, ResolveKindByNode_FuncDeclMethod) {
 
 TEST(ItemResolverUtilTest, ResolveKindByNode_ClassDecl) {
     // Create ClassDecl node
-    auto classDecl = Ptr<ClassDecl>();
+    auto classDecl = OwnedPtr<ClassDecl>(new ClassDecl());
 
     CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*classDecl);
     EXPECT_EQ(CompletionItemKind::CIK_CLASS, result);
@@ -94,7 +94,7 @@ TEST(ItemResolverUtilTest, ResolveKindByNode_ClassDecl) {
 
 TEST(ItemResolverUtilTest, ResolveKindByNode_InterfaceDecl) {
     // Create InterfaceDecl node
-    auto interfaceDecl = Ptr<InterfaceDecl>();
+    auto interfaceDecl = OwnedPtr<InterfaceDecl>(new InterfaceDecl());
 
     CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*interfaceDecl);
     EXPECT_EQ(CompletionItemKind::CIK_INTERFACE, result);
@@ -102,7 +102,7 @@ TEST(ItemResolverUtilTest, ResolveKindByNode_InterfaceDecl) {
 
 TEST(ItemResolverUtilTest, ResolveKindByNode_EnumDecl) {
     // Create EnumDecl node
-    auto enumDecl = Ptr<EnumDecl>();
+    auto enumDecl = OwnedPtr<EnumDecl>(new EnumDecl());
 
     CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*enumDecl);
     EXPECT_EQ(CompletionItemKind::CIK_ENUM, result);
@@ -110,7 +110,7 @@ TEST(ItemResolverUtilTest, ResolveKindByNode_EnumDecl) {
 
 TEST(ItemResolverUtilTest, ResolveKindByNode_StructDecl) {
     // Create StructDecl node
-    auto structDecl = Ptr<StructDecl>();
+    auto structDecl = OwnedPtr<StructDecl>(new StructDecl());
 
     CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*structDecl);
     EXPECT_EQ(CompletionItemKind::CIK_STRUCT, result);
@@ -118,7 +118,7 @@ TEST(ItemResolverUtilTest, ResolveKindByNode_StructDecl) {
 
 TEST(ItemResolverUtilTest, ResolveKindByNode_TypeAliasDecl) {
     // Create TypeAliasDecl node
-    auto typeAliasDecl = Ptr<TypeAliasDecl>();
+    auto typeAliasDecl = OwnedPtr<TypeAliasDecl>(new TypeAliasDecl());
 
     CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*typeAliasDecl);
     EXPECT_EQ(CompletionItemKind::CIK_CLASS, result);
@@ -126,8 +126,8 @@ TEST(ItemResolverUtilTest, ResolveKindByNode_TypeAliasDecl) {
 
 TEST(ItemResolverUtilTest, ResolveKindByNode_MacroExpandDeclWithInvocation) {
     // Create MacroExpandDecl node with invocation declaration
-    auto macroExpandDecl = Ptr<MacroExpandDecl>();
-    auto invocationDecl = OwnedPtr<Decl>();
+    auto macroExpandDecl = OwnedPtr<MacroExpandDecl>(new MacroExpandDecl());
+    auto invocationDecl = OwnedPtr<Decl>(new FuncDecl());
     macroExpandDecl->invocation.decl = std::move(invocationDecl);
 
     CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*macroExpandDecl);
@@ -136,7 +136,7 @@ TEST(ItemResolverUtilTest, ResolveKindByNode_MacroExpandDeclWithInvocation) {
 
 TEST(ItemResolverUtilTest, ResolveKindByNode_MacroExpandDeclWithoutInvocation) {
     // Create MacroExpandDecl node without invocation declaration
-    auto macroExpandDecl = Ptr<MacroExpandDecl>();
+    auto macroExpandDecl = OwnedPtr<MacroExpandDecl>(new MacroExpandDecl());
     macroExpandDecl->invocation.decl = nullptr;
 
     CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*macroExpandDecl);
@@ -219,7 +219,7 @@ TEST(ItemResolverUtilTest, GetGenericParamByDecl_NullGeneric) {
 
 TEST(ItemResolverUtilTest, GetGenericParamByDecl_EmptyGeneric) {
     // Test empty Generic declaration (no type parameters)
-    auto genericDecl = Ptr<Generic>();
+    auto genericDecl = OwnedPtr<Generic>(new Generic());
 
     std::string result = ItemResolverUtil::GetGenericParamByDecl(genericDecl);
     EXPECT_EQ("<>", result);
@@ -227,10 +227,10 @@ TEST(ItemResolverUtilTest, GetGenericParamByDecl_EmptyGeneric) {
 
 TEST(ItemResolverUtilTest, GetGenericParamByDecl_SingleGenericParam) {
     // Test Generic declaration with single type parameter
-    auto genericDecl = Ptr<Generic>();
-    auto param = Ptr<GenericParamDecl>();
+    auto genericDecl = OwnedPtr<Generic>(new Generic());
+    auto param = OwnedPtr<GenericParamDecl>(new GenericParamDecl());
     param->identifier = "T";
-    genericDecl->typeParameters.emplace_back(param);
+    genericDecl->typeParameters.emplace_back(std::move(param));
 
     std::string result = ItemResolverUtil::GetGenericParamByDecl(genericDecl);
     EXPECT_EQ("<T>", result);
@@ -238,13 +238,13 @@ TEST(ItemResolverUtilTest, GetGenericParamByDecl_SingleGenericParam) {
 
 TEST(ItemResolverUtilTest, GetGenericParamByDecl_MultipleGenericParams) {
     // Test Generic declaration with multiple type parameters
-    auto genericDecl = Ptr<Generic>();
-    auto param1 = Ptr<GenericParamDecl>();
+    auto genericDecl = OwnedPtr<Generic>(new Generic());
+    auto param1 = OwnedPtr<GenericParamDecl>(new GenericParamDecl());
     param1->identifier = "T";
-    auto param2 = Ptr<GenericParamDecl>();
+    auto param2 = OwnedPtr<GenericParamDecl>(new GenericParamDecl());
     param2->identifier = "U";
-    genericDecl->typeParameters.emplace_back(param1);
-    genericDecl->typeParameters.emplace_back(param2);
+    genericDecl->typeParameters.emplace_back(std::move(param1));
+    genericDecl->typeParameters.emplace_back(std::move(param2));
 
     std::string result = ItemResolverUtil::GetGenericParamByDecl(genericDecl);
     EXPECT_EQ("<T, U>", result);
@@ -253,7 +253,7 @@ TEST(ItemResolverUtilTest, GetGenericParamByDecl_MultipleGenericParams) {
 // Test ResolveSignatureByNode function
 TEST(ItemResolverUtilTest, ResolveSignatureByNode_VarDecl) {
     // Test signature resolution for VarDecl node
-    auto varDecl = Ptr<VarDecl>();
+    auto varDecl = OwnedPtr<VarDecl>(new VarDecl());
     varDecl->identifier = "testVar";
 
     std::string result = ItemResolverUtil::ResolveSignatureByNode(*varDecl, nullptr);
@@ -262,7 +262,7 @@ TEST(ItemResolverUtilTest, ResolveSignatureByNode_VarDecl) {
 
 TEST(ItemResolverUtilTest, ResolveSignatureByNode_FuncDecl) {
     // Test signature resolution for FuncDecl node
-    auto funcDecl = Ptr<FuncDecl>();
+    auto funcDecl = OwnedPtr<FuncDecl>(new FuncDecl());
     funcDecl->identifier = "testFunction";
 
     std::string result = ItemResolverUtil::ResolveSignatureByNode(*funcDecl, nullptr);
@@ -271,7 +271,7 @@ TEST(ItemResolverUtilTest, ResolveSignatureByNode_FuncDecl) {
 
 TEST(ItemResolverUtilTest, ResolveSignatureByNode_ClassDecl) {
     // Test signature resolution for ClassDecl node
-    auto classDecl = Ptr<ClassDecl>();
+    auto classDecl = OwnedPtr<ClassDecl>(new ClassDecl());
     classDecl->identifier = "TestClass";
 
     std::string result = ItemResolverUtil::ResolveSignatureByNode(*classDecl, nullptr);
@@ -280,12 +280,12 @@ TEST(ItemResolverUtilTest, ResolveSignatureByNode_ClassDecl) {
 
 TEST(ItemResolverUtilTest, ResolveSignatureByNode_ClassDeclWithGeneric) {
     // Test signature resolution for ClassDecl node with generic parameters
-    auto classDecl = Ptr<ClassDecl>();
+    auto classDecl = OwnedPtr<ClassDecl>(new ClassDecl());
     classDecl->identifier = "TestClass";
-    auto generic = OwnedPtr<Generic>();
-    auto param = Ptr<GenericParamDecl>();
+    auto generic = OwnedPtr<Generic>(new Generic());
+    auto param = OwnedPtr<GenericParamDecl>(new GenericParamDecl());
     param->identifier = "T";
-    generic->typeParameters.emplace_back(param);
+    generic->typeParameters.emplace_back(std::move(param));
     classDecl->generic = std::move(generic);
 
     std::string result = ItemResolverUtil::ResolveSignatureByNode(*classDecl, nullptr);
@@ -304,8 +304,8 @@ TEST(ItemResolverUtilTest, IsCustomAnnotation_NoOuterDecl) {
 TEST(ItemResolverUtilTest, IsCustomAnnotation_NoAnnotations) {
     // Test case where outer declaration has no annotations
     FuncDecl decl;
-    auto outerDecl = Ptr<FuncDecl>();
-    decl.outerDecl = outerDecl;
+    auto outerDecl = OwnedPtr<FuncDecl>(new FuncDecl());
+    decl.outerDecl = outerDecl.get();
 
     bool result = ItemResolverUtil::IsCustomAnnotation(decl);
     EXPECT_FALSE(result);
@@ -314,10 +314,10 @@ TEST(ItemResolverUtilTest, IsCustomAnnotation_NoAnnotations) {
 TEST(ItemResolverUtilTest, IsCustomAnnotation_WithCustomAnnotation) {
     // Test case with custom annotation
     FuncDecl decl;
-    auto outerDecl = Ptr<FuncDecl>();
-    auto annotation = Ptr<Annotation>(new Annotation("TestAnnotation", AnnotationKind::CUSTOM, Position{1, 1, 1}));
-    outerDecl->annotations.emplace_back(annotation);
-    decl.outerDecl = outerDecl;
+    auto outerDecl = OwnedPtr<FuncDecl>(new FuncDecl());
+    auto annotation = OwnedPtr<Annotation>(new Annotation("TestAnnotation", AnnotationKind::CUSTOM, Position{1, 1, 1}));
+    outerDecl->annotations.emplace_back(std::move(annotation));
+    decl.outerDecl = outerDecl.get();
 
     bool result = ItemResolverUtil::IsCustomAnnotation(decl);
     EXPECT_TRUE(result);

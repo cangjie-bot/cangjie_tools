@@ -18,6 +18,15 @@ using namespace Cangjie::AST;
 std::vector<Cangjie::Token> CreateTestTokens() {
     std::vector<Cangjie::Token> tokens;
 
+    // 创建与测试代码对应的有效 token
+    Cangjie::Token varToken(
+        Cangjie::TokenKind::IDENTIFIER,
+        "testVariable",
+        Cangjie::Position{1, 1, 1},
+        Cangjie::Position{1, 1, 13}
+    );
+    tokens.push_back(varToken);
+
     return tokens;
 }
 
@@ -80,46 +89,52 @@ TEST_F(SemanticHighlightImplTest, GetFuncDecl_NormalFunction) {
 }
 
 TEST_F(SemanticHighlightImplTest, GetFuncDecl_PrimaryConstructor) {
-    Ptr<Node> node = Ptr<FuncDecl>();
-    node->EnableAttr(Cangjie::AST::Attribute::PRIMARY_CONSTRUCTOR);
-    node->begin = Position{1, 1, 1};
-    node->end = Position{1, 1, 5};
+    auto funcDecl = std::make_shared<FuncDecl>();
+    funcDecl->EnableAttr(Cangjie::AST::Attribute::PRIMARY_CONSTRUCTOR);
+    funcDecl->begin = Position{1, 1, 1};
+    funcDecl->end = Position{1, 1, 5};
 
-    GetFuncDecl(Ptr<Node>(node), result, tokens, sourceManager);
+    funcDecl->identifier = "testFunction";
+    funcDecl->identifierForLsp = "testFunction";
 
+    GetFuncDecl(funcDecl.get(), result, tokens, sourceManager);
     EXPECT_TRUE(result.empty());
 }
 
 TEST_F(SemanticHighlightImplTest, GetFuncDecl_InvalidIdentifier) {
-    auto node = Ptr<FuncDecl>();
-    node->identifier = "<invalid identifier>";
-    node->begin = Position{1, 1, 1};
-    node->end = Position{1, 1, 10};
+    auto funcDecl = std::make_shared<FuncDecl>();
+    funcDecl->EnableAttr(Cangjie::AST::Attribute::PRIMARY_CONSTRUCTOR);
+    funcDecl->begin = Position{1, 1, 1};
+    funcDecl->end = Position{1, 1, 5};
 
-    GetFuncDecl(node, result, tokens, sourceManager);
+    funcDecl->identifier = "<invalid identifier>";
+    funcDecl->identifierForLsp = "<invalid identifier>";
+
+    GetFuncDecl(funcDecl.get(), result, tokens, sourceManager);
 
     EXPECT_TRUE(result.empty());
 }
 
 TEST_F(SemanticHighlightImplTest, GetPrimaryDecl_NormalCase) {
-    auto node = Ptr<PrimaryCtorDecl>();
+    auto node = std::make_shared<PrimaryCtorDecl>();
+
     node->identifier = "PrimaryType";
+    node->identifierForLsp = "PrimaryType";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetPrimaryDecl(node, result, tokens, sourceManager);
-
+    GetPrimaryDecl(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
 TEST_F(SemanticHighlightImplTest, GetVarDecl_NormalCase) {
-    auto node = Ptr<VarDecl>();
+    auto node = std::make_shared<VarDecl>();
     node->identifier = "testVariable";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetVarDecl(node, result, tokens, sourceManager);
+    GetVarDecl(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);

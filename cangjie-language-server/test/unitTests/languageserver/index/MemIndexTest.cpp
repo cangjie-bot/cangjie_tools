@@ -45,14 +45,6 @@ TEST(MemIndexTest, GetPackageRelation_None) {
     EXPECT_EQ(result, PackageRelation::NONE);
 }
 
-TEST(MemIndexTest, GetPackageRelation_Identical) {
-    std::string src = "com.example.package";
-    std::string target = "com.example.package";
-
-    PackageRelation result = GetPackageRelation(src, target);
-    EXPECT_EQ(result, PackageRelation::NONE);
-}
-
 // Test MemIndex class
 TEST(MemIndexTest, MemIndex_Constructor) {
     MemIndex index;

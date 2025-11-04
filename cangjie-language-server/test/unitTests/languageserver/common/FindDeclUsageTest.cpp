@@ -103,13 +103,13 @@ TEST(FindDeclUsageTest, CheckFunctionEqual_DifferentParamListCount) {
     FuncDecl srcFunc;
     FuncDecl targetFunc;
 
-    srcFunc.funcBody = OwnedPtr<FuncBody>();
-    targetFunc.funcBody = OwnedPtr<FuncBody>();
+    srcFunc.funcBody = OwnedPtr<FuncBody>(new FuncBody());
+    targetFunc.funcBody = OwnedPtr<FuncBody>(new FuncBody());
 
     // Add different parameter list counts
-    auto paramList1 = Ptr<FuncParamList>();
-    auto paramList2 = Ptr<FuncParamList>();
-    auto paramList3 = Ptr<FuncParamList>();
+    auto paramList1 = Ptr<FuncParamList>(new FuncParamList());
+    auto paramList2 = Ptr<FuncParamList>(new FuncParamList());
+    auto paramList3 = Ptr<FuncParamList>(new FuncParamList());
 
     srcFunc.funcBody->paramLists.emplace_back(paramList1);
     targetFunc.funcBody->paramLists.emplace_back(paramList2);
@@ -122,7 +122,7 @@ TEST(FindDeclUsageTest, CheckFunctionEqual_DifferentParamListCount) {
 TEST(FindDeclUsageTest, GetDefinedDecl_FuncDeclWithPropDecl) {
     // Create function declaration with propDecl
     FuncDecl funcDecl;
-    auto propDecl = Ptr<PropDecl>();
+    auto propDecl = Ptr<PropDecl>(new PropDecl());
     funcDecl.propDecl = propDecl;
 
     auto result = GetDefinedDecl(Ptr<const Decl>(&funcDecl));
@@ -198,8 +198,8 @@ TEST(FindDeclUsageTest, CheckDeclEqual_NonFunctionDeclsSameContext) {
 // GetRealNode test
 TEST(FindDeclUsageTest, GetRealNode_ExprWithSourceExpr) {
     // Create expression with sourceExpr
-    auto expr = Ptr<RefExpr>();
-    auto sourceExpr = Ptr<RefExpr>();
+    auto expr = Ptr<RefExpr>(new RefExpr());
+    auto sourceExpr = Ptr<RefExpr>(new RefExpr());
     expr->sourceExpr = sourceExpr;
 
     auto result = GetRealNode(expr);
@@ -208,12 +208,12 @@ TEST(FindDeclUsageTest, GetRealNode_ExprWithSourceExpr) {
 
 TEST(FindDeclUsageTest, GetRealNode_MemberAccessWithBuiltinOperator) {
     // Create member access expression with builtin operator
-    auto ma = Ptr<MemberAccess>();
+    auto ma = Ptr<MemberAccess>(new MemberAccess());
     // Assume "+" is one of the builtin operators
     ma->field = "+";
 
-    auto callExpr = Ptr<CallExpr>();
-    auto sourceExpr = Ptr<RefExpr>();
+    auto callExpr = Ptr<CallExpr>(new CallExpr());
+    auto sourceExpr = Ptr<RefExpr>(new RefExpr());
     callExpr->sourceExpr = sourceExpr;
     ma->callOrPattern = callExpr;
 
@@ -233,10 +233,10 @@ TEST(FindDeclUsageTest, GetRealNode_NormalNode) {
 TEST(FindDeclUsageTest, CheckMacroFunc_ValidMacroFunction) {
     // Create valid macro function
     Decl decl;
-    auto target = Ptr<FuncDecl>();
+    auto target = Ptr<FuncDecl>(new FuncDecl());
 
     decl.isInMacroCall = true;
-    decl.ty = Ptr<Ty>();
+    decl.ty = Ptr<Ty>(new PrimitiveTy(TypeKind::TYPE_INT32));
     decl.identifier = "testFunc";
 
     target->ty = decl.ty; // Same type
@@ -248,7 +248,7 @@ TEST(FindDeclUsageTest, CheckMacroFunc_ValidMacroFunction) {
 TEST(FindDeclUsageTest, CheckMacroFunc_NotInMacroCall) {
     // Create non-macro function
     Decl decl;
-    auto target = Ptr<FuncDecl>();
+    auto target = Ptr<FuncDecl>(new FuncDecl());
 
     decl.isInMacroCall = false; // Not in macro call
     decl.ty = Ptr<Ty>();
@@ -257,19 +257,19 @@ TEST(FindDeclUsageTest, CheckMacroFunc_NotInMacroCall) {
     target->ty = decl.ty;
     target->identifier = "testFunc";
 
-    EXPECT_FALSE(checkMacroFunc(decl, Ptr<const Decl>(target)));
+    EXPECT_FALSE(checkMacroFunc(decl, target));
 }
 
 TEST(FindDeclUsageTest, CheckMacroFunc_DifferentIdentifiers) {
     // Create macro function with different identifiers
     Decl decl;
-    auto target = Ptr<FuncDecl>();
+    auto target = Ptr<FuncDecl>(new FuncDecl());
 
     decl.isInMacroCall = true;
-    decl.ty = Ptr<Ty>();
+    decl.ty = Ptr<Ty>(new PrimitiveTy(TypeKind::TYPE_INT32));
     decl.identifier = "testFunc1";
 
-    target->ty = decl.ty;
+    target->ty = Ptr<Ty>(new PrimitiveTy(TypeKind::TYPE_INT32));
     target->identifier = "testFunc2"; // Different identifier
 
     EXPECT_FALSE(checkMacroFunc(decl, target));
