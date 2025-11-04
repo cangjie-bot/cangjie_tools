@@ -291,28 +291,77 @@ cjpm build success
 - `-g` 用于运行 `debug` 版本的产物
 - `-V, --verbose` 用于展示运行日志
 - `--skip-script` 配置后，将会跳过构建脚本的编译运行
-- `-- <values>`  透传 `--` 后面的所有参数给本次运行的二进制产物，以空格分隔，带空格的字符串需要添加 ""
+- `-- <values>`  透传命令中第一个 `--` 后面的所有参数给本次运行的二进制产物，以空格分隔，带空格的字符串需要添加 ""
 
-例如：
+例如下面给定的main函数：
+
+```
+@When[debug]
+func foo() {
+    println("debug")
+}
+
+@When[!debug]
+func foo() {
+    println("release")
+}
+
+main(args: Array<String>): Int64 {
+    for (arg in args) {println("arg: '${arg}'")}
+    foo()
+    return 0
+}
+```
+
+给出不同的输入会有不同的结果：
 
 ```text
 输入: cjpm run
-输出: cjpm run finished
+输出: 
+release
+
+cjpm run finished
 ```
 
 ```text
 输入: cjpm run -g // 此时会默认执行 cjpm build -i -g 命令
-输出: cjpm run finished
+输出: 
+debug
+
+cjpm run finished
 ```
 
 ```text
-输入: cjpm run --build-args="-s -j16" --run-args="a b c"
-输出: cjpm run finished
+输入: cjpm run --build-args="-j16" --run-args="a b c"
+输出:
+Warning: option '--run-args' will be removed in the future, prefer to use '--' instead
+arg: 'a'
+arg: 'b'
+arg: 'c'
+release
+
+cjpm run finished
 ```
 
 ```text
-输入: cjpm run --build-args="-s -j16" -- a b "c d"
-输出: cjpm run finished
+输入: cjpm run --build-args="-j16" --run-args="a b c" -- "c b a"
+输出:
+Warning: option '--run-args' will be ignored while using '--' at the same time
+arg: 'c b a'
+release
+
+cjpm run finished
+```
+
+```text
+输入: cjpm run --build-args="-j16" -- a b "c d"
+输出:
+arg: 'a'
+arg: 'b'
+arg: 'c d'
+release
+
+cjpm run finished
 ```
 
 > **注意：**
