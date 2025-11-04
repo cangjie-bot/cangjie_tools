@@ -1856,6 +1856,12 @@ void CompilerCangjieProject::BuildIndex(const std::unique_ptr<LSPCompilerInstanc
         if (needStoreCache) {
             StorePackageCache(curPkgName);
         }
+        if (!needStoreCache && curPkgName == "ohos_app_cangjie_entry.page" && !ci->diag.GetStoredDiags().empty()) {
+            for (const auto &diagnostic : ci->diag.GetStoredDiags()) {
+                std::string filePath = ci->diag.GetSourceManager().GetSource(diagnostic.start.fileID).path;
+                Trace::Log("------------diag--------------", diagnostic.errorMessage, filePath, diagnostic.start, diagnostic.end);
+            }
+        }
         Trace::Log(curPkgName, "error count: ", ci->diag.GetErrorCount());
     }
 #endif
