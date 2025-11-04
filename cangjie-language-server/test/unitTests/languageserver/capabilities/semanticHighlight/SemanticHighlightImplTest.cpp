@@ -1,3 +1,4 @@
+// SemanticHighlightImplTest.cpp
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
@@ -17,14 +18,15 @@ using namespace Cangjie::AST;
 // Helper function to create test tokens
 std::vector<Cangjie::Token> CreateTestTokens() {
     std::vector<Cangjie::Token> tokens;
-    // 创建一些基本的测试 tokens
+    // 添加一些测试用的Token
+    tokens.emplace_back(TokenKind::IDENTIFIER, "test");
+    tokens.emplace_back(TokenKind::STRING_LITERAL, "\"hello\"");
     return tokens;
 }
 
 // Helper function to create test source manager
 Cangjie::SourceManager* CreateTestSourceManager() {
     auto* sourceManager = new Cangjie::SourceManager();
-    // 添加一个测试源文件
     std::string testCode = "func testFunction() {\n"
                            "    var testVariable = 10\n"
                            "    $testVariable\n"
@@ -36,9 +38,7 @@ Cangjie::SourceManager* CreateTestSourceManager() {
 class SemanticHighlightImplTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        // 初始化测试环境
         sourceManager = CreateTestSourceManager();
-        // 创建一些基本的测试 tokens
         tokens = CreateTestTokens();
         result.clear();
     }
@@ -52,266 +52,240 @@ protected:
     std::vector<SemanticHighlightToken> result;
 };
 
-// 测试 AddAnnoToken 函数
 TEST_F(SemanticHighlightImplTest, AddAnnoToken_NormalCase) {
-    // 创建带有注解的 Decl 节点
-    auto decl = Ptr<Decl>(new Decl());
+    auto decl = MakeOwned<Decl>();
     decl->identifier = "TestClass";
 
-    // 创建注解
-    auto annotation = OwnedPtr<Annotation>(new Annotation());
-    annotation->identifier = "@TestAnnotation";
-    auto baseExpr = new Expr();
+    auto annotation = MakeOwned<Annotation>();
+    annotation->identifier = "TestAnnotation";
+    auto baseExpr = MakeOwned<Expr>();
     baseExpr->begin = Position{1, 1, 1};
     baseExpr->end = Position{1, 1, 15};
-    annotation->baseExpr = OwnedPtr<Expr>(baseExpr);
+    annotation->baseExpr = std::move(baseExpr);
 
     decl->annotations.push_back(std::move(annotation));
 
-    AddAnnoToken(decl, result, tokens, sourceManager);
+    AddAnnoToken(decl.get(), result, tokens, sourceManager);
 
-    // 验证结果
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// 测试 GetFuncDecl 函数
 TEST_F(SemanticHighlightImplTest, GetFuncDecl_NormalFunction) {
-    auto node = Ptr<Node>(new Decl());
-    // 设置其他必要字段
+    auto node = MakeOwned<FuncDecl>();
+    node->identifier = "testFunction";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetFuncDecl(node, result, tokens, sourceManager);
+    GetFuncDecl(node.get(), result, tokens, sourceManager);
 
-    // 验证结果
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::FUNCTION_H);
 }
 
-// 测试 GetFuncDecl 函数 - 主构造函数
 TEST_F(SemanticHighlightImplTest, GetFuncDecl_PrimaryConstructor) {
-    Ptr<Node> node = Ptr<FuncDecl>();
+    auto node = MakeOwned<FuncDecl>();
     node->EnableAttr(Cangjie::AST::Attribute::PRIMARY_CONSTRUCTOR);
+    node->identifier = "PrimaryConstructor";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 5};
 
-    GetFuncDecl(Ptr<Node>(node), result, tokens, sourceManager);
+    GetFuncDecl(node.get(), result, tokens, sourceManager);
 
-    // 主构造函数不应产生高亮token
     EXPECT_TRUE(result.empty());
 }
 
-// 测试 GetFuncDecl 函数 - 无效标识符
 TEST_F(SemanticHighlightImplTest, GetFuncDecl_InvalidIdentifier) {
-    auto node = Ptr<FuncDecl>();
+    auto node = MakeOwned<FuncDecl>();
     node->identifier = "<invalid identifier>";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetFuncDecl(node, result, tokens, sourceManager);
+    GetFuncDecl(node.get(), result, tokens, sourceManager);
 
-    // 无效标识符不应产生高亮token
     EXPECT_TRUE(result.empty());
 }
 
-// 测试 GetPrimaryDecl 函数
 TEST_F(SemanticHighlightImplTest, GetPrimaryDecl_NormalCase) {
-    auto node = Ptr<PrimaryCtorDecl>();
+    auto node = MakeOwned<PrimaryCtorDecl>();
     node->identifier = "PrimaryType";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetPrimaryDecl(node, result, tokens, sourceManager);
+    GetPrimaryDecl(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// 测试 GetVarDecl 函数
 TEST_F(SemanticHighlightImplTest, GetVarDecl_NormalCase) {
-    auto node = Ptr<VarDecl>();
+    auto node = MakeOwned<VarDecl>();
     node->identifier = "testVariable";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetVarDecl(node, result, tokens, sourceManager);
+    GetVarDecl(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
 }
 
-// 测试 GetPropDecl 函数
 TEST_F(SemanticHighlightImplTest, GetPropDecl_NormalCase) {
-    auto node = Ptr<PropDecl>();
+    auto node = MakeOwned<PropDecl>();
     node->identifier = "testProperty";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetPropDecl(node, result, tokens, sourceManager);
+    GetPropDecl(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
 }
 
-// 测试 GetCallExpr 函数
 TEST_F(SemanticHighlightImplTest, GetCallExpr_NormalCase) {
-    auto node = Ptr<CallExpr>();
-    // 设置必要的字段
-    auto symbol = Ptr<Symbol>();
-    node->symbol = symbol;
+    auto node = MakeOwned<CallExpr>();
+    auto symbol = OwnedPtr<Symbol>();
+    node->symbol = symbol.get();
 
-    auto resolvedFunction = Ptr<FuncDecl>();
+    auto resolvedFunction = MakeOwned<FuncDecl>();
     resolvedFunction->identifier = "testFunction";
-    node->resolvedFunction = resolvedFunction;
+    node->resolvedFunction = resolvedFunction.get();
 
-    auto baseFunc = Ptr<RefExpr>();
-    node->baseFunc = OwnedPtr<Expr>(baseFunc);
+    auto baseFunc = MakeOwned<RefExpr>();
+    node->baseFunc = std::move(baseFunc);
 
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
     node->leftParenPos = Position{1, 1, 14};
 
-    GetCallExpr(node, result, tokens, sourceManager);
+    GetCallExpr(node.get(), result, tokens, sourceManager);
 
-    // 验证结果
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::FUNCTION_H);
 }
 
-// 测试 GetCallExpr 函数 - MemberAccess基函数
 TEST_F(SemanticHighlightImplTest, GetCallExpr_MemberAccessBase) {
-    auto node = Ptr<CallExpr>();
-    // 设置必要的字段
-    auto symbol = Ptr<Symbol>();
-    node->symbol = symbol;
+    auto node = MakeOwned<CallExpr>();
 
-    auto resolvedFunction = Ptr<FuncDecl>();
+    auto symbol = MakeOwned<Symbol>();
+    node->symbol = symbol.get();
+
+    auto resolvedFunction = MakeOwned<FuncDecl>();
     resolvedFunction->identifier = "testMethod";
-    node->resolvedFunction = resolvedFunction;
+    node->resolvedFunction = resolvedFunction.get();
 
-    auto baseFunc = new Expr();
-    node->baseFunc = OwnedPtr<Expr>(baseFunc);
+    auto baseFunc = MakeOwned<MemberAccess>();
+    node->baseFunc = std::move(baseFunc);
 
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
     node->leftParenPos = Position{1, 1, 14};
 
-    GetCallExpr(node, result, tokens, sourceManager);
+    GetCallExpr(node.get(), result, tokens, sourceManager);
 
-    // MemberAccess作为基函数时不应产生高亮token
     EXPECT_TRUE(result.empty());
 }
 
-// 测试 GetMemberAccess 函数
 TEST_F(SemanticHighlightImplTest, GetMemberAccess_ClassMember) {
-    auto node = Ptr<MemberAccess>();
+    auto node = MakeOwned<MemberAccess>();
     node->field = "memberField";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    // 设置 target 为 ClassLikeDecl
-    auto target = Ptr<ClassDecl>();
+    auto target = MakeOwned<ClassDecl>();
     target->identifier = "TestClass";
-    node->target = target;
+    node->target = std::move(target);
 
-    GetMemberAccess(node, result, tokens, sourceManager);
+    GetMemberAccess(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// 测试 GetMemberAccess 函数 - 包成员
 TEST_F(SemanticHighlightImplTest, GetMemberAccess_PackageMember) {
-    auto node = Ptr<MemberAccess>();
+    auto node = MakeOwned<MemberAccess>();
     node->field = "packageName";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    // 设置 target 为 PackageDecl
-    auto target = Ptr<PackageDecl>();
-    node->target = target;
+    auto target = OwnedPtr<PackageDecl>();
+    node->target = std::move(target);
 
-    GetMemberAccess(node, result, tokens, sourceManager);
+    GetMemberAccess(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::PACKAGE_H);
 }
 
-// 测试 GetFuncArg 函数
 TEST_F(SemanticHighlightImplTest, GetFuncArg_NormalCase) {
-    auto node = Ptr<FuncArg>();
+    auto node = MakeOwned<FuncArg>();
     node->name = "argName";
-    // 设置位置信息
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetFuncArg(node, result, tokens, sourceManager);
+    GetFuncArg(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
 }
 
-// 测试 GetFuncArg 函数 - 零位置
 TEST_F(SemanticHighlightImplTest, GetFuncArg_ZeroPosition) {
-    auto node = Ptr<FuncArg>();
+    auto node = MakeOwned<FuncArg>();
     node->name = "argName";
-    // 设置零位置信息
     node->begin = Position{0, 0, 0};
     node->end = Position{0, 0, 0};
 
-    GetFuncArg(node, result, tokens, sourceManager);
+    GetFuncArg(node.get(), result, tokens, sourceManager);
 
-    // 零位置不应产生高亮token
     EXPECT_TRUE(result.empty());
 }
 
-// 测试 RefTargetEmpty 函数
+// Test RefTargetEmpty function
 TEST_F(SemanticHighlightImplTest, RefTargetEmpty_NullTarget) {
-    auto node = Ptr<RefExpr>();
-    // 不设置 ref.target
+    auto node = MakeOwned<RefExpr>();
+    // Do not set ref.target
 
-    bool isEmpty = RefTargetEmpty(node);
+    bool isEmpty = RefTargetEmpty(node.get());
 
     EXPECT_TRUE(isEmpty);
 }
 
-// 测试 RefTargetEmpty 函数 - 非RefExpr节点
+// Test RefTargetEmpty function - Non-RefExpr node
 TEST_F(SemanticHighlightImplTest, RefTargetEmpty_NonRefExpr) {
-    auto node = Ptr<Decl>();
-    // 传入非RefExpr节点
+    auto node = MakeOwned<Decl>();
+    // Pass in non-RefExpr node
 
-    bool isEmpty = RefTargetEmpty(node);
+    bool isEmpty = RefTargetEmpty(node.get());
 
     EXPECT_TRUE(isEmpty);
 }
 
-// 测试 SpecialTarget 函数
+// Test SpecialTarget function
 TEST_F(SemanticHighlightImplTest, SpecialTarget_ClassTarget) {
-    auto node = Ptr<RefExpr>();
-    auto target = Ptr<ClassDecl>();
-    node->ref.target = target;
+    auto node = MakeOwned<RefExpr>();
+    auto target = MakeOwned<ClassDecl>();
+    node->ref.target = target.get();
 
-    bool isSpecial = SpecialTarget(node);
+    bool isSpecial = SpecialTarget(node.get());
 
     EXPECT_TRUE(isSpecial);
 }
 
-// 测试 SpecialTarget 函数 - Init函数
+// Test SpecialTarget function - Init function
 TEST_F(SemanticHighlightImplTest, SpecialTarget_InitFunction) {
-    auto node = Ptr<RefExpr>();
-    auto target = Ptr<FuncDecl>();
+    auto node = MakeOwned<RefExpr>();
+    auto target = MakeOwned<FuncDecl>();
     target->identifier = "init";
-    node->ref.target = target;
+    node->ref.target = target.get();
 
-    bool isSpecial = SpecialTarget(node);
+    bool isSpecial = SpecialTarget(node.get());
 
     EXPECT_TRUE(isSpecial);
 }
 
-// 测试 HandleInterpolationExpr 函数
+// Test HandleInterpolationExpr function
 TEST_F(SemanticHighlightImplTest, HandleInterpolationExpr_DollarSign) {
-    // 重新创建一个包含$的源码管理器
+    // Recreate a source manager containing $
     delete sourceManager;
     sourceManager = new Cangjie::SourceManager();
     std::string testCode = "$variable";
@@ -323,12 +297,12 @@ TEST_F(SemanticHighlightImplTest, HandleInterpolationExpr_DollarSign) {
 
     HandleInterpolationExpr(range, sourceManager);
 
-    // 验证范围是否正确调整（应偏移1个字符）
+    // Verify that the range is correctly adjusted (should offset by 1 character)
     EXPECT_EQ(range.start.column, 2);
     EXPECT_EQ(range.end.column, 11);
 }
 
-// 测试 HandleInterpolationExpr 函数 - 无源码管理器
+// Test HandleInterpolationExpr function - No source manager
 TEST_F(SemanticHighlightImplTest, HandleInterpolationExpr_NoSourceManager) {
     ark::Range range;
     range.start = Position{1, 1, 1};
@@ -336,313 +310,313 @@ TEST_F(SemanticHighlightImplTest, HandleInterpolationExpr_NoSourceManager) {
 
     HandleInterpolationExpr(range, nullptr);
 
-    // 应无变化
+    // Should remain unchanged
     EXPECT_EQ(range.start.column, 1);
     EXPECT_EQ(range.end.column, 10);
 }
 
-// 测试 GetRefExpr 函数
+// Test GetRefExpr function
 TEST_F(SemanticHighlightImplTest, GetRefExpr_ClassReference) {
-    auto node = Ptr<RefExpr>();
-    auto target = Ptr<ClassDecl>();
+    auto node = MakeOwned<RefExpr>();
+    auto target = MakeOwned<ClassDecl>();
     target->identifier = "TestClass";
-    node->ref.target = target;
-    // 设置其他必要字段
+    node->ref.target = target.get();
+    // Set other required fields
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetRefExpr(node, result, tokens, sourceManager);
+    GetRefExpr(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// 测试 GetRefExpr 函数 - 函数引用
+// Test GetRefExpr function - Function reference
 TEST_F(SemanticHighlightImplTest, GetRefExpr_FunctionReference) {
-    auto node = Ptr<RefExpr>();
-    auto target = Ptr<FuncDecl>();
+    auto node = MakeOwned<RefExpr>();
+    auto target = MakeOwned<FuncDecl>();
     target->identifier = "testFunction";
-    node->ref.target = target;
+    node->ref.target = target.get();
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetRefExpr(node, result, tokens, sourceManager);
+    GetRefExpr(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::FUNCTION_H);
 }
 
-// 测试 GetRefExpr 函数 - Init函数引用
+// Test GetRefExpr function - Init function reference
 TEST_F(SemanticHighlightImplTest, GetRefExpr_InitFunctionReference) {
-    auto node = Ptr<RefExpr>();
-    auto target = Ptr<FuncDecl>();
+    auto node = MakeOwned<RefExpr>();
+    auto target = MakeOwned<FuncDecl>();
     target->identifier = "init";
-    node->ref.target = target;
+    node->ref.target = target.get();
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 5};
 
-    GetRefExpr(node, result, tokens, sourceManager);
+    GetRefExpr(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// 测试 GetClassDecl 函数
+// Test GetClassDecl function
 TEST_F(SemanticHighlightImplTest, GetClassDecl_NormalCase) {
-    auto node = Ptr<ClassDecl>();
+    auto node = MakeOwned<ClassDecl>();
     node->identifier = "TestClass";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetClassDecl(node, result, tokens, sourceManager);
+    GetClassDecl(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// 测试 GetClassDecl 函数 - 无效标识符
+// Test GetClassDecl function - Invalid identifier
 TEST_F(SemanticHighlightImplTest, GetClassDecl_InvalidIdentifier) {
-    auto node = Ptr<ClassDecl>();
+    auto node = MakeOwned<ClassDecl>();
     node->identifier = "<invalid identifier>";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetClassDecl(node, result, tokens, sourceManager);
+    GetClassDecl(node.get(), result, tokens, sourceManager);
 
-    // 无效标识符不应产生高亮token
+    // Invalid identifiers should not produce highlight tokens
     EXPECT_TRUE(result.empty());
 }
 
-// 测试 GetRefType 函数
+// Test GetRefType function
 TEST_F(SemanticHighlightImplTest, GetRefType_ClassType) {
-    auto node = Ptr<RefType>();
-    auto target = Ptr<ClassDecl>();
-    node->ref.target = target;
+    auto node = MakeOwned<RefType>();
+    auto target = MakeOwned<ClassDecl>();
+    node->ref.target = target.get();
     node->ref.identifier = "TestClass";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetRefType(node, result, tokens, sourceManager);
+    GetRefType(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// 测试 GetRefType 函数 - 接口类型
+// Test GetRefType function - Interface type
 TEST_F(SemanticHighlightImplTest, GetRefType_InterfaceType) {
-    auto node = Ptr<RefType>();
-    auto target = Ptr<InterfaceDecl>();
-    node->ref.target = target;
+    auto node = MakeOwned<RefType>();
+    auto target = MakeOwned<InterfaceDecl>();
+    node->ref.target = target.get();
     node->ref.identifier = "TestInterface";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetRefType(node, result, tokens, sourceManager);
+    GetRefType(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::INTERFACE_H);
 }
 
-// 测试 GetFuncParam 函数
+// Test GetFuncParam function
 TEST_F(SemanticHighlightImplTest, GetFuncParam_NormalCase) {
-    auto node = Ptr<FuncParam>();
+    auto node = MakeOwned<FuncParam>();
     node->identifier = "paramName";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
-    // 不设置 isIdentifierCompilerAdd 或设置为 false
+    // Do not set isIdentifierCompilerAdd or set it to false
 
-    GetFuncParam(node, result, tokens, sourceManager);
+    GetFuncParam(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
 }
 
-// 测试 GetFuncParam 函数 - 编译器添加的标识符
+// Test GetFuncParam function - Compiler-added identifier
 TEST_F(SemanticHighlightImplTest, GetFuncParam_CompilerAdded) {
-    auto node = Ptr<FuncParam>();
+    auto node = MakeOwned<FuncParam>();
     node->identifier = "paramName";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
     node->isIdentifierCompilerAdd = true;
 
-    GetFuncParam(node, result, tokens, sourceManager);
+    GetFuncParam(node.get(), result, tokens, sourceManager);
 
-    // 编译器添加的标识符不应产生高亮token
+    // Compiler-added identifiers should not produce highlight tokens
     EXPECT_TRUE(result.empty());
 }
 
-// 测试 GetInterfaceDecl 函数
+// Test GetInterfaceDecl function
 TEST_F(SemanticHighlightImplTest, GetInterfaceDecl_NormalCase) {
-    auto node = Ptr<InterfaceDecl>();
+    auto node = MakeOwned<InterfaceDecl>();
     node->identifier = "TestInterface";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetInterfaceDecl(node, result, tokens, sourceManager);
+    GetInterfaceDecl(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::INTERFACE_H);
 }
 
-// 测试 GetStructDecl 函数
+// Test GetStructDecl function
 TEST_F(SemanticHighlightImplTest, GetStructDecl_NormalCase) {
-    auto node = Ptr<StructDecl>();
+    auto node = MakeOwned<StructDecl>();
     node->identifier = "TestStruct";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 12};
 
-    GetStructDecl(node, result, tokens, sourceManager);
+    GetStructDecl(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// 测试 GetEnumDecl 函数
+// Test GetEnumDecl function
 TEST_F(SemanticHighlightImplTest, GetEnumDecl_NormalCase) {
-    auto node = Ptr<EnumDecl>();
+    auto node = MakeOwned<EnumDecl>();
     node->identifier = "TestEnum";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetEnumDecl(node, result, tokens, sourceManager);
+    GetEnumDecl(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// 测试 GetGenericParam 函数
+// Test GetGenericParam function
 TEST_F(SemanticHighlightImplTest, GetGenericParam_NormalCase) {
-    auto node = Ptr<GenericParamDecl>();
+    auto node = MakeOwned<GenericParamDecl>();
     node->identifier = "T";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 2};
 
-    GetGenericParam(node, result, tokens, sourceManager);
+    GetGenericParam(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
 }
 
-// 测试 GetGenericParam 函数 - 无效标识符
+// Test GetGenericParam function - Invalid identifier
 TEST_F(SemanticHighlightImplTest, GetGenericParam_InvalidIdentifier) {
-    auto node = Ptr<GenericParamDecl>();
+    auto node = MakeOwned<GenericParamDecl>();
     node->identifier = "<invalid identifier>";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetGenericParam(node, result, tokens, sourceManager);
+    GetGenericParam(node.get(), result, tokens, sourceManager);
 
-    // 无效标识符不应产生高亮token
+    // Invalid identifiers should not produce highlight tokens
     EXPECT_TRUE(result.empty());
 }
 
-// 测试 GetQualifiedType 函数
+// Test GetQualifiedType function
 TEST_F(SemanticHighlightImplTest, GetQualifiedType_PackageType) {
-    auto node = Ptr<QualifiedType>();
-    auto target = Ptr<PackageDecl>();
-    node->target = target;
+    auto node = MakeOwned<QualifiedType>();
+    auto target = MakeOwned<PackageDecl>();
+    node->target = target.get();
     node->field = "packageName";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetQualifiedType(node, result, tokens, sourceManager);
+    GetQualifiedType(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::PACKAGE_H);
 }
 
-// 测试 GetQualifiedType 函数 - 类类型
+// Test GetQualifiedType function - Class type
 TEST_F(SemanticHighlightImplTest, GetQualifiedType_ClassType) {
-    auto node = Ptr<QualifiedType>();
-    auto target = Ptr<ClassDecl>();
-    node->target = target;
+    auto node = MakeOwned<QualifiedType>();
+    auto target = MakeOwned<ClassDecl>();
+    node->target = target.get();
     node->field = "ClassName";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetQualifiedType(node, result, tokens, sourceManager);
+    GetQualifiedType(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// 测试 GetTypeAliasDecl 函数
+// Test GetTypeAliasDecl function
 TEST_F(SemanticHighlightImplTest, GetTypeAliasDecl_NormalCase) {
-    auto node = Ptr<TypeAliasDecl>();
+    auto node = MakeOwned<TypeAliasDecl>();
     node->identifier = "TypeAlias";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetTypeAliasDecl(node, result, tokens, sourceManager);
+    GetTypeAliasDecl(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// 测试 FindCharKeyWord 函数
+// Test FindCharKeyWord function
 TEST_F(SemanticHighlightImplTest, FindCharKeyWord_Keyword) {
     bool found = FindCharKeyWord("if");
 
     EXPECT_TRUE(found);
 }
 
-// 测试 FindCharKeyWord 函数 - 非关键字
+// Test FindCharKeyWord function - Non-keyword
 TEST_F(SemanticHighlightImplTest, FindCharKeyWord_NonKeyword) {
     bool found = FindCharKeyWord("customIdentifier");
 
     EXPECT_FALSE(found);
 }
 
-// 测试 FindCharKeyWord 函数 - 关键字标识符
+// Test FindCharKeyWord function - Keyword identifier
 TEST_F(SemanticHighlightImplTest, FindCharKeyWord_KeywordIdentifier) {
     bool found = FindCharKeyWord("public");
 
-    EXPECT_FALSE(found); // public在KEYWORD_IDENTIFIER中，应返回false
+    EXPECT_FALSE(found); // public is in KEYWORD_IDENTIFIER, should return false
 }
 
-// 测试 SemanticHighlightImpl::NodeValid 函数
+// Test SemanticHighlightImpl::NodeValid function
 TEST_F(SemanticHighlightImplTest, NodeValid_ValidNode) {
-    auto node = Ptr<Decl>();
-    // 设置正确的文件ID和位置
+    auto node = MakeOwned<Decl>();
+    // Set correct file ID and position
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    bool valid = SemanticHighlightImpl::NodeValid(node, 1, "validName");
+    bool valid = SemanticHighlightImpl::NodeValid(node.get(), 1, "validName");
 
     EXPECT_TRUE(valid);
 }
 
-// 测试 SemanticHighlightImpl::NodeValid 函数 - 错误文件ID
+// Test SemanticHighlightImpl::NodeValid function - Wrong file ID
 TEST_F(SemanticHighlightImplTest, NodeValid_WrongFileId) {
-    auto node = Ptr<Decl>();
-    // 设置错误的文件ID
-    node->begin = Position{2, 1, 1}; // 文件ID为2
+    auto node = MakeOwned<Decl>();
+    // Set incorrect file ID
+    node->begin = Position{2, 1, 1}; // File ID is 2
     node->end = Position{2, 1, 10};
 
-    bool valid = SemanticHighlightImpl::NodeValid(node, 1, "validName"); // 期望文件ID为1
+    bool valid = SemanticHighlightImpl::NodeValid(node.get(), 1, "validName"); // Expected file ID is 1
 
     EXPECT_FALSE(valid);
 }
 
-// 测试 SemanticHighlightImpl::NodeValid 函数 - 关键字名称
+// Test SemanticHighlightImpl::NodeValid function - Keyword name
 TEST_F(SemanticHighlightImplTest, NodeValid_KeywordName) {
-    auto node = Ptr<Decl>();
+    auto node = MakeOwned<Decl>();
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    bool valid = SemanticHighlightImpl::NodeValid(node, 1, "if"); // if是关键字
+    bool valid = SemanticHighlightImpl::NodeValid(node.get(), 1, "if"); // if is a keyword
 
     EXPECT_FALSE(valid);
 }
 
-// 测试 SemanticHighlightImpl::NodeValid 函数 - 零位置
+// Test SemanticHighlightImpl::NodeValid function - Zero position
 TEST_F(SemanticHighlightImplTest, NodeValid_ZeroPosition) {
-    auto node = Ptr<Decl>();
-    // 不设置位置或设置为零位置
+    auto node = MakeOwned<Decl>();
+    // Do not set position or set to zero position
     node->begin = Position{0, 0, 0};
     node->end = Position{0, 0, 0};
 
-    bool valid = SemanticHighlightImpl::NodeValid(node, 1, "validName");
+    bool valid = SemanticHighlightImpl::NodeValid(node.get(), 1, "validName");
 
     EXPECT_FALSE(valid);
 }
