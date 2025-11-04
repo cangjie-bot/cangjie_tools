@@ -127,7 +127,8 @@ TEST(ItemResolverUtilTest, ResolveKindByNode_TypeAliasDecl) {
 TEST(ItemResolverUtilTest, ResolveKindByNode_MacroExpandDeclWithInvocation) {
     // Create MacroExpandDecl node with invocation declaration
     auto macroExpandDecl = OwnedPtr<MacroExpandDecl>(new MacroExpandDecl());
-    auto invocationDecl = OwnedPtr<Decl>(new FuncDecl());
+    auto invocationDecl = OwnedPtr<FuncDecl>(new FuncDecl());
+    invocationDecl->identifier = "testFunction";
     macroExpandDecl->invocation.decl = std::move(invocationDecl);
 
     CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*macroExpandDecl);
@@ -266,7 +267,7 @@ TEST(ItemResolverUtilTest, ResolveSignatureByNode_FuncDecl) {
     funcDecl->identifier = "testFunction";
 
     std::string result = ItemResolverUtil::ResolveSignatureByNode(*funcDecl, nullptr);
-    EXPECT_EQ("", result);
+    EXPECT_EQ("testFunction", result);
 }
 
 TEST(ItemResolverUtilTest, ResolveSignatureByNode_ClassDecl) {
