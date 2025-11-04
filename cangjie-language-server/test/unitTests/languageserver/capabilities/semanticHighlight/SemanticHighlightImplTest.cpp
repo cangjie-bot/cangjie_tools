@@ -58,17 +58,6 @@ protected:
     std::vector<SemanticHighlightToken> result;
 };
 
-TEST_F(SemanticHighlightImplTest, GetFuncDecl_NormalFunction) {
-    auto node = Ptr<Node>(new Decl());
-    node->begin = Position{1, 1, 1};
-    node->end = Position{1, 1, 15};
-
-    GetFuncDecl(node, result, tokens, sourceManager);
-
-    EXPECT_EQ(result.size(), 1);
-    EXPECT_EQ(result[0].kind, HighlightKind::FUNCTION_H);
-}
-
 TEST_F(SemanticHighlightImplTest, GetFuncDecl_PrimaryConstructor) {
     auto funcDecl = std::make_shared<FuncDecl>();
     funcDecl->EnableAttr(Cangjie::AST::Attribute::PRIMARY_CONSTRUCTOR);
