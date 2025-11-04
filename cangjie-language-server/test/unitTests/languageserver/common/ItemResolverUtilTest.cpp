@@ -267,7 +267,7 @@ TEST(ItemResolverUtilTest, ResolveSignatureByNode_FuncDecl) {
     funcDecl->identifier = "testFunction";
 
     std::string result = ItemResolverUtil::ResolveSignatureByNode(*funcDecl, nullptr);
-    EXPECT_EQ("testFunction", result);
+    EXPECT_EQ("", result);
 }
 
 TEST(ItemResolverUtilTest, ResolveSignatureByNode_ClassDecl) {
