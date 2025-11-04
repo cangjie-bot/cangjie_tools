@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-
 #include <gtest/gtest.h>
 #include "FileRefactor.h"
 
