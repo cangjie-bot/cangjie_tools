@@ -513,7 +513,7 @@ TEST_F(SemanticHighlightImplTest, GetGenericParam_InvalidIdentifier) {
 // Test GetQualifiedType function
 TEST_F(SemanticHighlightImplTest, GetQualifiedType_PackageType) {
     auto node = MakeOwned<QualifiedType>();
-    auto target = MakeOwned<PackageDecl>();
+    auto target = OwnedPtr<PackageDecl>();
     node->target = target.get();
     node->field = "packageName";
     node->begin = Position{1, 1, 1};
