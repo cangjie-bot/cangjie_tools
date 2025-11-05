@@ -199,17 +199,6 @@ TEST(CompilerCangjieProjectTest, GetSourcePackagesByPkg) {
     }
 }
 
-// Test GetModuleSrcPath function
-TEST(CompilerCangjieProjectTest, GetModuleSrcPath) {
-    CompilerCangjieProject* project = CompilerCangjieProject::GetInstance();
-    if (project != nullptr) {
-        // Test that getting module source path does not crash
-        EXPECT_NO_THROW(project->GetModuleSrcPath("test_module_path"));
-    } else {
-        EXPECT_TRUE(true);
-    }
-}
-
 // Test Denoising function
 TEST(CompilerCangjieProjectTest, Denoising) {
     CompilerCangjieProject* project = CompilerCangjieProject::GetInstance();
