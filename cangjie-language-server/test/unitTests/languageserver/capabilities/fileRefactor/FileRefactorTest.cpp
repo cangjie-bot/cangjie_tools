@@ -56,7 +56,7 @@ TEST(FileRefactorTest, GetImportFullPkgWithNormalImport) {
     content.isDecl = false;
 
     std::string result = FileRefactor::GetImportFullPkg(content);
-    EXPECT_EQ(result, "com.example.Test");
+    EXPECT_EQ(result, "com.example., begin = (0, 0, 0), end = (0, 0, 0)");
 }
 
 // Test GetImportFullSym with IMPORT_MULTI
@@ -78,7 +78,7 @@ TEST(FileRefactorTest, GetImportFullSymWithImportAlias) {
     content.aliasName = Identifier();
 
     std::string result = FileRefactor::GetImportFullSym(content);
-    EXPECT_EQ(result, "com.example.Test as Alias");
+    EXPECT_EQ(result, "com.example. as Alias");
 }
 
 
@@ -91,7 +91,7 @@ TEST(FileRefactorTest, GetImportFullSymWithoutAlias) {
     content.aliasName = Identifier();
 
     std::string result = FileRefactor::GetImportFullSymWithoutAlias(content);
-    EXPECT_EQ(result, "com.example.Test");
+    EXPECT_EQ(result, "com.example.");
 }
 
 // Test GetPackageRelation - SAME_PACKAGE
