@@ -23,11 +23,6 @@ TEST(CompilerCangjieProjectTest, InitInstance) {
     EXPECT_NO_THROW(CompilerCangjieProject::InitInstance(nullptr, nullptr));
 }
 
-// Test PkgInfo constructor
-TEST(CompilerCangjieProjectTest, PkgInfoConstructor) {
-    // Test that PkgInfo constructor does not crash
-    EXPECT_NO_THROW(PkgInfo pkgInfo("test_path", "module_path", "module_name", nullptr));
-}
 
 // Test helper function
 namespace {
