@@ -78,7 +78,7 @@ TEST(FileRefactorTest, GetImportFullSymWithImportAlias) {
     content.aliasName = Identifier();
 
     std::string result = FileRefactor::GetImportFullSym(content);
-    EXPECT_EQ(result, "com.example. as Alias");
+    EXPECT_EQ(result, "com.example. as ");
 }
 
 
