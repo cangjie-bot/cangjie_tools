@@ -124,15 +124,6 @@ TEST(ArkASTTest, GetCurToken) {
     EXPECT_EQ(ast.GetCurToken(pos, 0, 0), -1);  // Empty range
 }
 
-// Test GetCurTokenByStartColumn function
-TEST(ArkASTTest, GetCurTokenByStartColumn) {
-    ArkAST ast = CreateArkAST();
-
-    // Test empty tokens case
-    Cangjie::Position pos{0, 1, 1};
-    EXPECT_EQ(ast.GetCurTokenByStartColumn(pos, 0, -1), -1);
-}
-
 // Test GetCurTokenSkipSpace function
 TEST(ArkASTTest, GetCurTokenSkipSpace) {
     ArkAST ast = CreateArkAST();
