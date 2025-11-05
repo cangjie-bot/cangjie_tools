@@ -65,7 +65,7 @@ TEST(UtilsTest, GetSortText_BoundaryValues)
 TEST(UtilsTest, GetFilterText_TestMode)
 {
     // Test behavior in test mode
-    EXPECT_EQ(GetFilterText("prefix_name", "prefix"), "prefix_name");
+    EXPECT_EQ(GetFilterText("name", "prefix"), "prefix_name");
 }
 
 // Test GetNamedFuncArgRange function
