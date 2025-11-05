@@ -306,17 +306,13 @@ func combineOptionString(preStr: String, postStr: String): String {
     return preStr + " " + postStr
 }
 
-// Change Path from "xxx/xxx/pro/xoo.cjo" to (xxx/xxx, xxx/xxx/pro), this path must be exist.
+// Change Path from "xxx/xxx/pro/xoo.cjo" to (xxx/xxx/pro, xxx/xxx/pro), this path must be exist.
 public func makePackagePath(path: String): (String, String) {
     let packagePath = Path(path).parent.toString()
     if (packagePath.isEmpty()) {
         throw NoneValueException()
     }
-    let cangjiePath = Path(packagePath).parent.toString()
-    if (cangjiePath.isEmpty()) {
-        throw NoneValueException()
-    }
-    return (cangjiePath, packagePath)
+    return (packagePath, packagePath)
 }
 
 // Hashcode of json data
