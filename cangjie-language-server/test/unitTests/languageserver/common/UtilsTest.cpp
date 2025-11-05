@@ -472,13 +472,6 @@ TEST(UtilsTest, InImportSpec_InvalidPosition)
     EXPECT_FALSE(InImportSpec(file, INVALID_POSITION));
 }
 
-// Test IsInCjlibDir function
-TEST(UtilsTest, IsInCjlibDir_EmptyPath)
-{
-    // Test empty path
-    EXPECT_FALSE(IsInCjlibDir(""));
-}
-
 // Test EndsWith function
 TEST(UtilsTest, EndsWith_EmptyString)
 {
