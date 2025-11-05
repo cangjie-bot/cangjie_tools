@@ -391,6 +391,13 @@ func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
     let parallel = ParallelBuilder(buildConfig)
 
     res.forEachPkg { r: ResolveItem =>
+        if (buildConfig.isIncremental && !buildConfig.rebuildList.contains(r.fullName)) {
+            return true
+        }
+        if (!r.hasProdFiles) {
+            buildConfig.rebuildList.remove(r.fullName)
+            return true
+        }
         let resolveConfigs = fromResolveItem(r, buildConfig) ?? return false
         for (config in resolveConfigs) {
             parallel.taskMap.add(TaskIdentifier.fromResolveConfig(config), config)
