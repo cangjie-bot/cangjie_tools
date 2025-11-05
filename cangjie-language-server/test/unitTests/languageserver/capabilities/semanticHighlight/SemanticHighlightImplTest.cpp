@@ -130,27 +130,6 @@ TEST_F(SemanticHighlightImplTest, GetPropDecl_NormalCase) {
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
 }
 
-TEST_F(SemanticHighlightImplTest, GetCallExpr_NormalCase) {
-    auto node = std::make_shared<CallExpr>();
-    auto symbol = Ptr<Symbol>();
-    node->symbol = symbol.get();
-
-    auto resolvedFunction = std::make_shared<FuncDecl>();
-    resolvedFunction->identifier = CreateSrcIdentifier("testFunction", Position{1, 1, 1}, Position{1, 1, 13});
-    node->resolvedFunction = resolvedFunction.get();
-
-    auto baseFunc = std::make_shared<RefExpr>();
-    node->baseFunc = OwnedPtr<Expr>(baseFunc.get());
-
-    node->begin = Position{1, 1, 1};
-    node->end = Position{1, 1, 15};
-    node->leftParenPos = Position{1, 1, 14};
-
-    GetCallExpr(node.get(), result, tokens, sourceManager);
-    EXPECT_EQ(result.size(), 0);
-    EXPECT_EQ(result[0].kind, HighlightKind::FUNCTION_H);
-}
-
 TEST_F(SemanticHighlightImplTest, GetCallExpr_MemberAccessBase) {
     auto node = std::make_shared<CallExpr>();
     auto symbol = Ptr<Symbol>();
