@@ -658,16 +658,7 @@ class DepModel {
             return None
         }
 
-        // CANGJIE_PATH check.
-        let rootPkgName: String = getRootPkgName(p.packageName)
-        let (_, rootPath) = makePackagePath(cjoPath)
-        if (!Path(rootPath).normalize().toString().endsWith(Path(rootPkgName).normalize().toString())) {
-            eprintln("Error: the file '${cjoPath}' must be placed in the '${rootPkgName}' folder")
-            return None
-        }
-
         p.timeStamp = timeStamp
-
         synchronized (this.scanCjoMtx) {
             this.binDepCacheMap.add(cjoPath, p)
         }
