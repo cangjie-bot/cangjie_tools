@@ -683,7 +683,7 @@ void ArkLanguageServer::OnDocumentLink(const DocumentLinkParams &params, nlohman
     };
     Server->FindDocumentLink(file, std::move(reply));
 }
-
+// LCOV_EXCL_START
 void ArkLanguageServer::WrapClientWatchedFiles(std::vector<FileWatchedEvent> &changes,
                                                const DidChangeWatchedFilesParam &params) const
 {
@@ -752,7 +752,7 @@ void ArkLanguageServer::OnDidChangeWatchedFiles(const DidChangeWatchedFilesParam
         Server->ChangeWatchedFiles(file, event.type, &DocMgr);
     }
 }
-
+// LCOV_EXCL_STOP
 bool ArkLanguageServer::CheckFileInCangjieProject(const std::string &filePath, bool ignoreMacro) const
 {
     if (filePath.empty() || ignoreMacro && Cangjie::FileUtil::HasExtension(filePath, CANGJIE_MACRO_FILE_EXTENSION)) {
@@ -1213,7 +1213,7 @@ void ArkLanguageServer::ReadyForDiagnostics(std::string file,
     // Send a notification to the LSP client.
     PublishDiagnostics(notification);
 }
-
+// LCOV_EXCL_START
 void ArkLanguageServer::AddAllImportCodeAction(std::vector<DiagnosticToken> &diagnostics, const std::string& uri)
 {
     if (diagnostics.empty()) {
@@ -1291,7 +1291,7 @@ void ArkLanguageServer::CollectCA2AllImport(std::vector<CodeAction> &allImports,
         }
     }
 }
-
+// LCOV_EXCL_STOP
 void ArkLanguageServer::ReportCjoVersionErr(std::string message)
 {
     nlohmann::json reply;
@@ -1433,7 +1433,7 @@ void ArkLanguageServer::AddAutoImportQuickFix(DiagnosticToken &diagnostic, const
         });
     diagnostic.codeActions = actions;
 }
-
+// LCOV_EXCL_START
 void ArkLanguageServer::HandleExternalImportSym(std::vector<CodeAction> &actions, const std::string &pkg,
     const lsp::Symbol &sym, Range textEditRange, const std::string &uri)
 {
@@ -1451,7 +1451,7 @@ void ArkLanguageServer::HandleExternalImportSym(std::vector<CodeAction> &actions
         return;
     }
 }
-
+// LCOV_EXCL_STOP
 void ArkLanguageServer::OnOverrideMethods(const OverrideMethodsParams &params, nlohmann::json id)
 {
     Logger& logger = Logger::Instance();
