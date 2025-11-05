@@ -92,6 +92,7 @@ TEST_F(SemanticHighlightImplTest, GetPrimaryDecl_NormalCase) {
     node->identifierForLsp = "PrimaryType";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
+    node->identifier.SetPos(Position{1, 1, 1}, Position{1, 1, 12});
 
     GetPrimaryDecl(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
@@ -103,6 +104,7 @@ TEST_F(SemanticHighlightImplTest, GetVarDecl_NormalCase) {
     node->identifier = "testVariable";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
+    node->identifier.SetPos(Position{1, 1, 1}, Position{1, 1, 12});
 
     GetVarDecl(node.get(), result, tokens, sourceManager);
 
@@ -115,6 +117,7 @@ TEST_F(SemanticHighlightImplTest, GetPropDecl_NormalCase) {
     node->identifier = "testProperty";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
+    node->identifier.SetPos(Position{1, 1, 1}, Position{1, 1, 12});
 
     GetPropDecl(node, result, tokens, sourceManager);
 
