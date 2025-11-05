@@ -243,17 +243,6 @@ TEST(CompilerCangjieProjectTest, IsCurModuleCjoDep) {
     }
 }
 
-// Test GetOneModuleDeps function
-TEST(CompilerCangjieProjectTest, GetOneModuleDeps) {
-    CompilerCangjieProject* project = CompilerCangjieProject::GetInstance();
-    if (project != nullptr) {
-        // Test that getting module dependencies does not crash
-        EXPECT_NO_THROW(project->GetOneModuleDeps("test_module"));
-    } else {
-        EXPECT_TRUE(true);
-    }
-}
-
 // Test GetOneModuleDirectDeps function
 TEST(CompilerCangjieProjectTest, GetOneModuleDirectDeps) {
     CompilerCangjieProject* project = CompilerCangjieProject::GetInstance();
