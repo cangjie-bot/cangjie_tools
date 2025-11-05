@@ -113,13 +113,13 @@ TEST_F(SemanticHighlightImplTest, GetVarDecl_NormalCase) {
 }
 
 TEST_F(SemanticHighlightImplTest, GetPropDecl_NormalCase) {
-    auto node = Ptr<PropDecl>();
+    auto node = std::make_shared<PropDecl>();
     node->identifier = "testProperty";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
-    node->identifier.SetPos(Position{1, 1, 1}, Position{1, 1, 12});
+    node->identifier.SetPos(Position{1, 1, 1}, Position{1, 1, 12}); // 设置identifier位置
 
-    GetPropDecl(node, result, tokens, sourceManager);
+    GetPropDecl(node.get(), result, tokens, sourceManager);
 
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
