@@ -58,13 +58,26 @@ protected:
     std::vector<SemanticHighlightToken> result;
 };
 
+// Helper function to create a properly initialized SrcIdentifier
+SrcIdentifier CreateSrcIdentifier(const std::string& name, const Position& begin, const Position& end) {
+    SrcIdentifier identifier;
+    identifier.SetPos(begin, end);
+    return identifier;
+}
+
+// Helper function to create a properly initialized Identifier
+Identifier CreateIdentifier(const std::string& name, const Position& begin, const Position& end) {
+    Identifier identifier;
+    identifier.SetPos(begin, end);
+    return identifier;
+}
+
 TEST_F(SemanticHighlightImplTest, GetFuncDecl_PrimaryConstructor) {
     auto funcDecl = std::make_shared<FuncDecl>();
     funcDecl->EnableAttr(Cangjie::AST::Attribute::PRIMARY_CONSTRUCTOR);
     funcDecl->begin = Position{1, 1, 1};
     funcDecl->end = Position{1, 1, 5};
-
-    funcDecl->identifier = "testFunction";
+    funcDecl->identifier = CreateSrcIdentifier("testFunction", Position{1, 1, 1}, Position{1, 1, 13});
     funcDecl->identifierForLsp = "testFunction";
 
     GetFuncDecl(funcDecl.get(), result, tokens, sourceManager);
@@ -76,23 +89,19 @@ TEST_F(SemanticHighlightImplTest, GetFuncDecl_InvalidIdentifier) {
     funcDecl->EnableAttr(Cangjie::AST::Attribute::PRIMARY_CONSTRUCTOR);
     funcDecl->begin = Position{1, 1, 1};
     funcDecl->end = Position{1, 1, 5};
-
-    funcDecl->identifier = "<invalid identifier>";
+    funcDecl->identifier = CreateSrcIdentifier("<invalid identifier>", Position{1, 1, 1}, Position{1, 1, 20});
     funcDecl->identifierForLsp = "<invalid identifier>";
 
     GetFuncDecl(funcDecl.get(), result, tokens, sourceManager);
-
     EXPECT_TRUE(result.empty());
 }
 
 TEST_F(SemanticHighlightImplTest, GetPrimaryDecl_NormalCase) {
     auto node = std::make_shared<PrimaryCtorDecl>();
-
-    node->identifier = "PrimaryType";
+    node->identifier = CreateSrcIdentifier("PrimaryType", Position{1, 1, 1}, Position{1, 1, 12});
     node->identifierForLsp = "PrimaryType";
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
-    node->identifier.SetPos(Position{1, 1, 1}, Position{1, 1, 12});
 
     GetPrimaryDecl(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
@@ -101,174 +110,155 @@ TEST_F(SemanticHighlightImplTest, GetPrimaryDecl_NormalCase) {
 
 TEST_F(SemanticHighlightImplTest, GetVarDecl_NormalCase) {
     auto node = std::make_shared<VarDecl>();
-    node->identifier = "testVariable";
+    node->identifier = CreateSrcIdentifier("testVariable", Position{1, 1, 1}, Position{1, 1, 13});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
-    node->identifier.SetPos(Position{1, 1, 1}, Position{1, 1, 12});
 
     GetVarDecl(node.get(), result, tokens, sourceManager);
-
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
 }
 
 TEST_F(SemanticHighlightImplTest, GetPropDecl_NormalCase) {
     auto node = std::make_shared<PropDecl>();
-    node->identifier = "testProperty";
+    node->identifier = CreateSrcIdentifier("testProperty", Position{1, 1, 1}, Position{1, 1, 13});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
-    node->identifier.SetPos(Position{1, 1, 1}, Position{1, 1, 12}); // 设置identifier位置
 
     GetPropDecl(node.get(), result, tokens, sourceManager);
-
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
 }
 
 TEST_F(SemanticHighlightImplTest, GetCallExpr_NormalCase) {
-    auto node = Ptr<CallExpr>();
+    auto node = std::make_shared<CallExpr>();
     auto symbol = Ptr<Symbol>();
-    node->symbol = symbol;
+    node->symbol = symbol.get();
 
-    auto resolvedFunction = Ptr<FuncDecl>();
-    resolvedFunction->identifier = "testFunction";
-    node->resolvedFunction = resolvedFunction;
+    auto resolvedFunction = std::make_shared<FuncDecl>();
+    resolvedFunction->identifier = CreateSrcIdentifier("testFunction", Position{1, 1, 1}, Position{1, 1, 13});
+    node->resolvedFunction = resolvedFunction.get();
 
-    auto baseFunc = Ptr<RefExpr>();
-    node->baseFunc = OwnedPtr<Expr>(baseFunc);
+    auto baseFunc = std::make_shared<RefExpr>();
+    node->baseFunc = OwnedPtr<Expr>(baseFunc.get());
 
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
     node->leftParenPos = Position{1, 1, 14};
 
-    GetCallExpr(node, result, tokens, sourceManager);
-
+    GetCallExpr(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::FUNCTION_H);
 }
 
 TEST_F(SemanticHighlightImplTest, GetCallExpr_MemberAccessBase) {
-    auto node = Ptr<CallExpr>();
-
+    auto node = std::make_shared<CallExpr>();
     auto symbol = Ptr<Symbol>();
-    node->symbol = symbol;
+    node->symbol = symbol.get();
 
-    auto resolvedFunction = Ptr<FuncDecl>();
-    resolvedFunction->identifier = "testMethod";
-    node->resolvedFunction = resolvedFunction;
+    auto resolvedFunction = std::make_shared<FuncDecl>();
+    resolvedFunction->identifier = CreateSrcIdentifier("testMethod", Position{1, 1, 1}, Position{1, 1, 11});
+    node->resolvedFunction = resolvedFunction.get();
 
-    auto baseFunc = new Expr();
-    node->baseFunc = OwnedPtr<Expr>(baseFunc);
+    auto baseFunc = std::make_shared<MemberAccess>();
+    node->baseFunc = OwnedPtr<Expr>(baseFunc.get());
 
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
     node->leftParenPos = Position{1, 1, 14};
 
-    GetCallExpr(node, result, tokens, sourceManager);
-
+    GetCallExpr(node.get(), result, tokens, sourceManager);
     EXPECT_TRUE(result.empty());
 }
 
 TEST_F(SemanticHighlightImplTest, GetMemberAccess_ClassMember) {
-    auto node = Ptr<MemberAccess>();
-    node->field = "memberField";
+    auto node = std::make_shared<MemberAccess>();
+    node->field = CreateSrcIdentifier("memberField", Position{1, 1, 1}, Position{1, 1, 12});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    auto target = Ptr<ClassDecl>();
-    target->identifier = "TestClass";
-    node->target = target;
+    auto target = std::make_shared<ClassDecl>();
+    target->identifier = CreateSrcIdentifier("TestClass", Position{1, 1, 1}, Position{1, 1, 10});
+    node->target = target.get();
 
-    GetMemberAccess(node, result, tokens, sourceManager);
-
+    GetMemberAccess(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
 TEST_F(SemanticHighlightImplTest, GetMemberAccess_PackageMember) {
-    auto node = Ptr<MemberAccess>();
-    node->field = "packageName";
+    auto node = std::make_shared<MemberAccess>();
+    node->field = CreateSrcIdentifier("packageName", Position{1, 1, 1}, Position{1, 1, 12});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    auto target = Ptr<PackageDecl>();
-    node->target = target;
+    auto target = std::make_shared<PackageDecl>(*std::make_shared<Package>().get());
+    node->target = target.get();
 
-    GetMemberAccess(node, result, tokens, sourceManager);
-
+    GetMemberAccess(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::PACKAGE_H);
 }
 
 TEST_F(SemanticHighlightImplTest, GetFuncArg_NormalCase) {
-    auto node = Ptr<FuncArg>();
-    node->name = "argName";
+    auto node = std::make_shared<FuncArg>();
+    node->name = CreateSrcIdentifier("argName", Position{1, 1, 1}, Position{1, 1, 8});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetFuncArg(node, result, tokens, sourceManager);
-
+    GetFuncArg(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
 }
 
 TEST_F(SemanticHighlightImplTest, GetFuncArg_ZeroPosition) {
-    auto node = Ptr<FuncArg>();
-    node->name = "argName";
+    auto node = std::make_shared<FuncArg>();
+    node->name = CreateSrcIdentifier("argName", Position{0, 0, 0}, Position{0, 0, 0});
     node->begin = Position{0, 0, 0};
     node->end = Position{0, 0, 0};
 
-    GetFuncArg(node, result, tokens, sourceManager);
-
+    GetFuncArg(node.get(), result, tokens, sourceManager);
     EXPECT_TRUE(result.empty());
 }
 
-// Test RefTargetEmpty function
 TEST_F(SemanticHighlightImplTest, RefTargetEmpty_NullTarget) {
-    auto node = Ptr<RefExpr>();
+    auto node = std::make_shared<RefExpr>();
     // Do not set ref.target
-
-    bool isEmpty = RefTargetEmpty(node);
-
+    bool isEmpty = RefTargetEmpty(node.get());
     EXPECT_TRUE(isEmpty);
 }
 
-// Test RefTargetEmpty function - Non-RefExpr node
 TEST_F(SemanticHighlightImplTest, RefTargetEmpty_NonRefExpr) {
-    auto node = Ptr<Decl>();
-    // Pass in non-RefExpr node
-
-    bool isEmpty = RefTargetEmpty(node);
-
+    auto node = std::make_shared<FuncDecl>();
+    bool isEmpty = RefTargetEmpty(node.get());
     EXPECT_TRUE(isEmpty);
 }
 
-// Test SpecialTarget function
 TEST_F(SemanticHighlightImplTest, SpecialTarget_ClassTarget) {
-    auto node = Ptr<RefExpr>();
-    auto target = Ptr<ClassDecl>();
-    node->ref.target = target;
+    auto node = std::make_shared<RefExpr>();
+    auto target = std::make_shared<ClassDecl>();
+    target->identifier = CreateSrcIdentifier("TestClass", Position{1, 1, 1}, Position{1, 1, 10});
+    node->ref.target = target.get();
+    node->begin = Position{1, 1, 1};
+    node->end = Position{1, 1, 10};
 
-    bool isSpecial = SpecialTarget(node);
-
+    bool isSpecial = SpecialTarget(node.get());
     EXPECT_TRUE(isSpecial);
 }
 
-// Test SpecialTarget function - Init function
 TEST_F(SemanticHighlightImplTest, SpecialTarget_InitFunction) {
-    auto node = Ptr<RefExpr>();
-    auto target = Ptr<FuncDecl>();
-    target->identifier = "init";
-    node->ref.target = target;
+    auto node = std::make_shared<RefExpr>();
+    auto target = std::make_shared<FuncDecl>();
+    target->identifier = CreateSrcIdentifier("init", Position{1, 1, 1}, Position{1, 1, 5});
+    node->ref.target = target.get();
+    node->begin = Position{1, 1, 1};
+    node->end = Position{1, 1, 5};
 
-    bool isSpecial = SpecialTarget(node);
-
+    bool isSpecial = SpecialTarget(node.get());
     EXPECT_TRUE(isSpecial);
 }
 
-// Test HandleInterpolationExpr function
 TEST_F(SemanticHighlightImplTest, HandleInterpolationExpr_DollarSign) {
-    // Recreate a source manager containing $
     delete sourceManager;
     sourceManager = new Cangjie::SourceManager();
     std::string testCode = "$variable";
@@ -279,327 +269,277 @@ TEST_F(SemanticHighlightImplTest, HandleInterpolationExpr_DollarSign) {
     range.end = Position{1, 1, 10};
 
     HandleInterpolationExpr(range, sourceManager);
-
-    // Verify that the range is correctly adjusted (should offset by 1 character)
     EXPECT_EQ(range.start.column, 2);
     EXPECT_EQ(range.end.column, 11);
 }
 
-// Test HandleInterpolationExpr function - No source manager
 TEST_F(SemanticHighlightImplTest, HandleInterpolationExpr_NoSourceManager) {
     ark::Range range;
     range.start = Position{1, 1, 1};
     range.end = Position{1, 1, 10};
 
     HandleInterpolationExpr(range, nullptr);
-
-    // Should remain unchanged
     EXPECT_EQ(range.start.column, 1);
     EXPECT_EQ(range.end.column, 10);
 }
 
-// Test GetRefExpr function
 TEST_F(SemanticHighlightImplTest, GetRefExpr_ClassReference) {
-    auto node = Ptr<RefExpr>();
-    auto target = Ptr<ClassDecl>();
-    target->identifier = "TestClass";
-    node->ref.target = target;
-    // Set other required fields
+    auto node = std::make_shared<RefExpr>();
+    auto target = std::make_shared<ClassDecl>();
+    target->identifier = CreateSrcIdentifier("TestClass", Position{1, 1, 1}, Position{1, 1, 10});
+    node->ref.target = target.get();
+    node->ref.identifier = CreateSrcIdentifier("TestClass", Position{1, 1, 1}, Position{1, 1, 10});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetRefExpr(node, result, tokens, sourceManager);
-
+    GetRefExpr(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// Test GetRefExpr function - Function reference
 TEST_F(SemanticHighlightImplTest, GetRefExpr_FunctionReference) {
-    auto node = Ptr<RefExpr>();
-    auto target = Ptr<FuncDecl>();
-    target->identifier = "testFunction";
-    node->ref.target = target;
+    auto node = std::make_shared<RefExpr>();
+    auto target = std::make_shared<FuncDecl>();
+    target->identifier = CreateSrcIdentifier("testFunction", Position{1, 1, 1}, Position{1, 1, 13});
+    node->ref.target = target.get();
+    node->ref.identifier = CreateSrcIdentifier("testFunction", Position{1, 1, 1}, Position{1, 1, 13});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetRefExpr(node, result, tokens, sourceManager);
-
+    GetRefExpr(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::FUNCTION_H);
 }
 
-// Test GetRefExpr function - Init function reference
 TEST_F(SemanticHighlightImplTest, GetRefExpr_InitFunctionReference) {
-    auto node = Ptr<RefExpr>();
-    auto target = Ptr<FuncDecl>();
-    target->identifier = "init";
-    node->ref.target = target;
+    auto node = std::make_shared<RefExpr>();
+    auto target = std::make_shared<FuncDecl>();
+    target->identifier = CreateSrcIdentifier("init", Position{1, 1, 1}, Position{1, 1, 5});
+    node->ref.target = target.get();
+    node->ref.identifier = CreateSrcIdentifier("init", Position{1, 1, 1}, Position{1, 1, 5});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 5};
 
-    GetRefExpr(node, result, tokens, sourceManager);
-
+    GetRefExpr(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// Test GetClassDecl function
 TEST_F(SemanticHighlightImplTest, GetClassDecl_NormalCase) {
-    auto node = Ptr<ClassDecl>();
-    node->identifier = "TestClass";
+    auto node = std::make_shared<ClassDecl>();
+    node->identifier = CreateSrcIdentifier("TestClass", Position{1, 1, 1}, Position{1, 1, 10});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetClassDecl(node, result, tokens, sourceManager);
-
+    GetClassDecl(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// Test GetClassDecl function - Invalid identifier
 TEST_F(SemanticHighlightImplTest, GetClassDecl_InvalidIdentifier) {
-    auto node = Ptr<ClassDecl>();
-    node->identifier = "<invalid identifier>";
+    auto node = std::make_shared<ClassDecl>();
+    node->identifier = CreateSrcIdentifier("<invalid identifier>", Position{1, 1, 1}, Position{1, 1, 20});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetClassDecl(node, result, tokens, sourceManager);
-
-    // Invalid identifiers should not produce highlight tokens
+    GetClassDecl(node.get(), result, tokens, sourceManager);
     EXPECT_TRUE(result.empty());
 }
 
-// Test GetRefType function
 TEST_F(SemanticHighlightImplTest, GetRefType_ClassType) {
-    auto node = Ptr<RefType>();
-    auto target = Ptr<ClassDecl>();
-    node->ref.target = target;
-    node->ref.identifier = "TestClass";
+    auto node = std::make_shared<RefType>();
+    auto target = std::make_shared<ClassDecl>();
+    target->identifier = CreateSrcIdentifier("TestClass", Position{1, 1, 1}, Position{1, 1, 10});
+    node->ref.target = target.get();
+    node->ref.identifier = CreateSrcIdentifier("TestClass", Position{1, 1, 1}, Position{1, 1, 10});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetRefType(node, result, tokens, sourceManager);
-
+    GetRefType(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// Test GetRefType function - Interface type
 TEST_F(SemanticHighlightImplTest, GetRefType_InterfaceType) {
-    auto node = Ptr<RefType>();
-    auto target = Ptr<InterfaceDecl>();
-    node->ref.target = target;
-    node->ref.identifier = "TestInterface";
+    auto node = std::make_shared<RefType>();
+    auto target = std::make_shared<InterfaceDecl>();
+    target->identifier = CreateSrcIdentifier("TestInterface", Position{1, 1, 1}, Position{1, 1, 14});
+    node->ref.target = target.get();
+    node->ref.identifier = CreateSrcIdentifier("TestInterface", Position{1, 1, 1}, Position{1, 1, 14});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetRefType(node, result, tokens, sourceManager);
-
+    GetRefType(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::INTERFACE_H);
 }
 
-// Test GetFuncParam function
 TEST_F(SemanticHighlightImplTest, GetFuncParam_NormalCase) {
-    auto node = Ptr<FuncParam>();
-    node->identifier = "paramName";
+    auto node = std::make_shared<FuncParam>();
+    node->identifier = CreateSrcIdentifier("paramName", Position{1, 1, 1}, Position{1, 1, 10});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
-    // Do not set isIdentifierCompilerAdd or set it to false
+    node->isIdentifierCompilerAdd = false;
 
-    GetFuncParam(node, result, tokens, sourceManager);
-
+    GetFuncParam(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
 }
 
-// Test GetFuncParam function - Compiler-added identifier
 TEST_F(SemanticHighlightImplTest, GetFuncParam_CompilerAdded) {
-    auto node = Ptr<FuncParam>();
-    node->identifier = "paramName";
+    auto node = std::make_shared<FuncParam>();
+    node->identifier = CreateSrcIdentifier("paramName", Position{1, 1, 1}, Position{1, 1, 10});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
     node->isIdentifierCompilerAdd = true;
 
-    GetFuncParam(node, result, tokens, sourceManager);
-
-    // Compiler-added identifiers should not produce highlight tokens
+    GetFuncParam(node.get(), result, tokens, sourceManager);
     EXPECT_TRUE(result.empty());
 }
 
-// Test GetInterfaceDecl function
 TEST_F(SemanticHighlightImplTest, GetInterfaceDecl_NormalCase) {
-    auto node = Ptr<InterfaceDecl>();
-    node->identifier = "TestInterface";
+    auto node = std::make_shared<InterfaceDecl>();
+    node->identifier = CreateSrcIdentifier("TestInterface", Position{1, 1, 1}, Position{1, 1, 14});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetInterfaceDecl(node, result, tokens, sourceManager);
-
+    GetInterfaceDecl(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::INTERFACE_H);
 }
 
-// Test GetStructDecl function
 TEST_F(SemanticHighlightImplTest, GetStructDecl_NormalCase) {
-    auto node = Ptr<StructDecl>();
-    node->identifier = "TestStruct";
+    auto node = std::make_shared<StructDecl>();
+    node->identifier = CreateSrcIdentifier("TestStruct", Position{1, 1, 1}, Position{1, 1, 11});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 12};
 
-    GetStructDecl(node, result, tokens, sourceManager);
-
+    GetStructDecl(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// Test GetEnumDecl function
 TEST_F(SemanticHighlightImplTest, GetEnumDecl_NormalCase) {
-    auto node = Ptr<EnumDecl>();
-    node->identifier = "TestEnum";
+    auto node = std::make_shared<EnumDecl>();
+    node->identifier = CreateSrcIdentifier("TestEnum", Position{1, 1, 1}, Position{1, 1, 9});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetEnumDecl(node, result, tokens, sourceManager);
-
+    GetEnumDecl(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// Test GetGenericParam function
 TEST_F(SemanticHighlightImplTest, GetGenericParam_NormalCase) {
-    auto node = Ptr<GenericParamDecl>();
-    node->identifier = "T";
+    auto node = std::make_shared<GenericParamDecl>();
+    node->identifier = CreateSrcIdentifier("T", Position{1, 1, 1}, Position{1, 1, 2});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 2};
 
-    GetGenericParam(node, result, tokens, sourceManager);
-
+    GetGenericParam(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
 }
 
-// Test GetGenericParam function - Invalid identifier
 TEST_F(SemanticHighlightImplTest, GetGenericParam_InvalidIdentifier) {
-    auto node = Ptr<GenericParamDecl>();
-    node->identifier = "<invalid identifier>";
+    auto node = std::make_shared<GenericParamDecl>();
+    node->identifier = CreateSrcIdentifier("<invalid identifier>", Position{1, 1, 1}, Position{1, 1, 20});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetGenericParam(node, result, tokens, sourceManager);
-
-    // Invalid identifiers should not produce highlight tokens
+    GetGenericParam(node.get(), result, tokens, sourceManager);
     EXPECT_TRUE(result.empty());
 }
 
-// Test GetQualifiedType function
 TEST_F(SemanticHighlightImplTest, GetQualifiedType_PackageType) {
-    auto node = Ptr<QualifiedType>();
-    auto target = Ptr<PackageDecl>();
-    node->target = target;
-    node->field = "packageName";
+    auto node = std::make_shared<QualifiedType>();
+    auto target = std::make_shared<PackageDecl>(*std::make_shared<Package>().get());
+    node->target = target.get();
+    node->field = CreateSrcIdentifier("packageName", Position{1, 1, 1}, Position{1, 1, 12});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetQualifiedType(node, result, tokens, sourceManager);
-
+    GetQualifiedType(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::PACKAGE_H);
 }
 
-// Test GetQualifiedType function - Class type
 TEST_F(SemanticHighlightImplTest, GetQualifiedType_ClassType) {
-    auto node = Ptr<QualifiedType>();
-    auto target = Ptr<ClassDecl>();
-    node->target = target;
-    node->field = "ClassName";
+    auto node = std::make_shared<QualifiedType>();
+    auto target = std::make_shared<ClassDecl>();
+    target->identifier = CreateSrcIdentifier("ClassName", Position{1, 1, 1}, Position{1, 1, 10});
+    node->target = target.get();
+    node->field = CreateSrcIdentifier("ClassName", Position{1, 1, 1}, Position{1, 1, 10});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 15};
 
-    GetQualifiedType(node, result, tokens, sourceManager);
-
+    GetQualifiedType(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// Test GetTypeAliasDecl function
 TEST_F(SemanticHighlightImplTest, GetTypeAliasDecl_NormalCase) {
-    auto node = Ptr<TypeAliasDecl>();
-    node->identifier = "TypeAlias";
+    auto node = std::make_shared<TypeAliasDecl>();
+    node->identifier = CreateSrcIdentifier("TypeAlias", Position{1, 1, 1}, Position{1, 1, 10});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    GetTypeAliasDecl(node, result, tokens, sourceManager);
-
+    GetTypeAliasDecl(node.get(), result, tokens, sourceManager);
     EXPECT_EQ(result.size(), 1);
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-// Test FindCharKeyWord function
 TEST_F(SemanticHighlightImplTest, FindCharKeyWord_Keyword) {
     bool found = FindCharKeyWord("if");
-
     EXPECT_TRUE(found);
 }
 
-// Test FindCharKeyWord function - Non-keyword
 TEST_F(SemanticHighlightImplTest, FindCharKeyWord_NonKeyword) {
     bool found = FindCharKeyWord("customIdentifier");
-
     EXPECT_FALSE(found);
 }
 
-// Test FindCharKeyWord function - Keyword identifier
 TEST_F(SemanticHighlightImplTest, FindCharKeyWord_KeywordIdentifier) {
     bool found = FindCharKeyWord("public");
-
-    EXPECT_FALSE(found); // public is in KEYWORD_IDENTIFIER, should return false
+    EXPECT_FALSE(found);
 }
 
-// Test SemanticHighlightImpl::NodeValid function
 TEST_F(SemanticHighlightImplTest, NodeValid_ValidNode) {
-    auto node = Ptr<Decl>();
-    // Set correct file ID and position
+    auto node = std::make_shared<FuncDecl>();
+    node->identifier = CreateSrcIdentifier("validName", Position{1, 1, 1}, Position{1, 1, 9});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    bool valid = SemanticHighlightImpl::NodeValid(node, 1, "validName");
-
+    bool valid = SemanticHighlightImpl::NodeValid(node.get(), 1, "validName");
     EXPECT_TRUE(valid);
 }
 
-// Test SemanticHighlightImpl::NodeValid function - Wrong file ID
 TEST_F(SemanticHighlightImplTest, NodeValid_WrongFileId) {
-    auto node = Ptr<Decl>();
-    // Set incorrect file ID
-    node->begin = Position{2, 1, 1}; // File ID is 2
+    auto node = std::make_shared<FuncDecl>();
+    node->identifier = CreateSrcIdentifier("validName", Position{2, 1, 1}, Position{2, 1, 9});
+    node->begin = Position{2, 1, 1};
     node->end = Position{2, 1, 10};
 
-    bool valid = SemanticHighlightImpl::NodeValid(node, 1, "validName"); // Expected file ID is 1
-
+    bool valid = SemanticHighlightImpl::NodeValid(node.get(), 1, "validName");
     EXPECT_FALSE(valid);
 }
 
-// Test SemanticHighlightImpl::NodeValid function - Keyword name
 TEST_F(SemanticHighlightImplTest, NodeValid_KeywordName) {
-    auto node = Ptr<Decl>();
+    auto node = std::make_shared<FuncDecl>();
+    node->identifier = CreateSrcIdentifier("if", Position{1, 1, 1}, Position{1, 1, 3});
     node->begin = Position{1, 1, 1};
     node->end = Position{1, 1, 10};
 
-    bool valid = SemanticHighlightImpl::NodeValid(node, 1, "if"); // if is a keyword
-
+    bool valid = SemanticHighlightImpl::NodeValid(node.get(), 1, "if");
     EXPECT_FALSE(valid);
 }
 
-// Test SemanticHighlightImpl::NodeValid function - Zero position
 TEST_F(SemanticHighlightImplTest, NodeValid_ZeroPosition) {
-    auto node = Ptr<Decl>();
-    // Do not set position or set to zero position
+    auto node = std::make_shared<FuncDecl>();
+    node->identifier = CreateSrcIdentifier("validName", Position{0, 0, 0}, Position{0, 0, 0});
     node->begin = Position{0, 0, 0};
     node->end = Position{0, 0, 0};
 
-    bool valid = SemanticHighlightImpl::NodeValid(node, 1, "validName");
-
+    bool valid = SemanticHighlightImpl::NodeValid(node.get(), 1, "validName");
     EXPECT_FALSE(valid);
 }
