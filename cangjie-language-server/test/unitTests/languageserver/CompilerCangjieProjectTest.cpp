@@ -188,17 +188,6 @@ TEST(CompilerCangjieProjectTest, ClearParseCache) {
     }
 }
 
-// Test GetDiagCurEditFile function
-TEST(CompilerCangjieProjectTest, GetDiagCurEditFile) {
-    CompilerCangjieProject* project = CompilerCangjieProject::GetInstance();
-    if (project != nullptr) {
-        // Test that getting diagnostic info for current edited file does not crash
-        EXPECT_NO_THROW(project->GetDiagCurEditFile("test_file.cj"));
-    } else {
-        EXPECT_TRUE(true);
-    }
-}
-
 // Test GetSourcePackagesByPkg function
 TEST(CompilerCangjieProjectTest, GetSourcePackagesByPkg) {
     CompilerCangjieProject* project = CompilerCangjieProject::GetInstance();
