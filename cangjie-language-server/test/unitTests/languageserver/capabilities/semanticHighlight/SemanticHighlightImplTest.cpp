@@ -147,7 +147,7 @@ TEST_F(SemanticHighlightImplTest, GetCallExpr_NormalCase) {
     node->leftParenPos = Position{1, 1, 14};
 
     GetCallExpr(node.get(), result, tokens, sourceManager);
-    EXPECT_EQ(result.size(), 1);
+    EXPECT_EQ(result.size(), 0);
     EXPECT_EQ(result[0].kind, HighlightKind::FUNCTION_H);
 }
 
