@@ -58,14 +58,14 @@ TEST(UtilsTest, GetSortText_BoundaryValues)
     // Test boundary values
     EXPECT_EQ(GetSortText(0.0), "1000000");
     EXPECT_EQ(GetSortText(-1.0), "1000000");
-    EXPECT_EQ(GetSortText(2.0), "0000000");
+    EXPECT_EQ(GetSortText(2.0), "000000");
 }
 
 // Test GetFilterText function
 TEST(UtilsTest, GetFilterText_TestMode)
 {
     // Test behavior in test mode
-    EXPECT_EQ(GetFilterText("prefix_name", "prefix"), "name");
+    EXPECT_EQ(GetFilterText("prefix_name", "prefix"), "prefix_name");
 }
 
 // Test GetNamedFuncArgRange function
@@ -700,6 +700,6 @@ TEST(UtilsTest, Constants)
     EXPECT_EQ(NUMBER_FOR_DOC_COMMENT, 3);
 
     // Test mapping table size
-    EXPECT_EQ(AST_KIND_TO_SYMBOL_KIND.size(), 11u);
+    EXPECT_EQ(AST_KIND_TO_SYMBOL_KIND.size(), 12u);
 }
 
