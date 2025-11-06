@@ -419,7 +419,7 @@ dberr_no IndexDatabase::FileExists(std::string fileURI, bool &exists)
         .execute(sqldb::with(fileURI), sqldb::into(exists));
     return 0;
 }
-// LCOV_EXCL_START
+// LCOV_EXCL_STOP
 dberr_no IndexDatabase::GetFileDigest(uint32_t fileId, std::string &digest)
 {
 #ifndef NO_EXCEPTIONS
