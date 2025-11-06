@@ -39,7 +39,6 @@ add_compile_definitions(
         SQLITE_USE_ALLOCA
 )
 target_compile_options(sqlite3 PRIVATE -fPIC)
-target_compile_options(LSPServer PUBLIC -fno-exceptions)
 # declare the path of JSON header file
 include_directories(../third_party/json-v3.11.3/include)
 # declare the path of Cangjie header file
