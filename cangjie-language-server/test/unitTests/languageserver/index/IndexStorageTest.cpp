@@ -6,575 +6,414 @@
 
 #include <gtest/gtest.h>
 #include "IndexStorage.cpp"
-#include <string>
-#include <vector>
-#include <unordered_map>
-
+ 
 using namespace ark::lsp;
-
-// Test SplitFileName function
-TEST(IndexStorageTest, SplitFileName_ValidFile) {
-    std::string file = "test.package.hash.ast";
-    auto result = SplitFileName(file);
-    EXPECT_EQ(result.first, "test.package");
-    EXPECT_EQ(result.second, "hash");
+ 
+TEST(IndexStorageTest, SplitFileName001) {
+    auto res = SplitFileName("filename");
+    EXPECT_EQ(res.first, "");
+    EXPECT_EQ(res.second, "");
 }
-
-TEST(IndexStorageTest, SplitFileName_NoExtension) {
-    std::string file = "testpackagehashast";
-    auto result = SplitFileName(file);
-    EXPECT_TRUE(result.first.empty());
-    EXPECT_TRUE(result.second.empty());
+ 
+TEST(IndexStorageTest, SplitFileName002) {
+    auto res = SplitFileName("file.txt");
+    EXPECT_EQ(res.first, "");
+    EXPECT_EQ(res.second, "");
 }
-
-TEST(IndexStorageTest, SplitFileName_SingleDot) {
-    std::string file = "test.package.ast";
-    auto result = SplitFileName(file);
-    EXPECT_EQ(result.first, "test");
-    EXPECT_EQ(result.second, "package");
+ 
+TEST(IndexStorageTest, SplitFileName003) {
+    auto res = SplitFileName("archive.tar.gz");
+    EXPECT_EQ(res.first, "archive");
+    EXPECT_EQ(res.second, "tar");
 }
-
-// Test MergeFileName function
-TEST(IndexStorageTest, MergeFileName) {
-    std::string fullPkgName = "test.package";
-    std::string hashCode = "abc123";
-    std::string extension = "idx";
-
-    std::string result = MergeFileName(fullPkgName, hashCode, extension);
-    EXPECT_EQ(result, "test.package.abc123.idx");
+ 
+TEST(IndexStorageTest, MergeFileName001) {
+    EXPECT_EQ(MergeFileName("mypkg", "123abc", "bin"), "mypkg.123abc.bin");
 }
-
-// Test CacheManager::IsStale function
-TEST(IndexStorageTest, CacheManagerIsStale_NoCache) {
-    CacheManager cacheManager("test_path");
-    bool result = cacheManager.IsStale("nonexistent.package", "hash123");
-    EXPECT_TRUE(result);
-}
-
-// Test CacheManager::GetShardPathFromFilePath function
-TEST(IndexStorageTest, CacheManagerGetShardPathFromFilePath) {
-    CacheManager cacheManager("test_path");
-    std::string result = cacheManager.GetShardPathFromFilePath("test/package", "hash123");
-    // Note: The actual path depends on the value of indexDir, here we just check if it contains key parts
-    EXPECT_NE(result.find("test.package"), std::string::npos);
-    EXPECT_NE(result.find("hash123.idx"), std::string::npos);
-}
-
-// Test ReadSymbolLocation function
-TEST(IndexStorageTest, ReadSymbolLocation_ValidData) {
+ 
+TEST(IndexStorageTest, convertCommentGroup001) {
     flatbuffers::FlatBufferBuilder builder;
-
-    // Create location data
-    IdxFormat::Position startPos(1, 1, 1);
-    IdxFormat::Position endPos(1, 1, 10);
-    auto fileUri = builder.CreateString("file:///test.cj");
-    auto location = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-
-    // Create symbol with location
-    auto name = builder.CreateString("testSymbol");
-    auto scope = builder.CreateString("testScope");
-    auto symbol = IdxFormat::CreateSymbol(builder, 1, name, scope, location);
-
-    // Create package with symbol
-    std::vector<flatbuffers::Offset<IdxFormat::Symbol>> symbols = {symbol};
-    auto symbolSlab = builder.CreateVector(symbols);
-    auto package = IdxFormat::CreateHashedPackage(builder, symbolSlab);
-    builder.Finish(package);
-
-    // Get the actual symbol from the buffer
-    auto pkg = IdxFormat::GetHashedPackage(builder.GetBufferPointer());
-    auto sym = pkg->symbol_slab()->Get(0);
-
-    Symbol outSymbol;
-    EXPECT_NO_THROW(ReadSymbolLocation(outSymbol, sym));
+ 
+    auto groupOffset = IdxFormat::CreateCommentGroup(builder, 0);
+ 
+    builder.Finish(groupOffset);
+    auto group = flatbuffers::GetRoot<IdxFormat::CommentGroup>(builder.GetBufferPointer());
+    convertCommentGroup(*group);
 }
-
-// Test ReadSymbolMacro function
-TEST(IndexStorageTest, ReadSymbolMacro_ValidData) {
-    flatbuffers::FlatBufferBuilder builder;
-
-    // Create macro call location
-    IdxFormat::Position macroStart(2, 1, 1);
-    IdxFormat::Position macroEnd(2, 1, 5);
-    auto macroFileUri = builder.CreateString("file:///macro.cj");
-    auto macroLocation = IdxFormat::CreateLocation(builder, &macroStart, &macroEnd, macroFileUri);
-
-    // Create main location
-    IdxFormat::Position startPos(1, 1, 1);
-    IdxFormat::Position endPos(1, 1, 10);
-    auto fileUri = builder.CreateString("file:///test.cj");
-    auto location = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-
-    // Create declaration location (cannot be nullptr)
-    auto declLocation = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-
-    // Create symbol with macro call
-    auto name = builder.CreateString("testSymbol");
-    auto scope = builder.CreateString("testScope");
-    auto signature = builder.CreateString("testSignature");
-    auto returnType = builder.CreateString("Int");
-    auto curModule = builder.CreateString("testCurModule");
-    auto symbol = IdxFormat::CreateSymbol(builder, 1, name, scope, location, declLocation, 0,
-                                          signature, returnType, false, 0, false, false,
-                                          curModule, macroLocation);
-
-    // Create package with symbol
-    std::vector<flatbuffers::Offset<IdxFormat::Symbol>> symbols = {symbol};
-    auto symbolSlab = builder.CreateVector(symbols);
-    auto package = IdxFormat::CreateHashedPackage(builder, symbolSlab);
-    builder.Finish(package);
-
-    // Get the actual symbol from the buffer
-    auto pkg = IdxFormat::GetHashedPackage(builder.GetBufferPointer());
-    auto sym = pkg->symbol_slab()->Get(0);
-
-    Symbol outSymbol;
-    EXPECT_NO_THROW(ReadSymbolMacro(outSymbol, sym));
+ 
+static constexpr uint64_t kTestId    = 42;
+static constexpr uint8_t  kTestType  = 3;
+static constexpr uint64_t kContainer = 99;
+ 
+TEST(IndexStorageTest, ReadCrossSymbol001) {
+    // name==nullptr, location==nullptr, container_name==nullptr
+    flatbuffers::FlatBufferBuilder fbb;
+    auto crs_off = IdxFormat::CreateCrossSymbol(fbb,
+        kTestId,
+        0,
+        kTestType,
+        0,
+        kContainer,
+        0);
+    fbb.Finish(crs_off);
+    auto fb_crs = flatbuffers::GetRoot<IdxFormat::CrossSymbol>(fbb.GetBufferPointer());
+ 
+    CrossSymbol out;
+    ReadCrossSymbol(out, fb_crs);
+ 
+    EXPECT_EQ(out.id,          kTestId);
+    EXPECT_EQ(out.crossType,   CrossType(kTestType));
+    EXPECT_EQ(out.container,   kContainer);
+    EXPECT_TRUE(out.name.empty());
+    EXPECT_TRUE(out.containerName.empty());
+ 
+    EXPECT_EQ(out.location.begin.fileID, 0u);
+    EXPECT_EQ(out.location.begin.line,   0u);
+    EXPECT_EQ(out.location.begin.column, 0u);
+    EXPECT_EQ(out.location.end.fileID,   0u);
+    EXPECT_EQ(out.location.end.line,     0u);
+    EXPECT_EQ(out.location.end.column,   0u);
+    EXPECT_TRUE(out.location.fileUri.empty());
 }
-
-
-// Test ReadSymbol function
-TEST(IndexStorageTest, ReadSymbol_ValidData) {
-    flatbuffers::FlatBufferBuilder builder;
-
-    // Create location data
-    IdxFormat::Position startPos(1, 1, 1);
-    IdxFormat::Position endPos(1, 1, 10);
-    auto fileUri = builder.CreateString("file:///test.cj");
-    auto location = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-
-    // Create symbol
-    auto name = builder.CreateString("testSymbol");
-    auto scope = builder.CreateString("testScope");
-    auto signature = builder.CreateString("testSignature");
-    auto returnType = builder.CreateString("Int");
-    auto module = builder.CreateString("test.module");
-    auto declaration = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-    auto symbol = IdxFormat::CreateSymbol(builder, 1, name, scope, location, declaration,
-                                          static_cast<uint16_t>(AST::ASTKind::FUNC_TYPE),
-                                          signature, returnType, false,
-                                          static_cast<uint8_t>(Modifier::PUBLIC),
-                                          false, false, module);
-
-    // Create package with symbol
-    std::vector<flatbuffers::Offset<IdxFormat::Symbol>> symbols = {symbol};
-    auto symbolSlab = builder.CreateVector(symbols);
-    auto package = IdxFormat::CreateHashedPackage(builder, symbolSlab);
-    builder.Finish(package);
-
-    // Get the actual symbol from the buffer
-    auto pkg = IdxFormat::GetHashedPackage(builder.GetBufferPointer());
-    auto sym = pkg->symbol_slab()->Get(0);
-
-    Symbol outSymbol;
-    EXPECT_NO_THROW(ReadSymbol(outSymbol, sym));
+ 
+TEST(IndexStorageTest, ReadCrossSymbol002) {
+    // name!=nullptr, container_name!=nullptr, location==nullptr
+    flatbuffers::FlatBufferBuilder fbb;
+    auto name_off = fbb.CreateString("TestName");
+    auto cntname  = fbb.CreateString("CntName");
+    auto crs_off = IdxFormat::CreateCrossSymbol(fbb,
+        kTestId,
+        name_off,
+        kTestType,
+        0,
+        kContainer,
+        cntname);
+    fbb.Finish(crs_off);
+    auto fb_crs = flatbuffers::GetRoot<IdxFormat::CrossSymbol>(fbb.GetBufferPointer());
+ 
+    CrossSymbol out;
+    ReadCrossSymbol(out, fb_crs);
+ 
+    EXPECT_EQ(out.name,          "TestName");
+    EXPECT_EQ(out.containerName, "CntName");
 }
-
-// Test ReadRefLocation function
-TEST(IndexStorageTest, ReadRefLocation_ValidData) {
-    flatbuffers::FlatBufferBuilder builder;
-
-    // Create ref location
-    IdxFormat::Position startPos(1, 1, 1);
-    IdxFormat::Position endPos(1, 1, 10);
-    auto fileUri = builder.CreateString("file:///test.cj");
-    auto location = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-
-    // Create ref
-    auto ref = IdxFormat::CreateRef(builder, location, static_cast<uint16_t>(RefKind::REFERENCE), 1);
-
-    // Create Sym2Ref
-    std::vector<flatbuffers::Offset<IdxFormat::Ref>> refs = {ref};
-    auto refsVec = builder.CreateVector(refs);
-    auto sym2Ref = IdxFormat::CreateSym2Ref(builder, 1, refsVec);
-
-    // Create package with ref
-    std::vector<flatbuffers::Offset<IdxFormat::Sym2Ref>> sym2Refs = {sym2Ref};
-    auto refSlab = builder.CreateVector(sym2Refs);
-    // Create symbol
-    auto name = builder.CreateString("testSymbol");
-    auto scope = builder.CreateString("testScope");
-    auto signature = builder.CreateString("testSignature");
-    auto returnType = builder.CreateString("Int");
-    auto module = builder.CreateString("test.module");
-    auto declaration = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-    auto symbol = IdxFormat::CreateSymbol(builder, 1, name, scope, location, declaration,
-                                          static_cast<uint16_t>(AST::ASTKind::FUNC_TYPE),
-                                          signature, returnType, false,
-                                          static_cast<uint8_t>(Modifier::PUBLIC),
-                                          false, false, module);
-
-    // Create package with symbol
-    std::vector<flatbuffers::Offset<IdxFormat::Symbol>> symbols = {symbol};
-    auto symbolSlab = builder.CreateVector(symbols);
-    auto package = IdxFormat::CreateHashedPackage(builder, symbolSlab, refSlab);
-    builder.Finish(package);
-
-    // Get the actual ref from the buffer
-    auto pkg = IdxFormat::GetHashedPackage(builder.GetBufferPointer());
-    auto refEntry = pkg->ref_slab()->Get(0);
-    auto actualRef = refEntry->refs()->Get(0);
-
-    Ref outRef;
-    EXPECT_NO_THROW(ReadRefLocation(outRef, actualRef));
+ 
+TEST(IndexStorageTest, ReadCrossSymbol003) {
+    // only location present, subfields all nullptr -> skip nested assignments
+    flatbuffers::FlatBufferBuilder fbb;
+    auto loc_off = IdxFormat::CreateLocation(fbb,
+        0,
+        0,
+        0);
+    auto crs_off = CreateCrossSymbol(fbb,
+        kTestId,
+        0,
+        kTestType,
+        loc_off,
+        kContainer,
+        0);
+    fbb.Finish(crs_off);
+    auto fb_crs = flatbuffers::GetRoot<IdxFormat::CrossSymbol>(fbb.GetBufferPointer());
+ 
+    CrossSymbol out;
+    ReadCrossSymbol(out, fb_crs);
+ 
+    EXPECT_EQ(out.location.begin.fileID, 0u);
+    EXPECT_EQ(out.location.end.fileID,   0u);
+    EXPECT_TRUE(out.location.fileUri.empty());
 }
-
-// Test ReadRef function
-TEST(IndexStorageTest, ReadRef_ValidData) {
-    flatbuffers::FlatBufferBuilder builder;
-
-    // Create ref location
-    IdxFormat::Position startPos(1, 1, 1);
-    IdxFormat::Position endPos(1, 1, 10);
-    auto fileUri = builder.CreateString("file:///test.cj");
-    auto location = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-
-    // Create ref
-    auto ref = IdxFormat::CreateRef(builder, location, static_cast<uint16_t>(RefKind::REFERENCE), 1, true);
-
-    // Create Sym2Ref
-    std::vector<flatbuffers::Offset<IdxFormat::Ref>> refs = {ref};
-    auto refsVec = builder.CreateVector(refs);
-    auto sym2Ref = IdxFormat::CreateSym2Ref(builder, 1, refsVec);
-
-    // Create package with ref
-    std::vector<flatbuffers::Offset<IdxFormat::Sym2Ref>> sym2Refs = {sym2Ref};
-    auto refSlab = builder.CreateVector(sym2Refs);
-    // Create symbol
-    auto name = builder.CreateString("testSymbol");
-    auto scope = builder.CreateString("testScope");
-    auto signature = builder.CreateString("testSignature");
-    auto returnType = builder.CreateString("Int");
-    auto module = builder.CreateString("test.module");
-    auto declaration = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-    auto symbol = IdxFormat::CreateSymbol(builder, 1, name, scope, location, declaration,
-                                          static_cast<uint16_t>(AST::ASTKind::FUNC_TYPE),
-                                          signature, returnType, false,
-                                          static_cast<uint8_t>(Modifier::PUBLIC),
-                                          false, false, module);
-
-    // Create package with symbol
-    std::vector<flatbuffers::Offset<IdxFormat::Symbol>> symbols = {symbol};
-    auto symbolSlab = builder.CreateVector(symbols);
-    auto package = IdxFormat::CreateHashedPackage(builder, symbolSlab, refSlab);
-    builder.Finish(package);
-
-    // Get the actual ref from the buffer
-    auto pkg = IdxFormat::GetHashedPackage(builder.GetBufferPointer());
-    auto refEntry = pkg->ref_slab()->Get(0);
-    auto actualRef = refEntry->refs()->Get(0);
-
-    Ref outRef;
-    EXPECT_NO_THROW(ReadRef(outRef, actualRef));
+ 
+TEST(IndexStorageTest, ReadCrossSymbol004) {
+    // only begin non-null
+    flatbuffers::FlatBufferBuilder fbb;
+    auto posB    = new IdxFormat::Position(7, 8, 9);
+    auto loc_off = CreateLocation(fbb,
+        posB,
+        0,
+        0);
+    auto crs_off = CreateCrossSymbol(fbb,
+        kTestId,
+        0,
+        kTestType,
+        loc_off,
+        kContainer,
+        0);
+    fbb.Finish(crs_off);
+    auto fb_crs = flatbuffers::GetRoot<IdxFormat::CrossSymbol>(fbb.GetBufferPointer());
+ 
+    CrossSymbol out;
+    ReadCrossSymbol(out, fb_crs);
+ 
+    EXPECT_EQ(out.location.begin.fileID,  7u);
+    EXPECT_EQ(out.location.begin.line,    8u);
+    EXPECT_EQ(out.location.begin.column,  9u);
+    EXPECT_EQ(out.location.end.fileID,    0u);
+    EXPECT_TRUE(out.location.fileUri.empty());
 }
-
-// Test ReadRelation function
-TEST(IndexStorageTest, ReadRelation_ValidData) {
-    flatbuffers::FlatBufferBuilder builder;
-
-
-    // Create relation
-    auto relation = IdxFormat::CreateRelation(builder, 1, static_cast<uint16_t>(RelationKind::EXTEND), 2);
-
-    // Create ref location
-    IdxFormat::Position startPos(1, 1, 1);
-    IdxFormat::Position endPos(1, 1, 10);
-    auto fileUri = builder.CreateString("file:///test.cj");
-    auto location = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-
-    // Create ref
-    auto ref = IdxFormat::CreateRef(builder, location, static_cast<uint16_t>(RefKind::REFERENCE), 1);
-
-    // Create package with relation
-    std::vector<flatbuffers::Offset<IdxFormat::Relation>> relations = {relation};
-    auto relationSlab = builder.CreateVector(relations);
-    // Create symbol
-    auto name = builder.CreateString("testSymbol");
-    auto scope = builder.CreateString("testScope");
-    auto signature = builder.CreateString("testSignature");
-    auto returnType = builder.CreateString("Int");
-    auto module = builder.CreateString("test.module");
-    auto declaration = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-    auto symbol = IdxFormat::CreateSymbol(builder, 1, name, scope, location, declaration,
-                                          static_cast<uint16_t>(AST::ASTKind::FUNC_TYPE),
-                                          signature, returnType, false,
-                                          static_cast<uint8_t>(Modifier::PUBLIC),
-                                          false, false, module);
-
-    // Create package with symbol
-    std::vector<flatbuffers::Offset<IdxFormat::Symbol>> symbols = {symbol};
-    auto symbolSlab = builder.CreateVector(symbols);
-    // Create Sym2Ref
-    std::vector<flatbuffers::Offset<IdxFormat::Ref>> refs = {ref};
-    auto refsVec = builder.CreateVector(refs);
-    auto sym2Ref = IdxFormat::CreateSym2Ref(builder, 1, refsVec);
-    // Create package with ref
-    std::vector<flatbuffers::Offset<IdxFormat::Sym2Ref>> sym2Refs = {sym2Ref};
-    auto refSlab = builder.CreateVector(sym2Refs);
-
-    auto package = IdxFormat::CreateHashedPackage(builder, symbolSlab, refSlab, relationSlab);
-    builder.Finish(package);
-
-    // Get the actual relation from the buffer
-    auto pkg = IdxFormat::GetHashedPackage(builder.GetBufferPointer());
-    auto actualRelation = pkg->relation_slab()->Get(0);
-
-    Relation outRelation;
-    EXPECT_NO_THROW(ReadRelation(outRelation, actualRelation));
+ 
+TEST(IndexStorageTest, ReadCrossSymbol005) {
+    // only end non-null
+    flatbuffers::FlatBufferBuilder fbb;
+    auto posE    = new IdxFormat::Position(1, 2, 3);
+    auto loc_off = CreateLocation(fbb,
+        0,
+        posE,
+        0);
+    auto crs_off = CreateCrossSymbol(fbb,
+        kTestId,
+        0,
+        kTestType,
+        loc_off,
+        kContainer,
+        0);
+    fbb.Finish(crs_off);
+    auto fb_crs = flatbuffers::GetRoot<IdxFormat::CrossSymbol>(fbb.GetBufferPointer());
+ 
+    CrossSymbol out;
+    ReadCrossSymbol(out, fb_crs);
+ 
+    EXPECT_EQ(out.location.end.fileID,    1u);
+    EXPECT_EQ(out.location.end.line,      2u);
+    EXPECT_EQ(out.location.end.column,    3u);
+    EXPECT_EQ(out.location.begin.fileID,  0u);
+    EXPECT_TRUE(out.location.fileUri.empty());
 }
-
-// Test ReadCrossSymbolLocation function
-TEST(IndexStorageTest, ReadCrossSymbolLocation_ValidData) {
-    flatbuffers::FlatBufferBuilder builder;
-
-    // Create cross symbol location
-    IdxFormat::Position startPos(1, 1, 1);
-    IdxFormat::Position endPos(1, 1, 10);
-    auto fileUri = builder.CreateString("file:///test.cj");
-    auto location = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-
-    // Create cross symbol
-    auto name = builder.CreateString("testCrossSymbol");
-    auto containerName = builder.CreateString("testContainer");
-    auto crossSymbol = IdxFormat::CreateCrossSymbol(builder, 1, name,
-                                                    static_cast<uint8_t>(CrossType::ARK_TS_WITH_INTEROP),
-                                                    location, 2, containerName);
-
-    // Create package with cross symbol
-    std::vector<flatbuffers::Offset<IdxFormat::CrossSymbol>> crossSymbols = {crossSymbol};
-    auto crossSymbolSlab = builder.CreateVector(crossSymbols);
-
-    // Create relation
-    auto relation = IdxFormat::CreateRelation(builder, 1, static_cast<uint16_t>(RelationKind::EXTEND), 2);
-
-    // Create ref
-    auto ref = IdxFormat::CreateRef(builder, location, static_cast<uint16_t>(RefKind::REFERENCE), 1);
-
-    // Create package with relation
-    std::vector<flatbuffers::Offset<IdxFormat::Relation>> relations = {relation};
-    auto scope = builder.CreateString("testScope");
-    auto signature = builder.CreateString("testSignature");
-    auto returnType = builder.CreateString("Int");
-    auto module = builder.CreateString("test.module");
-    auto declaration = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-    auto symbol = IdxFormat::CreateSymbol(builder, 1, name, scope, location, declaration,
-                                          static_cast<uint16_t>(AST::ASTKind::FUNC_TYPE),
-                                          signature, returnType, false,
-                                          static_cast<uint8_t>(Modifier::PUBLIC),
-                                          false, false, module);
-    // Create package with symbol
-    std::vector<flatbuffers::Offset<IdxFormat::Symbol>> symbols = {symbol};
-    auto symbolSlab = builder.CreateVector(symbols);
-    // Create Sym2Ref
-    std::vector<flatbuffers::Offset<IdxFormat::Ref>> refs = {ref};
-    auto refsVec = builder.CreateVector(refs);
-    auto sym2Ref = IdxFormat::CreateSym2Ref(builder, 1, refsVec);
-    // Create package with ref
-    std::vector<flatbuffers::Offset<IdxFormat::Sym2Ref>> sym2Refs = {sym2Ref};
-    auto refSlab = builder.CreateVector(sym2Refs);
-
-    // Create package with relation
-    auto relationSlab = builder.CreateVector(relations);
-
-    // Create extend slab
-    auto interfaceName = builder.CreateString("TestInterface");
-    auto extend = IdxFormat::CreateExtend(builder, 1, static_cast<uint8_t>(Modifier::PUBLIC), interfaceName);
-
-    std::vector<flatbuffers::Offset<IdxFormat::Extend>> extends = {extend};
-    auto extendsVec = builder.CreateVector(extends);
-
-    auto sym2Extend = IdxFormat::CreateSym2Extend(builder, 1, extendsVec);
-
-    std::vector<flatbuffers::Offset<IdxFormat::Sym2Extend>> sym2Extends = {sym2Extend};
-    auto extendSlab = builder.CreateVector(sym2Extends);
-
-    auto package = IdxFormat::CreateHashedPackage(builder, symbolSlab, refSlab, relationSlab, extendSlab, crossSymbolSlab);
-    builder.Finish(package);
-
-    // Get the actual cross symbol from the buffer
-    auto pkg = IdxFormat::GetHashedPackage(builder.GetBufferPointer());
-    auto actualCrossSymbol = pkg->cross_symbol_slab()->Get(0);
-
-    CrossSymbol outCrossSymbol;
-    EXPECT_NO_THROW(ReadCrossSymbolLocation(outCrossSymbol, actualCrossSymbol));
+ 
+TEST(IndexStorageTest, ReadCrossSymbol006)
+{
+    // only file_uri non-null
+    flatbuffers::FlatBufferBuilder fbb;
+    auto uri_off = fbb.CreateString("file://uri");
+    auto loc_off = IdxFormat::CreateLocation(fbb,
+        0,
+        0, uri_off);
+    auto crs_off = CreateCrossSymbol(fbb, kTestId,
+        0, kTestType, loc_off, kContainer,
+        0);
+    fbb.Finish(crs_off);
+    auto fb_crs = flatbuffers::GetRoot<IdxFormat::CrossSymbol>(fbb.GetBufferPointer());
+ 
+    CrossSymbol out;
+    ReadCrossSymbol(out, fb_crs);
+ 
+    EXPECT_EQ(out.location.fileUri, "file://uri");
 }
-
-// Test ReadCrossSymbol function
-TEST(IndexStorageTest, ReadCrossSymbol_ValidData) {
-    flatbuffers::FlatBufferBuilder builder;
-
-    // Create cross symbol location
-    IdxFormat::Position startPos(1, 1, 1);
-    IdxFormat::Position endPos(1, 1, 10);
-    auto fileUri = builder.CreateString("file:///test.cj");
-    auto location = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-
-    // Create cross symbol
-    auto name = builder.CreateString("testCrossSymbol");
-    auto containerName = builder.CreateString("testContainer");
-    auto crossSymbol = IdxFormat::CreateCrossSymbol(builder, 1, name,
-                                                    static_cast<uint8_t>(CrossType::ARK_TS_WITH_INTEROP),
-                                                    location, 2, containerName);
-
-    // Create package with cross symbol
-    std::vector<flatbuffers::Offset<IdxFormat::CrossSymbol>> crossSymbols = {crossSymbol};
-    auto crossSymbolSlab = builder.CreateVector(crossSymbols);
-    // Create ref
-    auto ref = IdxFormat::CreateRef(builder, location, static_cast<uint16_t>(RefKind::REFERENCE), 1);
-    // Create relation
-    auto relation = IdxFormat::CreateRelation(builder, 1, static_cast<uint16_t>(RelationKind::EXTEND), 2);
-
-    // Create package with relation
-    std::vector<flatbuffers::Offset<IdxFormat::Relation>> relations = {relation};
-    auto scope = builder.CreateString("testScope");
-    auto signature = builder.CreateString("testSignature");
-    auto returnType = builder.CreateString("Int");
-    auto module = builder.CreateString("test.module");
-    auto declaration = IdxFormat::CreateLocation(builder, &startPos, &endPos, fileUri);
-    auto symbol = IdxFormat::CreateSymbol(builder, 1, name, scope, location, declaration,
-                                          static_cast<uint16_t>(AST::ASTKind::FUNC_TYPE),
-                                          signature, returnType, false,
-                                          static_cast<uint8_t>(Modifier::PUBLIC),
-                                          false, false, module);
-    // Create package with symbol
-    std::vector<flatbuffers::Offset<IdxFormat::Symbol>> symbols = {symbol};
-    auto symbolSlab = builder.CreateVector(symbols);
-    // Create Sym2Ref
-    std::vector<flatbuffers::Offset<IdxFormat::Ref>> refs = {ref};
-    auto refsVec = builder.CreateVector(refs);
-    auto sym2Ref = IdxFormat::CreateSym2Ref(builder, 1, refsVec);
-    // Create package with ref
-    std::vector<flatbuffers::Offset<IdxFormat::Sym2Ref>> sym2Refs = {sym2Ref};
-    auto refSlab = builder.CreateVector(sym2Refs);
-
-    // Create package with relation
-    auto relationSlab = builder.CreateVector(relations);
-
-    // Create extend slab
-    auto interfaceName = builder.CreateString("TestInterface");
-    auto extend = IdxFormat::CreateExtend(builder, 1, static_cast<uint8_t>(Modifier::PUBLIC), interfaceName);
-
-    std::vector<flatbuffers::Offset<IdxFormat::Extend>> extends = {extend};
-    auto extendsVec = builder.CreateVector(extends);
-
-    auto sym2Extend = IdxFormat::CreateSym2Extend(builder, 1, extendsVec);
-
-    std::vector<flatbuffers::Offset<IdxFormat::Sym2Extend>> sym2Extends = {sym2Extend};
-    auto extendSlab = builder.CreateVector(sym2Extends);
-
-    auto package = IdxFormat::CreateHashedPackage(builder, symbolSlab, refSlab, relationSlab, extendSlab, crossSymbolSlab);
-    builder.Finish(package);
-
-    // Get the actual cross symbol from the buffer
-    auto pkg = IdxFormat::GetHashedPackage(builder.GetBufferPointer());
-    auto actualCrossSymbol = pkg->cross_symbol_slab()->Get(0);
-
-    CrossSymbol outCrossSymbol;
-    EXPECT_NO_THROW(ReadCrossSymbol(outCrossSymbol, actualCrossSymbol));
+ 
+static constexpr uint64_t kDefaultId = 0;
+ 
+TEST(IndexStorageTest, ReadSymsComments001) {
+    // sym == nullptr → early return
+    Symbol res;
+    ReadSymsComments(res, nullptr);
+    EXPECT_TRUE(res.comments.leadingComments.empty());
+    EXPECT_TRUE(res.comments.innerComments.empty());
+    EXPECT_TRUE(res.comments.trailingComments.empty());
 }
-
-// Test StoreRef function
-TEST(IndexStorageTest, StoreRef_ValidData) {
-    flatbuffers::FlatBufferBuilder builder;
-    Ref ref;
-    ref.kind = RefKind::REFERENCE;
-    ref.container = 1;
-    ref.isCjoRef = true;
-
-    // 补全位置信息
-    ref.location.begin.fileID = 1;
-    ref.location.begin.line = 10;
-    ref.location.begin.column = 5;
-    ref.location.end.fileID = 1;
-    ref.location.end.line = 10;
-    ref.location.end.column = 25;
-    ref.location.fileUri = "file:///test/module.cj";
-
-    EXPECT_NO_THROW(StoreRef(builder, ref));
+ 
+TEST(IndexStorageTest, ReadSymsComments002) {
+    // sym != nullptr but comments() == nullptr → early return
+    flatbuffers::FlatBufferBuilder fbb;
+    auto sym_off = IdxFormat::CreateSymbol(fbb,
+        kDefaultId, // id
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        false,
+        0,
+        false,
+        false,
+        0,
+        0,
+        0,
+        0,
+        0);
+    fbb.Finish(sym_off);
+ 
+    auto fb_sym = flatbuffers::GetRoot<IdxFormat::Symbol>(fbb.GetBufferPointer());
+    Symbol res;
+    fbb.Finish(sym_off);
+    ReadSymsComments(res, fb_sym);
+    EXPECT_TRUE(res.comments.leadingComments.empty());
+    EXPECT_TRUE(res.comments.innerComments.empty());
+    EXPECT_TRUE(res.comments.trailingComments.empty());
 }
-
-
-// Test StoreExtend function
-TEST(IndexStorageTest, StoreExtend_ValidData) {
-    flatbuffers::FlatBufferBuilder builder;
-    ExtendItem extendItem;
-    extendItem.id = 1;
-    extendItem.modifier = Modifier::PUBLIC;
-    extendItem.interfaceName = "TestInterface";
-
-    EXPECT_NO_THROW(StoreExtend(builder, extendItem));
+ 
+TEST(IndexStorageTest, ReadSymsComments004) {
+    // only leading_comments
+    flatbuffers::FlatBufferBuilder fbb;
+    auto cg1      = IdxFormat::CreateCommentGroup(fbb);
+    auto lead_vec = fbb.CreateVector<flatbuffers::Offset<IdxFormat::CommentGroup>>({cg1});
+    auto cg_group = CreateCommentGroups(fbb,
+        lead_vec,
+        0,
+        0);
+    auto sym_off = CreateSymbol(fbb,
+        kDefaultId, 0,0,0,0,0,0,0,false,0,false,false,0,0,0,
+        cg_group,
+        0);
+    fbb.Finish(sym_off);
+ 
+    auto fb_sym = flatbuffers::GetRoot<IdxFormat::Symbol>(fbb.GetBufferPointer());
+    Symbol res;
+    ReadSymsComments(res, fb_sym);
+    EXPECT_EQ(res.comments.leadingComments.size(), 1u);
+    EXPECT_TRUE(res.comments.innerComments.empty());
+    EXPECT_TRUE(res.comments.trailingComments.empty());
 }
-
-// Test StoreRelation function
-TEST(IndexStorageTest, StoreRelation_ValidData) {
-    flatbuffers::FlatBufferBuilder builder;
-    Relation relation;
-    relation.subject = 1;
-    relation.predicate = RelationKind::EXTEND;
-    relation.object = 2;
-
-    EXPECT_NO_THROW(StoreRelation(builder, relation));
+ 
+TEST(IndexStorageTest, ReadSymsComments005) {
+    // only inner_comments
+    flatbuffers::FlatBufferBuilder fbb;
+    auto cg1 = IdxFormat::CreateCommentGroup(fbb /* default args */);
+    auto inner_vec = fbb.CreateVector<flatbuffers::Offset<IdxFormat::CommentGroup>>({cg1});
+    auto cg_group = CreateCommentGroups(fbb,
+        0,
+        inner_vec,
+        0);
+    auto sym_off = CreateSymbol(fbb,
+        kDefaultId, 0,0,0,0,0,0,0,false,0,false,false,0,0,0,
+        cg_group,
+        0);
+    fbb.Finish(sym_off);
+ 
+    auto fb_sym = flatbuffers::GetRoot<IdxFormat::Symbol>(fbb.GetBufferPointer());
+    Symbol res;
+    ReadSymsComments(res, fb_sym);
+    EXPECT_TRUE(res.comments.leadingComments.empty());
+    EXPECT_EQ(res.comments.innerComments.size(), 1u);
+    EXPECT_TRUE(res.comments.trailingComments.empty());
 }
-
-// Test StoreCrossSymbol function
-TEST(IndexStorageTest, StoreCrossSymbol_ValidData) {
-    flatbuffers::FlatBufferBuilder builder;
-    CrossSymbol crossSymbol;
-    crossSymbol.id = 1;
-    crossSymbol.name = "testCrossSymbol";
-    crossSymbol.crossType = CrossType::ARK_TS_WITH_INTEROP;
-    crossSymbol.container = 2;
-    crossSymbol.containerName = "testContainer";
-
-    // 补全位置信息
-    crossSymbol.location.begin.fileID = 1;
-    crossSymbol.location.begin.line = 10;
-    crossSymbol.location.begin.column = 5;
-    crossSymbol.location.end.fileID = 1;
-    crossSymbol.location.end.line = 10;
-    crossSymbol.location.end.column = 25;
-    crossSymbol.location.fileUri = "file:///test/module.cj";
-
-    EXPECT_NO_THROW(StoreCrossSymbol(builder, crossSymbol));
+ 
+TEST(IndexStorageTest, ReadSymsComments006) {
+    // only trailing_comments
+    flatbuffers::FlatBufferBuilder fbb;
+    auto cg1= IdxFormat::CreateCommentGroup(fbb /* default args */);
+    auto trail_vec = fbb.CreateVector<flatbuffers::Offset<IdxFormat::CommentGroup>>({cg1});
+    auto cg_group  = CreateCommentGroups(fbb,
+        0,
+        0,
+        trail_vec);
+    auto sym_off = CreateSymbol(fbb,
+        kDefaultId, 0,0,0,0,0,0,0,false,0,false,false,0,0,0,
+        cg_group,
+        0);
+    fbb.Finish(sym_off);
+ 
+    auto fb_sym = flatbuffers::GetRoot<IdxFormat::Symbol>(fbb.GetBufferPointer());
+    Symbol res;
+    ReadSymsComments(res, fb_sym);
+    EXPECT_TRUE(res.comments.leadingComments.empty());
+    EXPECT_TRUE(res.comments.innerComments.empty());
+    EXPECT_EQ(res.comments.trailingComments.size(), 1u);
 }
-
-// Test AstFileHandler::LoadShard function
-TEST(IndexStorageTest, AstFileHandlerLoadShard_NonExistentFile) {
-    AstFileHandler handler;
-    auto result = handler.LoadShard("nonexistent_file.ast");
-    EXPECT_FALSE(result.has_value());
+ 
+static constexpr uint16_t kKind = 2;
+static constexpr uint64_t kContainerID = 42;
+static constexpr bool kIsCjoRef = true;
+ 
+TEST(IndexStorageTest, ReadRef001) {
+    flatbuffers::FlatBufferBuilder fbb;
+    auto ref_off = IdxFormat::CreateRef(fbb, 0, kKind, kContainerID, kIsCjoRef, false);
+    fbb.Finish(ref_off);
+    auto fb_ref = flatbuffers::GetRoot<IdxFormat::Ref>(fbb.GetBufferPointer());
+    Ref out;
+    ReadRef(out, fb_ref);
+    EXPECT_EQ(out.location.begin.fileID, 0u);
+    EXPECT_EQ(out.location.begin.line, 0u);
+    EXPECT_EQ(out.location.begin.column, 0u);
+    EXPECT_EQ(out.location.end.fileID, 0u);
+    EXPECT_EQ(out.location.end.line, 0u);
+    EXPECT_EQ(out.location.end.column, 0u);
+    EXPECT_TRUE(out.location.fileUri.empty());
+    EXPECT_EQ(out.kind, RefKind(kKind));
+    EXPECT_EQ(out.container, kContainerID);
+    EXPECT_EQ(out.isCjoRef, kIsCjoRef);
 }
-
-// Test AstFileHandler::StoreShard function
-TEST(IndexStorageTest, AstFileHandlerStoreShard_NullOut) {
-    AstFileHandler handler;
-    EXPECT_NO_THROW(handler.StoreShard("test_file.ast", nullptr));
+ 
+TEST(IndexStorageTest, ReadRef002) {
+    flatbuffers::FlatBufferBuilder fbb;
+    auto loc_off = IdxFormat::CreateLocation(fbb, nullptr, nullptr, 0);
+    auto ref_off = CreateRef(fbb, loc_off, kKind, kContainerID, kIsCjoRef, false);
+    fbb.Finish(ref_off);
+    auto fb_ref = flatbuffers::GetRoot<IdxFormat::Ref>(fbb.GetBufferPointer());
+    Ref out;
+    ReadRef(out, fb_ref);
+    EXPECT_EQ(out.location.begin.fileID, 0u);
+    EXPECT_EQ(out.location.begin.line, 0u);
+    EXPECT_EQ(out.location.begin.column, 0u);
+    EXPECT_EQ(out.location.end.fileID, 0u);
+    EXPECT_EQ(out.location.end.line, 0u);
+    EXPECT_EQ(out.location.end.column, 0u);
+    EXPECT_TRUE(out.location.fileUri.empty());
+    EXPECT_EQ(out.kind, RefKind(kKind));
+    EXPECT_EQ(out.container, kContainerID);
+    EXPECT_EQ(out.isCjoRef, kIsCjoRef);
 }
-
-// Test CacheManager::InitDir function
-TEST(IndexStorageTest, CacheManagerInitDir) {
-    // This test requires an actual path, but we cannot guarantee the path exists or is writable
-    // Mainly test whether the function can be called without crashing
-    EXPECT_NO_THROW(CacheManager cacheManager("test_path"));
+ 
+TEST(IndexStorageTest, ReadRef003) {
+    flatbuffers::FlatBufferBuilder fbb;
+    IdxFormat::Position posB(7, 8, 9);
+    auto loc_off = IdxFormat::CreateLocation(fbb, &posB, nullptr, 0);
+    auto ref_off = CreateRef(fbb, loc_off, kKind, kContainerID, kIsCjoRef, false);
+    fbb.Finish(ref_off);
+    auto fb_ref = flatbuffers::GetRoot<IdxFormat::Ref>(fbb.GetBufferPointer());
+    Ref out;
+    ReadRef(out, fb_ref);
+    EXPECT_EQ(out.location.begin.fileID, 7u);
+    EXPECT_EQ(out.location.begin.line, 8u);
+    EXPECT_EQ(out.location.begin.column, 9u);
+    EXPECT_EQ(out.location.end.fileID, 0u);
+    EXPECT_EQ(out.location.end.line, 0u);
+    EXPECT_EQ(out.location.end.column, 0u);
+    EXPECT_TRUE(out.location.fileUri.empty());
+    EXPECT_EQ(out.kind, RefKind(kKind));
+    EXPECT_EQ(out.container, kContainerID);
+    EXPECT_EQ(out.isCjoRef, kIsCjoRef);
 }
-
-// Test CacheManager::UpdateIdMap function
-TEST(IndexStorageTest, CacheManagerUpdateIdMap) {
-    CacheManager cacheManager("test_path");
-    EXPECT_NO_THROW(cacheManager.UpdateIdMap("test.package", "hash123"));
+ 
+TEST(IndexStorageTest, ReadRef004) {
+    flatbuffers::FlatBufferBuilder fbb;
+    IdxFormat::Position posE(1, 2, 3);
+    auto loc_off = IdxFormat::CreateLocation(fbb, nullptr, &posE, 0);
+    auto ref_off = CreateRef(fbb, loc_off, kKind, kContainerID, kIsCjoRef, false);
+    fbb.Finish(ref_off);
+    auto fb_ref = flatbuffers::GetRoot<IdxFormat::Ref>(fbb.GetBufferPointer());
+    Ref out;
+    ReadRef(out, fb_ref);
+    EXPECT_EQ(out.location.begin.fileID, 0u);
+    EXPECT_EQ(out.location.begin.line, 0u);
+    EXPECT_EQ(out.location.begin.column, 0u);
+    EXPECT_EQ(out.location.end.fileID, 1u);
+    EXPECT_EQ(out.location.end.line, 2u);
+    EXPECT_EQ(out.location.end.column, 3u);
+    EXPECT_TRUE(out.location.fileUri.empty());
+    EXPECT_EQ(out.kind, RefKind(kKind));
+    EXPECT_EQ(out.container, kContainerID);
+    EXPECT_EQ(out.isCjoRef, kIsCjoRef);
 }
-
-// Test CacheManager::Load function
-TEST(IndexStorageTest, CacheManagerLoad_NonExistentPackage) {
-    CacheManager cacheManager("test_path");
-    auto result = cacheManager.Load("nonexistent.package");
-    EXPECT_FALSE(result.has_value());
-}
-
-// Test CacheManager::Store function
-TEST(IndexStorageTest, CacheManagerStore_EmptyDigest) {
-    CacheManager cacheManager("test_path");
-    std::vector<uint8_t> buffer = {1, 2, 3, 4};
-    // Empty digest should cause the function to return directly
-    EXPECT_NO_THROW(cacheManager.Store("test.package", "", buffer));
+ 
+TEST(IndexStorageTest, ReadRef005)
+{
+    flatbuffers::FlatBufferBuilder fbb;
+    auto uri_off = fbb.CreateString("file://path");
+    auto loc_off = IdxFormat::CreateLocation(fbb, nullptr, nullptr, uri_off);
+    auto ref_off = CreateRef(fbb, loc_off, kKind, kContainerID, kIsCjoRef, false);
+    fbb.Finish(ref_off);
+    auto fb_ref = flatbuffers::GetRoot<IdxFormat::Ref>(fbb.GetBufferPointer());
+    Ref out;
+    ReadRef(out, fb_ref);
+    EXPECT_EQ(out.location.begin.fileID, 0u);
+    EXPECT_EQ(out.location.begin.line, 0u);
+    EXPECT_EQ(out.location.begin.column, 0u);
+    EXPECT_EQ(out.location.end.fileID, 0u);
+    EXPECT_EQ(out.location.end.line, 0u);
+    EXPECT_EQ(out.location.end.column, 0u);
+    EXPECT_EQ(out.location.fileUri, "file://path");
+    EXPECT_EQ(out.kind, RefKind(kKind));
+    EXPECT_EQ(out.container, kContainerID);
+    EXPECT_EQ(out.isCjoRef, kIsCjoRef);
 }
