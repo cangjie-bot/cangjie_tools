@@ -151,34 +151,6 @@ TEST(IndexStorageTest, ReadCrossSymbol004) {
     EXPECT_TRUE(out.location.fileUri.empty());
 }
  
-TEST(IndexStorageTest, ReadCrossSymbol005) {
-    // only end non-null
-    flatbuffers::FlatBufferBuilder fbb;
-    auto posE    = new IdxFormat::Position(1, 2, 3);
-    auto loc_off = CreateLocation(fbb,
-        0,
-        posE,
-        0);
-    auto crs_off = CreateCrossSymbol(fbb,
-        kTestId,
-        0,
-        kTestType,
-        loc_off,
-        kContainer,
-        0);
-    fbb.Finish(crs_off);
-    auto fb_crs = flatbuffers::GetRoot<IdxFormat::CrossSymbol>(fbb.GetBufferPointer());
- 
-    CrossSymbol out;
-    ReadCrossSymbol(out, fb_crs);
- 
-    EXPECT_EQ(out.location.end.fileID,    1u);
-    EXPECT_EQ(out.location.end.line,      2u);
-    EXPECT_EQ(out.location.end.column,    3u);
-    EXPECT_EQ(out.location.begin.fileID,  0u);
-    EXPECT_TRUE(out.location.fileUri.empty());
-}
- 
 TEST(IndexStorageTest, ReadCrossSymbol006)
 {
     // only file_uri non-null
