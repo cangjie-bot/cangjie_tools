@@ -706,9 +706,9 @@ namespace test::common {
             auto loc = message.find("Content-Length");
             if (loc != std::string::npos) {
                 message = message.substr(0, loc);
-                if (message == "\r") {
-                    continue;
-                }
+            }
+            if (message == "\r") {
+                continue;
             }
 #ifndef NO_EXCEPTIONS
             try {
@@ -751,9 +751,9 @@ namespace test::common {
             auto loc = message.find("Content-Length");
             if (loc != std::string::npos) {
                 message = message.substr(0, loc);
-                if (message == "\r") {
-                    continue;
-                }
+            }
+            if (message == "\r") {
+                continue;
             }
 #ifndef NO_EXCEPTIONS
             try {
