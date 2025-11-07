@@ -240,8 +240,8 @@ dberr_no PrepareConnection(sqldb::Connection &sqlConnect)
             std::cerr << " prepareConnection execute fail\n";
             return 1;
         }
-    }
 #endif
+    }
     return 0;
 }
 // LCOV_EXCL_START
@@ -863,8 +863,8 @@ dberr_no IndexDatabase::DBUpdate::InsertFileWithId(int fileID, std::vector<std::
         db.Use(sql::InsertFileWithID)
             .execute(sqldb::with(fileID, fileInfo[0], fileInfo[DIGEST_INDEX],
                                  fileInfo[PACK_INDEX], fileInfo[MODU_INDEX]));
-    }
 #ifndef NO_EXCEPTIONS
+    }
     catch (std::exception &ex) {
         std::cerr << "exception in InsertFileWithID: " << ex.what() << "\n";
     }
@@ -883,8 +883,8 @@ dberr_no IndexDatabase::DBUpdate::DeleteFile(const std::string &fileURI)
     try {
 #endif
         db.Use(sql::DeleteFile).execute(sqldb::with(fileURI));
-    }
 #ifndef NO_EXCEPTIONS
+    }
     catch (std::exception &ex) {
         std::cerr << "exception in DeleteFile: " << ex.what() << "\n";
     }
@@ -1513,8 +1513,6 @@ dberr_no IndexDatabase::Update(std::function<dberr_no(DBUpdate)> callback)
         std::cerr << " err in update begin\n";
         return 1;
     }
-#endif
-#ifndef NO_EXCEPTIONS
     try {
 #endif
         callback(DBUpdate(dbConnect));
@@ -1524,8 +1522,6 @@ dberr_no IndexDatabase::Update(std::function<dberr_no(DBUpdate)> callback)
         dbConnect.Use(sql::Rollback).execute();
         return 1;
     }
-#endif
-#ifndef NO_EXCEPTIONS
     try {
 #endif
         dbConnect.Use(sql::Commit).execute();
