@@ -1429,7 +1429,6 @@ namespace test::common {
     }
 
     std::vector<TestParam> GetTestCaseList(const std::string &key) {
-        std::cerr<<"111111";
         std::vector<TestParam> vecParam;
         TestParam item;
         std::string pathPwd = GetPwd();
@@ -1448,7 +1447,6 @@ namespace test::common {
             char buf[MAX_LEN] = {0};
             infile.getline(buf, MAX_LEN);
             std::string message = std::string(buf);
-            std::cerr<<"22222";
 #ifndef NO_EXCEPTIONS
             try {
 #endif
@@ -1461,7 +1459,6 @@ namespace test::common {
                 continue;
             }
 #endif
-            std::cerr<<"33333";
             if (root.contains(key)) {
                 item.testFile = root[key].value("testFile", "");
                 item.baseFile = item.testFile.substr(0, item.testFile.rfind(".")) + ".base";
@@ -1471,7 +1468,6 @@ namespace test::common {
                 vecParam.push_back(item);
             }
         }
-        std::cerr<<"4444";
         infile.close();
         return vecParam;
     }
