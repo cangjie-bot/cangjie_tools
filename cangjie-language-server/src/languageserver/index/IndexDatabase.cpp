@@ -237,11 +237,11 @@ dberr_no PrepareConnection(sqldb::Connection &sqlConnect)
             sqlConnect.execute(sql);
 #ifndef NO_EXCEPTIONS
         } catch (...) {
-#endif
             std::cerr << " prepareConnection execute fail\n";
             return 1;
         }
     }
+#endif
     return 0;
 }
 // LCOV_EXCL_START
