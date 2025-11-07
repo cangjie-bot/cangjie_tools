@@ -80,8 +80,8 @@ Statement Connection::prepare(std::string_view SQL)
     sqlite3_stmt *Stmt = nullptr;
     int RC =
         sqlite3_prepare_v3(DB, SQL.data(), static_cast<int>(SQL.size()), SQLITE_PREPARE_PERSISTENT, &Stmt, nullptr);
-#ifndef NO_EXCEPTIONS
     if (RC != SQLITE_OK) {
+#ifndef NO_EXCEPTIONS
         throw Exception(RC, "Failed to prepare statement \"" + std::string(SQL) + "\"");
 #endif
     }
