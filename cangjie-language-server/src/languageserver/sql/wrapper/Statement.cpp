@@ -68,8 +68,8 @@ Result Statement::step()
             sqlite3_reset(Stmt);
             sqlite3_clear_bindings(Stmt);
             return Result();
-        default:
 #ifndef NO_EXCEPTIONS
+        default:
             throw Exception(sqlite3_db_handle(Stmt), "Failed to execute statement \"" + getExpandedSQL() + "\"");
 #endif
     }
