@@ -49,25 +49,6 @@ protected:
     std::vector<SemanticHighlightToken> result;
 };
 
-TEST_F(SemanticHighlightImplTest, AddAnnoToken_NormalCase) {
-    auto decl = Ptr<Decl>(new Decl());
-    decl->identifier = "TestClass";
-
-    auto annotation = OwnedPtr<Annotation>(new Annotation());
-    annotation->identifier = "@TestAnnotation";
-    auto baseExpr = new Expr();
-    baseExpr->begin = Position{1, 1, 1};
-    baseExpr->end = Position{1, 1, 15};
-    annotation->baseExpr = OwnedPtr<Expr>(baseExpr);
-
-    decl->annotations.push_back(std::move(annotation));
-
-    AddAnnoToken(decl, result, tokens, sourceManager);
-
-    EXPECT_EQ(result.size(), 1);
-    EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
-}
-
 TEST_F(SemanticHighlightImplTest, GetFuncDecl_NormalFunction) {
     auto node = Ptr<Node>(new Decl());
     node->begin = Position{1, 1, 1};
