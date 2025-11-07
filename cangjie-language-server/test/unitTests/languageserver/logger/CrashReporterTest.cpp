@@ -48,6 +48,9 @@ TEST(CrashReporterTest, KernelLogHandlerTest001)
     }
 }
 
+#ifdef __linux__
+
+#elif defined(_WIN32)
 TEST(CrashReporterTest, ReportExceptionTest001)
 {
     EXCEPTION_POINTERS exceptionPointers = {nullptr, nullptr};
@@ -164,6 +167,8 @@ TEST(CrashReporterTest, InitStackTest001)
 #error "Platform not supported!"
 #endif
 }
+
+#endif
 
 #ifdef __linux__
 TEST(CrashReporterTest, RegisterHandlersTest001)
