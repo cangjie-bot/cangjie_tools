@@ -1,21 +1,10 @@
-# Cangjie Project Manager Developer Guide
+# Cangjie Package Manager Developer Guide
 
-## System Architecture
+## Open Source Project Introduction
 
-`cjpm` is a project management tool for cangjie language, implemented in Cangjie language. It is designed to simplify user workflows. `cjpm` provides capabilities for project creation, project building, project execution, unit testing, and more. The overall architecture of this tool is illustrated as follows:
+`cjpm (cangjie package manager)` is a build tool for compiling Cangjie projects, implemented in the Cangjie language. It provides capabilities such as project creation, compilation, execution, and unit testing, supporting automatic dependency analysis for multi-module projects to achieve sequential builds. Its design goals are to simplify user workflows, enhance cross-platform development efficiency, and offer highly customizable configuration options. The overall architecture of this tool is shown below:
 
-![cjpm Architecture Diagram](../figures/cjpm-architecture.jpg)
-
-As shown in the architecture diagram, the overall structure of `cjpm` is as follows:
-
-- Command-line Argument Processing: The command-line argument processing module of `cjpm` supports project initialization, compilation and building, output execution, test case execution, dependency printing, dependency updates, output installation and uninstallation, and output cleanup via commands.
-- Configuration Management: Users can configure various settings via the `cjpm.toml` configuration file, including project information, dependency configurations, platform isolation settings, and workspace configurations. `cjpm` also performs checks to ensure the validity of these configurations.
-- Dependency Management: `cjpm` manages user-configured source dependencies, including configuration validity checks, incremental identification, configuration updates and parsing, and configuration display. It also supports configuring binary dependencies for C and Cangjie languages, along with command-line dependency printing.
-- Project Building: `cjpm` automates dependency parsing to generate package-level dependency graphs. It then invokes the Cangjie compiler to compile packages in dependency order, completing the project build. `cjpm` supports parallel and incremental compilation.
-- Project Testing: `cjpm` supports compiling test code within projects and running unit tests. It supports both single-package testing and module-level testing.
-- Compiler Integration Module: This module facilitates interaction with the Cangjie compiler, implementing imperative compiler invocation and result forwarding.
-
-Note that `cjpm` is a package management tool for the Cangjie project, and its product types are static libraries, dynamic libraries, and executable binary. To complete the HAP/APP build and packaging of OpenHarmony, it is also necessary to use the DevEco Hvigor tool provided by DevEco Studio.
+![cjpm Architecture Diagram]()
 
 ## Directory Structure
 
@@ -286,7 +275,7 @@ Key configuration fields:
       ``````toml
         "pro0.yoo" = "./test/pro0/pro0.yoo.cjo"
         "pro1.zoo" = "./test/pro1/pro1.zoo.cjo"
-    [target.x86_64-unknown-linux-gnu.ffi.c]
+    [target.x86_64-unknown-linux-gnu.bin-dependencies.ffi.c]
         "ctest" = "./test/c"
 
     [target.x86_64-unknown-linux-gnu.debug]
@@ -300,4 +289,10 @@ Key configuration fields:
 
 In addition to the aforementioned commands and configuration items, `cjpm` also supports other features such as build scripts, command extensions, etc.
 
-For detailed information on all commands, configuration items, and additional features of `cjpm`, please refer to the [《Cangjie Package Manager User Guide》](./user_guide.md).
+For detailed information on all commands, configuration items, and additional features of `cjpm`, please refer to the [《Cangjie Package Manager User Guide》](./user_guide_EN.md).
+
+## Related Repositories
+
+- [cangjie Repository](https://gitcode.com/Cangjie/cangjie_compiler)
+- [stdx Repository](https://gitcode.com/Cangjie/cangjie_stdx)
+- [cangjie SDK](https://gitcode.com/Cangjie/cangjie_build)
