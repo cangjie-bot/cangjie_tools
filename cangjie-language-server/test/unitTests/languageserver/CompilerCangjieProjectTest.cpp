@@ -1,493 +1,248 @@
-#include "SyscapCheck.cpp"
-#include "SyscapCheck.h"
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+#include "ArkLanguageServer.h"
+#include "CompilerCangjieProject.h"
 #include <gtest/gtest.h>
-#include "Utils.h"
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 using namespace ark;
 
-std::vector<uint8_t> StringToVector(const std::string &str)
-{
-    std::vector<uint8_t> input;
-    for (char c : str) {
-        input.push_back(static_cast<uint8_t>(c));
+class TestTransport : public Transport {
+public:
+    TestTransport() = default;
+    ~TestTransport() override = default;
+
+    void SetIO(std::FILE *in, std::FILE *out) override {
     }
-    return input;
+
+    void Notify(std::string method, ValueOrError result) override {
+    }
+
+    void Reply(nlohmann::json id, ValueOrError result) override {
+    }
+
+    LSPRet Loop(MessageHandler &handler) override {
+        return ark::LSPRet::SUCCESS;
+    }
+
+};
+
+Environment CreateTestEnvironment() {
+    Environment env;
+    env.cangjieHome = "test_workspace";
+    env.cangjiePath = "test_stdlib";
+    return env;
 }
 
-TEST(SyscapCheckTest, ParseJsonStringTest001)
-{
-    std::string str = "\"value\"";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonString(pos, input);
-
-    EXPECT_EQ(obj, "value");
+std::unique_ptr<lsp::IndexDatabase> CreateTestIndexDatabase() {
+    return std::unique_ptr<lsp::IndexDatabase>();
 }
 
-TEST(SyscapCheckTest, ParseJsonStringTest002)
-{
-    std::string str = "\"value\"";
-    auto input = StringToVector(str);
-    size_t pos = 10;
-    auto obj = ParseJsonString(pos, input);
+class CompilerCangjieProjectTest : public ::testing::Test {
+protected:
+    void SetUp() override {
+        workspace = "test_workspace";
+        stdLibPath = "test_stdlib";
+        useDB = false;
 
-    EXPECT_EQ(obj, "");
+        transport = std::make_unique<TestTransport>();
+
+        env = CreateTestEnvironment();
+
+        indexDB = CreateTestIndexDatabase();
+
+        server = std::make_unique<ArkLanguageServer>(*transport, env, indexDB.get());
+
+        CompilerCangjieProject::InitInstance(server.get(), indexDB.get());
+    }
+
+    void TearDown() override {
+    }
+
+    std::string workspace;
+    std::string stdLibPath;
+    bool useDB;
+    std::unique_ptr<TestTransport> transport;
+    Environment env;
+    std::unique_ptr<lsp::IndexDatabase> indexDB;
+    std::unique_ptr<ArkLanguageServer> server;
+};
+
+TEST_F(CompilerCangjieProjectTest, GetInstanceTest) {
+    CompilerCangjieProject* instance1 = CompilerCangjieProject::GetInstance();
+    CompilerCangjieProject* instance2 = CompilerCangjieProject::GetInstance();
+    EXPECT_EQ(instance1, instance2);
 }
 
-TEST(SyscapCheckTest, ParseJsonStringTest003)
-{
-    std::string str = "value\"";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonString(pos, input);
 
-    EXPECT_EQ(obj, "");
+TEST_F(CompilerCangjieProjectTest, InitInstanceTest) {
+    EXPECT_NE(CompilerCangjieProject::GetInstance(), nullptr);
+    EXPECT_NE(CompilerCangjieProject::GetInstance()->GetCallback(), nullptr);
+    EXPECT_NE(CompilerCangjieProject::GetInstance()->GetIndex(), nullptr);
 }
 
-TEST(SyscapCheckTest, ParseJsonStringTest004)
-{
-    std::string str = "\"value";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonString(pos, input);
-
-    EXPECT_EQ(obj, "value");
+TEST_F(CompilerCangjieProjectTest, ResolveDependenceTest) {
+    std::vector<std::vector<std::string>> cycles = CompilerCangjieProject::GetInstance()->ResolveDependence();
 }
 
-TEST(SyscapCheckTest, ParseJsonNumberTest001)
-{
-    std::string str = "100";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonNumber(pos, input);
-
-    EXPECT_EQ(obj, 100);
+TEST_F(CompilerCangjieProjectTest, ReportDiagForCirclePackagesTest) {
+    std::vector<std::vector<std::string>> cycles = {{"pkg1", "pkg2"}, {"pkg3"}};
+    CompilerCangjieProject::GetInstance()->ReportDiagForCirclePackages(cycles);
 }
 
-TEST(SyscapCheckTest, ParseJsonNumberTest002)
-{
-    std::string str = "a00";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonNumber(pos, input);
-
-    EXPECT_EQ(obj, 0);
+TEST_F(CompilerCangjieProjectTest, GetConditionCompileTest) {
+    std::string pkgName = "test_pkg";
+    std::string moduleName = "test_module";
+    std::unordered_map<std::string, std::string> compileOptions = CompilerCangjieProject::GetInstance()->GetConditionCompile(pkgName, moduleName);
 }
 
-TEST(SyscapCheckTest, ParseJsonNumberTest003)
-{
-    std::string str = "10a";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonNumber(pos, input);
-
-    EXPECT_EQ(obj, 10);
+TEST_F(CompilerCangjieProjectTest, GetRealPathTest) {
+    std::string path = "test_path";
+    CompilerCangjieProject::GetInstance()->GetRealPath(path);
 }
 
-TEST(SyscapCheckTest, ParseJsonNumberTest004)
-{
-    std::string str = "100";
-    auto input = StringToVector(str);
-    size_t pos = 10;
-    auto obj = ParseJsonNumber(pos, input);
-
-    EXPECT_EQ(obj, 0);
+TEST_F(CompilerCangjieProjectTest, CalculateScoreTest) {
+    CodeCompletion item;
+    std::string prefix = "test_prefix";
+    uint8_t cursorDepth = 2;
+    double score = CompilerCangjieProject::GetInstance()->CalculateScore(item, prefix, cursorDepth);
+    EXPECT_GE(score, 0.0);
 }
 
-TEST(SyscapCheckTest, ParseJsonNumberTest005)
-{
-    std::string str = "*100";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonNumber(pos, input);
-
-    EXPECT_EQ(obj, 0);
+TEST_F(CompilerCangjieProjectTest, UpdateUsageFrequencyTest) {
+    std::string item = "test_item";
+    CompilerCangjieProject::GetInstance()->UpdateUsageFrequency(item);
 }
 
-TEST(SyscapCheckTest, ParseJsonArrayTest001)
-{
-    std::string str = "]";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto value = new JsonPair();
-    ParseJsonArray(pos, input, value);
+TEST_F(CompilerCangjieProjectTest, GetIndexTest) {
+    lsp::SymbolIndex* index = CompilerCangjieProject::GetInstance()->GetIndex();
+    EXPECT_NE(index, nullptr);
 }
 
-TEST(SyscapCheckTest, ParseJsonArrayTest002)
-{
-    std::string str = "[]";
-    auto input = StringToVector(str);
-    size_t pos = 10;
-    auto value = new JsonPair();
-    ParseJsonArray(pos, input, value);
+TEST_F(CompilerCangjieProjectTest, GetMemIndexTest) {
+    lsp::MemIndex* memIndex = CompilerCangjieProject::GetInstance()->GetMemIndex();
+    EXPECT_NE(memIndex, nullptr);
 }
 
-TEST(SyscapCheckTest, ParseJsonArrayTest003)
-{
-    std::string str = "[\"array\" ";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto value = new JsonPair();
-    ParseJsonArray(pos, input, value);
+TEST_F(CompilerCangjieProjectTest, GetCjoManagerTest) {
+    ark::CjoManager* cjoManager = CompilerCangjieProject::GetInstance()->GetCjoManager();
+    EXPECT_NE(cjoManager, nullptr);
 }
 
-TEST(SyscapCheckTest, ParseJsonObjectTest001)
-{
-    std::string str = R"({
-        "key1": "value1",
-        "key2": 123,
-        "key3": 12a3b,
-        "key4": {"subKey": "subValue"},
-        "key5": {"subKey": {"subSubKey": "value"}},
-        "key6": ["array", {"obj": "val"}]
-    })";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonObject(pos, input);
-
-    EXPECT_EQ(obj->pairs.size(), 6);
+TEST_F(CompilerCangjieProjectTest, GetDependencyGraphTest) {
+    DependencyGraph* graph = CompilerCangjieProject::GetInstance()->GetDependencyGraph();
+    EXPECT_NE(graph, nullptr);
 }
 
-TEST(SyscapCheckTest, ParseJsonObjectTest002)
-{
-    std::string str = R"({
-        "key1": "value1"
-    })";
-    auto input = StringToVector(str);
-    size_t pos = 1000;
-    auto obj = ParseJsonObject(pos, input);
-
-    EXPECT_EQ(obj, nullptr);
+TEST_F(CompilerCangjieProjectTest, CheckNeedCompilerTest) {
+    std::string fileName = "test_file.cj";
+    bool needCompile = CompilerCangjieProject::GetInstance()->CheckNeedCompiler(fileName);
 }
 
-TEST(SyscapCheckTest, ParseJsonObjectTest003)
-{
-    std::string str = R"(
-        "key1": "value1"
-    })";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonObject(pos, input);
-
-    EXPECT_EQ(obj, nullptr);
+TEST_F(CompilerCangjieProjectTest, IncrementOnePkgCompileTest) {
+    std::string filePath = "test_file.cj";
+    std::string contents = "test_contents";
+    CompilerCangjieProject::GetInstance()->IncrementOnePkgCompile(filePath, contents);
 }
 
-TEST(SyscapCheckTest, ParseJsonObjectTest004)
+TEST_F(CompilerCangjieProjectTest, IncrementTempPkgCompileTest)
 {
-    std::string str = R"({
-        "key1": "value1"
-    )";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonObject(pos, input);
+    {
+        std::string basicString = "nonexistent_pkg";
+        CompilerCangjieProject::GetInstance()->IncrementTempPkgCompile(basicString);
+    }
 
-    EXPECT_EQ(obj->pairs.size(), 1);
+    {
+        std::string basicString = "test_pkg";
+        CompilerCangjieProject::GetInstance()->IncrementTempPkgCompile(basicString);
+    }
+
+    {
+        std::string basicString = "test_pkg";
+        CompilerCangjieProject::GetInstance()->IncrementTempPkgCompile(basicString);
+    }
+
+    {
+        std::string basicString = "test_pkg";
+        CompilerCangjieProject::GetInstance()->IncrementTempPkgCompile(basicString);
+    }
 }
 
-TEST(SyscapCheckTest, GetJsonStringTest001)
-{
-    std::string str = R"({
-        "key1": "value1",
-        "key2": 123,
-        "key3": {"subKey": "subValue"},
-        "key4": {"subKey": {"subSubKey": "value"}},
-        "key5": ["array", {"obj": "value"}]
-    })";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonObject(pos, input);
-    auto res = GetJsonString(obj, "subKey");
-
-    EXPECT_EQ(res.size(), 1);
+TEST_F(CompilerCangjieProjectTest, EraseOtherCacheTest) {
+    std::string fullPkgName = "test_pkg";
+    CompilerCangjieProject::GetInstance()->EraseOtherCache(fullPkgName);
 }
 
-TEST(SyscapCheckTest, GetJsonStringTest002)
-{
-    std::string str = R"({
-        "key1": "value1",
-        "key2": 123,
-        "key3": {"subKey": "subValue"},
-        "key4": {"subKey": {"subSubKey": "value"}},
-        "key5": ["array", {"obj": "value"}]
-    })";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonObject(pos, input);
-    auto res = GetJsonString(obj, "key1");
-
-    EXPECT_EQ(res.size(), 1);
+TEST_F(CompilerCangjieProjectTest, UpdateOnDiskTest) {
+    std::string path = "test_path";
+    CompilerCangjieProject::GetInstance()->UpdateOnDisk(path);
 }
 
-TEST(SyscapCheckTest, GetJsonStringTest003)
-{
-    std::string str = R"({
-    })";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonObject(pos, input);
-    auto res = GetJsonString(obj, "key1");
-
-    EXPECT_EQ(res.size(), 0);
+TEST_F(CompilerCangjieProjectTest, DenoisingTest) {
+    std::string candidate = "test_candidate";
+    std::string result = CompilerCangjieProject::GetInstance()->Denoising(candidate);
 }
 
-TEST(SyscapCheckTest, GetJsonStringTest004)
-{
-    std::string str = R"({
-        "key1": "value1",
-        "key2": 123,
-        "key3": {"subKey": "subValue"},
-        "key4": {"subKey": {"subSubKey": "value"}},
-        "key5": ["array", {"obj": "value"}]
-    })";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonObject(pos, input);
-    auto res = GetJsonString(obj, "key");
-
-    EXPECT_EQ(res.size(), 0);
+TEST_F(CompilerCangjieProjectTest, GetPackageSpecModTest) {
+    Node* node = nullptr;
+    ark::Modifier mod = CompilerCangjieProject::GetInstance()->GetPackageSpecMod(node);
+    EXPECT_EQ(mod, ark::Modifier::UNDEFINED);
 }
 
-TEST(SyscapCheckTest, GetJsonObjectTest001)
-{
-    std::string str = R"({
-        "key1": "value1",
-        "key2": 123,
-        "key3": {"subKey": "subValue"},
-        "key4": {"subKey": {"subSubKey": "value"}},
-        "key5": ["array", {"obj": "value"}]
-    })";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonObject(pos, input);
-    auto res = GetJsonObject(obj, "key1", 0);
-
-    EXPECT_EQ(res, nullptr);
+TEST_F(CompilerCangjieProjectTest, IsVisibleForPackageTest) {
+    std::string curPkgName = "current_pkg";
+    std::string importPkgName = "imported_pkg";
+    bool isVisible = CompilerCangjieProject::GetInstance()->IsVisibleForPackage(curPkgName, importPkgName);
 }
 
-TEST(SyscapCheckTest, GetJsonObjectTest002)
-{
-    std::string str = R"({
-        "key1": "value1",
-        "key2": 123,
-        "key3": {"subKey": "subValue"},
-        "key4": {"subKey": {"subSubKey": "value"}},
-        "key5": ["array", {"obj": "value"}]
-    })";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonObject(pos, input);
-    auto res = GetJsonObject(obj, "key3", 0);
-
-    EXPECT_NE(res, nullptr);
+TEST_F(CompilerCangjieProjectTest, IsCurModuleCjoDepTest) {
+    std::string curModule = "current_module";
+    std::string fullPkgName = "test_pkg";
+    bool isDep = CompilerCangjieProject::GetInstance()->IsCurModuleCjoDep(curModule, fullPkgName);
 }
 
-TEST(SyscapCheckTest, GetJsonObjectTest003)
-{
-    std::string str = R"({
-        "key1": "value1",
-        "key2": 123,
-        "key3": {"subKey": "subValue"},
-        "key4": {"subKey": {"subSubKey": "value"}},
-        "key5": ["array", {"obj": [{"obj1": "value1"}, {"obj2": "value2"}]}]
-    })";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonObject(pos, input);
-    auto res = GetJsonObject(obj, "obj", 1);
-
-    EXPECT_NE(res, nullptr);
+TEST_F(CompilerCangjieProjectTest, GetFullPkgNameToPathMapTest) {
+    std::unordered_map<std::string, std::string> pkgMap = CompilerCangjieProject::GetInstance()->GetFullPkgNameToPathMap();
 }
 
-TEST(SyscapCheckTest, ParseJsonFileTest001)
-{
-    std::string json = R"({
-        "Modules": {
-            "module1": {
-                "deviceSysCap": {"key1": "val1"}
-            },
-            "module2": {
-                "deviceSysCap": {"key2": "val2"}
-            }
-        }
-    })";
-    std::vector<uint8_t> input = StringToVector(json);
-    SyscapCheck syscapCheck;
-    syscapCheck.ParseJsonFile(input);
-
-    EXPECT_EQ(syscapCheck.module2SyscapsMap.size(), 2);
+TEST_F(CompilerCangjieProjectTest, GetContentByFileTest) {
+    std::string filePath = "test_file.cj";
+    std::string content = CompilerCangjieProject::GetInstance()->GetContentByFile(filePath);
 }
 
-TEST(SyscapCheckTest, ParseJsonFileTest002)
-{
-    std::string json = R"({
-        "Modules": {
-            "module1": {
-                "deviceSysCap": {"key1": "val1"}
-            },
-            "module2": {
-                "deviceSysCap": {"key2": "val2"}
-            }
-        }
-    })";
-    std::vector<uint8_t> input = StringToVector(json);
-    MessageHeaderEndOfLine::SetIsDeveco(true);
-    SyscapCheck syscapCheck;
-    syscapCheck.ParseJsonFile(input);
-
-    EXPECT_EQ(syscapCheck.module2SyscapsMap.size(), 4);
+TEST_F(CompilerCangjieProjectTest, CheckPackageModifierTest) {
+    File needCheckedFile;
+    std::string fullPackageName = "test_pkg";
+    bool result = CompilerCangjieProject::GetInstance()->CheckPackageModifier(needCheckedFile, fullPackageName);
 }
 
-TEST(SyscapCheckTest, ParseJsonFileTest003)
-{
-    std::string json = R"({
-        "Modules": {
-            "module1": "value1"
-        }
-    })";
-    std::vector<uint8_t> input = StringToVector(json);
-    SyscapCheck syscapCheck;
-    syscapCheck.ParseJsonFile(input);
-
-    EXPECT_EQ(syscapCheck.module2SyscapsMap.size(), 4);
+TEST_F(CompilerCangjieProjectTest, GetCallbackTest) {
+    Callbacks* callback = CompilerCangjieProject::GetInstance()->GetCallback();
+    EXPECT_NE(callback, nullptr);
 }
 
-TEST(SyscapCheckTest, ParseJsonFileTest004)
-{
-    std::string json = R"({
-        "Modules": {}
-    })";
-    std::vector<uint8_t> input = StringToVector(json);
-    SyscapCheck syscapCheck;
-    syscapCheck.ParseJsonFile(input);
-
-    EXPECT_EQ(syscapCheck.module2SyscapsMap.size(), 4);
+TEST_F(CompilerCangjieProjectTest, StoreAllPackagesCacheTest) {
+    CompilerCangjieProject::GetInstance()->StoreAllPackagesCache();
 }
 
-TEST(SyscapCheckTest, CheckSysCapTest001)
-{
-    auto declNode = new Decl();
-    auto annotation = new Annotation();
-    annotation->identifier = "APILevel";
-    auto arg = new FuncArg();
-    arg->name = "syscap";
-    auto expr = new ArrayExpr();
-    arg->expr = OwnedPtr<Expr>(expr);
-    annotation->args.emplace_back(arg);
-    declNode->annotations.emplace_back(annotation);
-
-    auto hasAPILevel = true;
-    SyscapCheck syscapCheck;
-    auto result = syscapCheck.CheckSysCap(declNode, hasAPILevel);
-
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(hasAPILevel);
+TEST_F(CompilerCangjieProjectTest, ReportCircularDepsEmptyCycles) {
+    std::vector<std::vector<std::string>> cycles;
+    CompilerCangjieProject::GetInstance()->ReportCircularDeps(cycles);
 }
 
-TEST(SyscapCheckTest, CheckSysCapTest002)
-{
-    auto declNode = new Decl();
-    auto annotation = new Annotation();
-    annotation->identifier = "APILevel";
-    auto arg = new FuncArg();
-    arg->name = "syscap";
-    annotation->args.emplace_back(arg);
-    declNode->annotations.emplace_back(annotation);
+TEST_F(CompilerCangjieProjectTest, ReportCircularDepsMultipleCycles) {
+    Callbacks* callback = CompilerCangjieProject::GetInstance()->GetCallback();
+    std::vector<std::vector<std::string>> cycles = {
+        {"pkg1", "pkg2"},
+        {"pkg3", "pkg4"}
+    };
 
-    auto hasAPILevel = true;
-    SyscapCheck syscapCheck;
-    auto result = syscapCheck.CheckSysCap(declNode, hasAPILevel);
-
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(hasAPILevel);
-}
-
-TEST(SyscapCheckTest, CheckSysCapTest003)
-{
-    auto declNode = new Decl();
-    auto annotation = new Annotation();
-    annotation->identifier = "APILevel";
-    auto arg = new FuncArg();
-    arg->name = "syscap";
-    auto expr = new LitConstExpr();
-    expr->kind = LitConstKind::STRING;
-    arg->expr = OwnedPtr<Expr>(expr);
-    annotation->args.emplace_back(arg);
-    declNode->annotations.emplace_back(annotation);
-
-    auto hasAPILevel = true;
-    SyscapCheck syscapCheck;
-    auto result = syscapCheck.CheckSysCap(declNode, hasAPILevel);
-
-    EXPECT_FALSE(result);
-    EXPECT_TRUE(hasAPILevel);
-}
-
-TEST(SyscapCheckTest, CheckSysCapTest004)
-{
-    auto declNode = new Decl();
-    auto annotation = new Annotation();
-    annotation->identifier = "APILevel";
-    auto arg = new FuncArg();
-    arg->name = "syscap";
-    auto expr = new ArrayExpr();
-    arg->expr = OwnedPtr<Expr>(expr);
-    annotation->args.emplace_back(arg);
-    declNode->annotations.emplace_back(annotation);
-
-    const SyscapCheck syscapCheck;
-    auto result = syscapCheck.CheckSysCap(declNode);
-
-    EXPECT_TRUE(result);
-}
-
-TEST(SyscapCheckTest, CheckSysCapTest005)
-{
-    auto declNode = new Decl();
-    auto annotation = new Annotation();
-    annotation->identifier = "APILevel";
-    auto arg = new FuncArg();
-    arg->name = "syscap";
-    annotation->args.emplace_back(arg);
-    declNode->annotations.emplace_back(annotation);
-
-    const SyscapCheck syscapCheck;
-    auto result = syscapCheck.CheckSysCap(declNode);
-
-    EXPECT_TRUE(result);
-}
-
-TEST(SyscapCheckTest, CheckSysCapTest006)
-{
-    auto declNode = new Decl();
-    auto annotation = new Annotation();
-    annotation->identifier = "APILevel";
-    auto arg = new FuncArg();
-    arg->name = "syscap";
-    auto expr = new LitConstExpr();
-    expr->kind = LitConstKind::STRING;
-    arg->expr = OwnedPtr<Expr>(expr);
-    annotation->args.emplace_back(arg);
-    declNode->annotations.emplace_back(annotation);
-
-    const SyscapCheck syscapCheck;
-    auto result = syscapCheck.CheckSysCap(declNode);
-
-    EXPECT_FALSE(result);
-}
-
-TEST(SyscapCheckTest, CheckSysCapTest007)
-{
-    const SyscapCheck syscapCheck;
-    auto result = syscapCheck.CheckSysCap(nullptr);
-
-    EXPECT_TRUE(result);
-}
-
-TEST(SyscapCheckTest, CheckSysCapTest012)
-{
-    const std::string& syscapName = "syscap1";
-    SyscapCheck syscapCheck;
-    auto res = syscapCheck.CheckSysCap(syscapName);
-
-    EXPECT_EQ(res, false);
+    CompilerCangjieProject::GetInstance()->ReportCircularDeps(cycles);
 }
