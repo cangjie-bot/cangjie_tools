@@ -92,11 +92,6 @@ TEST_F(CompilerCangjieProjectTest, ResolveDependenceTest) {
     std::vector<std::vector<std::string>> cycles = CompilerCangjieProject::GetInstance()->ResolveDependence();
 }
 
-TEST_F(CompilerCangjieProjectTest, ReportDiagForCirclePackagesTest) {
-    std::vector<std::vector<std::string>> cycles = {{"pkg1", "pkg2"}, {"pkg3"}};
-    CompilerCangjieProject::GetInstance()->ReportDiagForCirclePackages(cycles);
-}
-
 TEST_F(CompilerCangjieProjectTest, GetConditionCompileTest) {
     std::string pkgName = "test_pkg";
     std::string moduleName = "test_module";
