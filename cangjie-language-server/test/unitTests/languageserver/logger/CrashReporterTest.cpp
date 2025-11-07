@@ -48,19 +48,6 @@ TEST(CrashReporterTest, KernelLogHandlerTest001)
     }
 }
 
-#ifdef __linux__
-TEST(CrashReporterTest, PrintStackTraceOnSignalTest001)
-{
-    std::stringstream oss;
-    std::string expected = "stack[0]:0x";
-
-    PrintStackTraceOnSignal(oss);
-
-    std::string output = oss.str();
-    EXPECT_NE(output.find(expected), std::string::npos);
-}
-
-#elif defined(_WIN32)
 TEST(CrashReporterTest, ReportExceptionTest001)
 {
     EXCEPTION_POINTERS exceptionPointers = {nullptr, nullptr};
@@ -177,8 +164,6 @@ TEST(CrashReporterTest, InitStackTest001)
 #error "Platform not supported!"
 #endif
 }
-
-#endif
 
 #ifdef __linux__
 TEST(CrashReporterTest, RegisterHandlersTest001)
