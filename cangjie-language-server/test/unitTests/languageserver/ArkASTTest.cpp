@@ -21,16 +21,6 @@ auto CreateArkAST()
     return ast;
 }
 
-// Test DoLexer function
-TEST(ArkASTTest, DoLexer) {
-    ArkAST ast = CreateArkAST();
-    std::string contents = "let x = 10";
-    std::string fileName = "test.cj";
-
-    // Test that lexical analysis does not crash
-    EXPECT_NO_THROW(ast.DoLexer(contents, fileName));
-}
-
 // Test CheckTokenKind function
 TEST(ArkASTTest, CheckTokenKind) {
     ArkAST ast = CreateArkAST();

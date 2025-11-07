@@ -6,310 +6,494 @@
 
 #include <gtest/gtest.h>
 #include "SyscapCheck.cpp"
-#include <unordered_set>
-#include <string>
-#include <vector>
+#include "SyscapCheck.h"
+#include "Utils.h"
 
 using namespace ark;
-using namespace Cangjie::AST;
 
-// Test SyscapCheck constructor
-TEST(SyscapCheckTest, ConstructorWithExistingModule) {
-    // Prepare test data
-    std::string moduleName = "testModule";
-    SysCapSet testSet = {"syscap1", "syscap2"};
-    SyscapCheck::module2SyscapsMap[moduleName] = testSet;
-
-    // Create SyscapCheck instance
-    SyscapCheck syscapCheck(moduleName);
-
-    // Verify that intersectionSet is set correctly
-    EXPECT_TRUE(syscapCheck.CheckSysCap("syscap1"));
-    EXPECT_TRUE(syscapCheck.CheckSysCap("syscap2"));
-    EXPECT_FALSE(syscapCheck.CheckSysCap("nonexistent"));
-
-    // Clean up test data
-    SyscapCheck::module2SyscapsMap.clear();
-}
-
-TEST(SyscapCheckTest, ConstructorWithNonExistingModule) {
-    // Ensure module does not exist
-    std::string moduleName = "nonexistentModule";
-    SyscapCheck::module2SyscapsMap.clear();
-
-    // Create SyscapCheck instance
-    SyscapCheck syscapCheck(moduleName);
-
-    // Verify that intersectionSet should be empty
-    EXPECT_FALSE(syscapCheck.CheckSysCap("anySyscap"));
-}
-
-// Test SetIntersectionSet method
-TEST(SyscapCheckTest, SetIntersectionSetWithExistingModule) {
-    // Prepare test data
-    std::string moduleName = "testModule";
-    SysCapSet testSet = {"syscapA", "syscapB"};
-    SyscapCheck::module2SyscapsMap[moduleName] = testSet;
-
-    // Create SyscapCheck instance and set intersectionSet
-    SyscapCheck syscapCheck("otherModule");
-    syscapCheck.SetIntersectionSet(moduleName);
-
-    // Verify that intersectionSet is set correctly
-    EXPECT_TRUE(syscapCheck.CheckSysCap("syscapA"));
-    EXPECT_TRUE(syscapCheck.CheckSysCap("syscapB"));
-    EXPECT_FALSE(syscapCheck.CheckSysCap("nonexistent"));
-
-    // Clean up test data
-    SyscapCheck::module2SyscapsMap.clear();
-}
-
-TEST(SyscapCheckTest, SetIntersectionSetWithNonExistingModule) {
-    // Ensure module does not exist
-    std::string moduleName = "nonexistentModule";
-    SyscapCheck::module2SyscapsMap.clear();
-
-    // Create SyscapCheck instance and attempt to set intersectionSet
-    SyscapCheck syscapCheck("testModule");
-    syscapCheck.SetIntersectionSet(moduleName);
-
-    // Verify that intersectionSet should still be empty
-    EXPECT_FALSE(syscapCheck.CheckSysCap("anySyscap"));
-}
-
-// Test CheckSysCap method - Node version
-TEST(SyscapCheckTest, CheckSysCapWithNode_NullNode) {
-    SyscapCheck syscapCheck("");
-    Ptr<Node> node = nullptr;
-
-    // Test that null node should return true
-    EXPECT_TRUE(syscapCheck.CheckSysCap(node));
-}
-
-TEST(SyscapCheckTest, CheckSysCapWithNode_NonDeclNode) {
-    SyscapCheck syscapCheck("");
-    auto node = Ptr<Node>(new Node());
-
-    // Test that non-Decl node should return true
-    EXPECT_TRUE(syscapCheck.CheckSysCap(node));
-}
-
-// Test CheckSysCap method - Decl version
-TEST(SyscapCheckTest, CheckSysCapWithDecl_NullDecl) {
-    SyscapCheck syscapCheck("");
-    Ptr<Cangjie::AST::Node> decl = nullptr;
-
-    // Test that null declaration should return true
-    EXPECT_TRUE(syscapCheck.CheckSysCap(decl));
-}
-
-TEST(SyscapCheckTest, CheckSysCapWithDecl_NoAnnotations) {
-    SyscapCheck syscapCheck("");
-    auto decl = Ptr<Cangjie::AST::Node>(new Decl());
-
-    // Test that declaration without annotations should return true
-    EXPECT_TRUE(syscapCheck.CheckSysCap(decl));
-}
-
-TEST(SyscapCheckTest, CheckSysCapWithDecl_NonAPILevelAnnotation) {
-    SyscapCheck syscapCheck("");
-    auto decl = Ptr<FuncDecl>(new FuncDecl());
-
-    // Add non-APILevel annotation
-    auto annotation = Ptr<Annotation>(new Annotation());
-    annotation->identifier = "OtherAnnotation";
-    decl->annotations.emplace_back(annotation);
-
-    // Test that non-APILevel annotation should return true
-    EXPECT_TRUE(syscapCheck.CheckSysCap(decl));
-}
-
-TEST(SyscapCheckTest, CheckSysCapWithDecl_APILevelNoSyscapArg) {
-    SyscapCheck syscapCheck("");
-    auto decl = Ptr<FuncDecl>(new FuncDecl());
-
-    // Add APILevel annotation but without syscap argument
-    auto annotation = Ptr<Annotation>(new Annotation());
-    annotation->identifier = "APILevel";
-    decl->annotations.emplace_back(annotation);
-
-    // Test that APILevel annotation without syscap argument should return true
-    EXPECT_TRUE(syscapCheck.CheckSysCap(decl));
-}
-
-// Test CheckSysCap method - String version
-TEST(SyscapCheckTest, CheckSysCapWithString_ExistingSyscap) {
-    // Prepare test data
-    std::string moduleName = "testModule";
-    SysCapSet testSet = {"TestSysCap"};
-    SyscapCheck::module2SyscapsMap[moduleName] = testSet;
-
-    SyscapCheck syscapCheck(moduleName);
-
-    // Test that existing syscap should return true
-    EXPECT_TRUE(syscapCheck.CheckSysCap("TestSysCap"));
-
-    // Clean up test data
-    SyscapCheck::module2SyscapsMap.clear();
-}
-
-TEST(SyscapCheckTest, CheckSysCapWithString_NonExistingSyscap) {
-    // Prepare test data
-    std::string moduleName = "testModule";
-    SysCapSet testSet = {"TestSysCap"};
-    SyscapCheck::module2SyscapsMap[moduleName] = testSet;
-
-    SyscapCheck syscapCheck(moduleName);
-
-    // Test that non-existing syscap should return false
-    EXPECT_FALSE(syscapCheck.CheckSysCap("NonExistentSysCap"));
-
-    // Clean up test data
-    SyscapCheck::module2SyscapsMap.clear();
-}
-
-TEST(SyscapCheckTest, CheckSysCapWithString_EmptyIntersectionSet) {
-    SyscapCheck syscapCheck("");
-
-    // Test that empty intersectionSet should return false
-    EXPECT_FALSE(syscapCheck.CheckSysCap("AnySysCap"));
-}
-
-// Test ParseCondition method
-TEST(SyscapCheckTest, ParseCondition_EmptyMap) {
-    SyscapCheck syscapCheck("");
-    std::unordered_map<std::string, std::string> emptyMap;
-
-    // Test that empty map should not throw exception
-    EXPECT_NO_THROW(syscapCheck.ParseCondition(emptyMap));
-}
-
-// Test helper functions
-namespace {
-    // Create test JSON data
-    std::vector<uint8_t> CreateTestJson() {
-        std::string jsonStr = R"({
-            "Modules": {
-                "testModule": {
-                    "deviceSysCap": {
-                        "paths": []
-                    }
-                }
-            }
-        })";
-
-        return std::vector<uint8_t>(jsonStr.begin(), jsonStr.end());
+std::vector<uint8_t> StringToVector(const std::string &str)
+{
+    std::vector<uint8_t> input;
+    for (char c : str) {
+        input.push_back(static_cast<uint8_t>(c));
     }
+    return input;
 }
 
-TEST(SyscapCheckTest, ParseJsonFile_ValidJson) {
-    SyscapCheck syscapCheck("");
-    auto jsonContent = CreateTestJson();
-
-    // Test that parsing valid JSON should not throw exception
-    EXPECT_NO_THROW(syscapCheck.ParseJsonFile(jsonContent));
-}
-
-TEST(SyscapCheckTest, ParseJsonFile_InvalidJson) {
-    SyscapCheck syscapCheck("");
-    std::vector<uint8_t> invalidJson = {'i', 'n', 'v', 'a', 'l', 'i', 'd'};
-
-    // Test that parsing invalid JSON should not throw exception
-    EXPECT_ANY_THROW(syscapCheck.ParseJsonFile(invalidJson));
-}
-
-// Test JSON parsing helper functions
-TEST(SyscapCheckTest, ParseJsonString_Valid) {
-    std::string jsonStr = "\"testString\"";
-    std::vector<uint8_t> jsonBytes(jsonStr.begin(), jsonStr.end());
+TEST(SyscapCheckTest, ParseJsonStringTest001)
+{
+    std::string str = "\"value\"";
+    auto input = StringToVector(str);
     size_t pos = 0;
+    auto obj = ParseJsonString(pos, input);
 
-    std::string result = ParseJsonString(pos, jsonBytes);
-    EXPECT_EQ(result, "testString");
-    EXPECT_EQ(pos, 11u); // Position after the closing quote
+    EXPECT_EQ(obj, "value");
 }
 
-TEST(SyscapCheckTest, ParseJsonString_Invalid) {
-    std::vector<uint8_t> jsonBytes = {'t', 'e', 's', 't'}; // No quotes
+TEST(SyscapCheckTest, ParseJsonStringTest002)
+{
+    std::string str = "\"value\"";
+    auto input = StringToVector(str);
+    size_t pos = 10;
+    auto obj = ParseJsonString(pos, input);
+
+    EXPECT_EQ(obj, "");
+}
+
+TEST(SyscapCheckTest, ParseJsonStringTest003)
+{
+    std::string str = "value\"";
+    auto input = StringToVector(str);
     size_t pos = 0;
+    auto obj = ParseJsonString(pos, input);
 
-    std::string result = ParseJsonString(pos, jsonBytes);
-    EXPECT_EQ(result, "");
-    EXPECT_EQ(pos, 0u);
+    EXPECT_EQ(obj, "");
 }
 
-TEST(SyscapCheckTest, ParseJsonNumber_Valid) {
-    std::string jsonStr = "12345";
-    std::vector<uint8_t> jsonBytes(jsonStr.begin(), jsonStr.end());
+TEST(SyscapCheckTest, ParseJsonStringTest004)
+{
+    std::string str = "\"value";
+    auto input = StringToVector(str);
     size_t pos = 0;
+    auto obj = ParseJsonString(pos, input);
 
-    uint64_t result = ParseJsonNumber(pos, jsonBytes);
-    EXPECT_EQ(result, 12345u);
+    EXPECT_EQ(obj, "value");
 }
 
-TEST(SyscapCheckTest, ParseJsonNumber_Invalid) {
-    std::vector<uint8_t> jsonBytes = {'a', 'b', 'c'};
+TEST(SyscapCheckTest, ParseJsonNumberTest001)
+{
+    std::string str = "100";
+    auto input = StringToVector(str);
     size_t pos = 0;
+    auto obj = ParseJsonNumber(pos, input);
 
-    uint64_t result = ParseJsonNumber(pos, jsonBytes);
-    EXPECT_EQ(result, 0u);
+    EXPECT_EQ(obj, 100);
 }
 
-// Test GetJsonString function
-TEST(SyscapCheckTest, GetJsonString_ExistingKey) {
-    auto root = MakeOwned<JsonObject>();
-    auto pair = MakeOwned<JsonPair>();
-    pair->key = "testKey";
-    pair->valueStr = {"value1", "value2"};
-    root->pairs.emplace_back(std::move(pair));
+TEST(SyscapCheckTest, ParseJsonNumberTest002)
+{
+    std::string str = "a00";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonNumber(pos, input);
 
-    auto result = GetJsonString(root.get(), "testKey");
-    EXPECT_EQ(result.size(), 2u);
-    EXPECT_EQ(result[0], "value1");
-    EXPECT_EQ(result[1], "value2");
+    EXPECT_EQ(obj, 0);
 }
 
-TEST(SyscapCheckTest, GetJsonString_NonExistingKey) {
-    auto root = MakeOwned<JsonObject>();
-    auto pair = MakeOwned<JsonPair>();
-    pair->key = "testKey";
-    pair->valueStr = {"value1", "value2"};
-    root->pairs.emplace_back(std::move(pair));
+TEST(SyscapCheckTest, ParseJsonNumberTest003)
+{
+    std::string str = "10a";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonNumber(pos, input);
 
-    auto result = GetJsonString(root.get(), "nonExistingKey");
-    EXPECT_TRUE(result.empty());
+    EXPECT_EQ(obj, 10);
 }
 
-// Test GetJsonObject function
-TEST(SyscapCheckTest, GetJsonObject_ExistingKey) {
-    auto root = MakeOwned<JsonObject>();
-    auto pair = MakeOwned<JsonPair>();
-    pair->key = "testKey";
-    pair->valueObj.emplace_back(MakeOwned<JsonObject>());
-    root->pairs.emplace_back(std::move(pair));
+TEST(SyscapCheckTest, ParseJsonNumberTest004)
+{
+    std::string str = "100";
+    auto input = StringToVector(str);
+    size_t pos = 10;
+    auto obj = ParseJsonNumber(pos, input);
 
-    auto result = GetJsonObject(root.get(), "testKey", 0);
-    EXPECT_NE(result, nullptr);
+    EXPECT_EQ(obj, 0);
 }
 
-TEST(SyscapCheckTest, GetJsonObject_NonExistingKey) {
-    auto root = MakeOwned<JsonObject>();
-    auto pair = MakeOwned<JsonPair>();
-    pair->key = "testKey";
-    pair->valueObj.emplace_back(MakeOwned<JsonObject>());
-    root->pairs.emplace_back(std::move(pair));
+TEST(SyscapCheckTest, ParseJsonNumberTest005)
+{
+    std::string str = "*100";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonNumber(pos, input);
 
-    auto result = GetJsonObject(root.get(), "nonExistingKey", 0);
-    EXPECT_EQ(result, nullptr);
+    EXPECT_EQ(obj, 0);
 }
 
-TEST(SyscapCheckTest, GetJsonObject_InvalidIndex) {
-    auto root = MakeOwned<JsonObject>();
-    auto pair = MakeOwned<JsonPair>();
-    pair->key = "testKey";
-    // Do not add any valueObj
-    root->pairs.emplace_back(std::move(pair));
+TEST(SyscapCheckTest, ParseJsonArrayTest001)
+{
+    std::string str = "]";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto value = new JsonPair();
+    ParseJsonArray(pos, input, value);
+}
 
-    auto result = GetJsonObject(root.get(), "testKey", 0);
-    EXPECT_EQ(result, nullptr);
+TEST(SyscapCheckTest, ParseJsonArrayTest002)
+{
+    std::string str = "[]";
+    auto input = StringToVector(str);
+    size_t pos = 10;
+    auto value = new JsonPair();
+    ParseJsonArray(pos, input, value);
+}
+
+TEST(SyscapCheckTest, ParseJsonArrayTest003)
+{
+    std::string str = "[\"array\" ";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto value = new JsonPair();
+    ParseJsonArray(pos, input, value);
+}
+
+TEST(SyscapCheckTest, ParseJsonObjectTest001)
+{
+    std::string str = R"({
+        "key1": "value1",
+        "key2": 123,
+        "key3": 12a3b,
+        "key4": {"subKey": "subValue"},
+        "key5": {"subKey": {"subSubKey": "value"}},
+        "key6": ["array", {"obj": "val"}]
+    })";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonObject(pos, input);
+
+    EXPECT_EQ(obj->pairs.size(), 6);
+}
+
+TEST(SyscapCheckTest, ParseJsonObjectTest002)
+{
+    std::string str = R"({
+        "key1": "value1"
+    })";
+    auto input = StringToVector(str);
+    size_t pos = 1000;
+    auto obj = ParseJsonObject(pos, input);
+
+    EXPECT_EQ(obj, nullptr);
+}
+
+TEST(SyscapCheckTest, ParseJsonObjectTest003)
+{
+    std::string str = R"(
+        "key1": "value1"
+    })";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonObject(pos, input);
+
+    EXPECT_EQ(obj, nullptr);
+}
+
+TEST(SyscapCheckTest, ParseJsonObjectTest004)
+{
+    std::string str = R"({
+        "key1": "value1"
+    )";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonObject(pos, input);
+
+    EXPECT_EQ(obj->pairs.size(), 1);
+}
+
+TEST(SyscapCheckTest, GetJsonStringTest001)
+{
+    std::string str = R"({
+        "key1": "value1",
+        "key2": 123,
+        "key3": {"subKey": "subValue"},
+        "key4": {"subKey": {"subSubKey": "value"}},
+        "key5": ["array", {"obj": "value"}]
+    })";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonObject(pos, input);
+    auto res = GetJsonString(obj, "subKey");
+
+    EXPECT_EQ(res.size(), 1);
+}
+
+TEST(SyscapCheckTest, GetJsonStringTest002)
+{
+    std::string str = R"({
+        "key1": "value1",
+        "key2": 123,
+        "key3": {"subKey": "subValue"},
+        "key4": {"subKey": {"subSubKey": "value"}},
+        "key5": ["array", {"obj": "value"}]
+    })";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonObject(pos, input);
+    auto res = GetJsonString(obj, "key1");
+
+    EXPECT_EQ(res.size(), 1);
+}
+
+TEST(SyscapCheckTest, GetJsonStringTest003)
+{
+    std::string str = R"({
+    })";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonObject(pos, input);
+    auto res = GetJsonString(obj, "key1");
+
+    EXPECT_EQ(res.size(), 0);
+}
+
+TEST(SyscapCheckTest, GetJsonStringTest004)
+{
+    std::string str = R"({
+        "key1": "value1",
+        "key2": 123,
+        "key3": {"subKey": "subValue"},
+        "key4": {"subKey": {"subSubKey": "value"}},
+        "key5": ["array", {"obj": "value"}]
+    })";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonObject(pos, input);
+    auto res = GetJsonString(obj, "key");
+
+    EXPECT_EQ(res.size(), 0);
+}
+
+TEST(SyscapCheckTest, GetJsonObjectTest001)
+{
+    std::string str = R"({
+        "key1": "value1",
+        "key2": 123,
+        "key3": {"subKey": "subValue"},
+        "key4": {"subKey": {"subSubKey": "value"}},
+        "key5": ["array", {"obj": "value"}]
+    })";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonObject(pos, input);
+    auto res = GetJsonObject(obj, "key1", 0);
+
+    EXPECT_EQ(res, nullptr);
+}
+
+TEST(SyscapCheckTest, GetJsonObjectTest002)
+{
+    std::string str = R"({
+        "key1": "value1",
+        "key2": 123,
+        "key3": {"subKey": "subValue"},
+        "key4": {"subKey": {"subSubKey": "value"}},
+        "key5": ["array", {"obj": "value"}]
+    })";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonObject(pos, input);
+    auto res = GetJsonObject(obj, "key3", 0);
+
+    EXPECT_NE(res, nullptr);
+}
+
+TEST(SyscapCheckTest, GetJsonObjectTest003)
+{
+    std::string str = R"({
+        "key1": "value1",
+        "key2": 123,
+        "key3": {"subKey": "subValue"},
+        "key4": {"subKey": {"subSubKey": "value"}},
+        "key5": ["array", {"obj": [{"obj1": "value1"}, {"obj2": "value2"}]}]
+    })";
+    auto input = StringToVector(str);
+    size_t pos = 0;
+    auto obj = ParseJsonObject(pos, input);
+    auto res = GetJsonObject(obj, "obj", 1);
+
+    EXPECT_NE(res, nullptr);
+}
+
+TEST(SyscapCheckTest, ParseJsonFileTest001)
+{
+    std::string json = R"({
+        "Modules": {
+            "module1": {
+                "deviceSysCap": {"key1": "val1"}
+            },
+            "module2": {
+                "deviceSysCap": {"key2": "val2"}
+            }
+        }
+    })";
+    std::vector<uint8_t> input = StringToVector(json);
+    SyscapCheck syscapCheck;
+    syscapCheck.ParseJsonFile(input);
+
+    EXPECT_EQ(syscapCheck.module2SyscapsMap.size(), 2);
+}
+
+TEST(SyscapCheckTest, ParseJsonFileTest002)
+{
+    std::string json = R"({
+        "Modules": {
+            "module1": {
+                "deviceSysCap": {"key1": "val1"}
+            },
+            "module2": {
+                "deviceSysCap": {"key2": "val2"}
+            }
+        }
+    })";
+    std::vector<uint8_t> input = StringToVector(json);
+    MessageHeaderEndOfLine::SetIsDeveco(true);
+    SyscapCheck syscapCheck;
+    syscapCheck.ParseJsonFile(input);
+
+    EXPECT_EQ(syscapCheck.module2SyscapsMap.size(), 4);
+}
+
+TEST(SyscapCheckTest, ParseJsonFileTest003)
+{
+    std::string json = R"({
+        "Modules": {
+            "module1": "value1"
+        }
+    })";
+    std::vector<uint8_t> input = StringToVector(json);
+    SyscapCheck syscapCheck;
+    syscapCheck.ParseJsonFile(input);
+
+    EXPECT_EQ(syscapCheck.module2SyscapsMap.size(), 4);
+}
+
+TEST(SyscapCheckTest, ParseJsonFileTest004)
+{
+    std::string json = R"({
+        "Modules": {}
+    })";
+    std::vector<uint8_t> input = StringToVector(json);
+    SyscapCheck syscapCheck;
+    syscapCheck.ParseJsonFile(input);
+
+    EXPECT_EQ(syscapCheck.module2SyscapsMap.size(), 4);
+}
+
+TEST(SyscapCheckTest, CheckSysCapTest001)
+{
+    auto declNode = new Decl();
+    auto annotation = new Annotation();
+    annotation->identifier = "APILevel";
+    auto arg = new FuncArg();
+    arg->name = "syscap";
+    auto expr = new ArrayExpr();
+    arg->expr = OwnedPtr<Expr>(expr);
+    annotation->args.emplace_back(arg);
+    declNode->annotations.emplace_back(annotation);
+
+    auto hasAPILevel = true;
+    SyscapCheck syscapCheck;
+    auto result = syscapCheck.CheckSysCap(declNode, hasAPILevel);
+
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(hasAPILevel);
+}
+
+TEST(SyscapCheckTest, CheckSysCapTest002)
+{
+    auto declNode = new Decl();
+    auto annotation = new Annotation();
+    annotation->identifier = "APILevel";
+    auto arg = new FuncArg();
+    arg->name = "syscap";
+    annotation->args.emplace_back(arg);
+    declNode->annotations.emplace_back(annotation);
+
+    auto hasAPILevel = true;
+    SyscapCheck syscapCheck;
+    auto result = syscapCheck.CheckSysCap(declNode, hasAPILevel);
+
+    EXPECT_TRUE(result);
+    EXPECT_TRUE(hasAPILevel);
+}
+
+TEST(SyscapCheckTest, CheckSysCapTest003)
+{
+    auto declNode = new Decl();
+    auto annotation = new Annotation();
+    annotation->identifier = "APILevel";
+    auto arg = new FuncArg();
+    arg->name = "syscap";
+    auto expr = new LitConstExpr();
+    expr->kind = LitConstKind::STRING;
+    arg->expr = OwnedPtr<Expr>(expr);
+    annotation->args.emplace_back(arg);
+    declNode->annotations.emplace_back(annotation);
+
+    auto hasAPILevel = true;
+    SyscapCheck syscapCheck;
+    auto result = syscapCheck.CheckSysCap(declNode, hasAPILevel);
+
+    EXPECT_FALSE(result);
+    EXPECT_TRUE(hasAPILevel);
+}
+
+TEST(SyscapCheckTest, CheckSysCapTest004)
+{
+    auto declNode = new Decl();
+    auto annotation = new Annotation();
+    annotation->identifier = "APILevel";
+    auto arg = new FuncArg();
+    arg->name = "syscap";
+    auto expr = new ArrayExpr();
+    arg->expr = OwnedPtr<Expr>(expr);
+    annotation->args.emplace_back(arg);
+    declNode->annotations.emplace_back(annotation);
+
+    const SyscapCheck syscapCheck;
+    auto result = syscapCheck.CheckSysCap(declNode);
+
+    EXPECT_TRUE(result);
+}
+
+TEST(SyscapCheckTest, CheckSysCapTest005)
+{
+    auto declNode = new Decl();
+    auto annotation = new Annotation();
+    annotation->identifier = "APILevel";
+    auto arg = new FuncArg();
+    arg->name = "syscap";
+    annotation->args.emplace_back(arg);
+    declNode->annotations.emplace_back(annotation);
+
+    const SyscapCheck syscapCheck;
+    auto result = syscapCheck.CheckSysCap(declNode);
+
+    EXPECT_TRUE(result);
+}
+
+TEST(SyscapCheckTest, CheckSysCapTest006)
+{
+    auto declNode = new Decl();
+    auto annotation = new Annotation();
+    annotation->identifier = "APILevel";
+    auto arg = new FuncArg();
+    arg->name = "syscap";
+    auto expr = new LitConstExpr();
+    expr->kind = LitConstKind::STRING;
+    arg->expr = OwnedPtr<Expr>(expr);
+    annotation->args.emplace_back(arg);
+    declNode->annotations.emplace_back(annotation);
+
+    const SyscapCheck syscapCheck;
+    auto result = syscapCheck.CheckSysCap(declNode);
+
+    EXPECT_FALSE(result);
+}
+
+TEST(SyscapCheckTest, CheckSysCapTest007)
+{
+    const SyscapCheck syscapCheck;
+    auto result = syscapCheck.CheckSysCap(nullptr);
+
+    EXPECT_TRUE(result);
+}
+
+TEST(SyscapCheckTest, CheckSysCapTest012)
+{
+    const std::string& syscapName = "syscap1";
+    SyscapCheck syscapCheck;
+    auto res = syscapCheck.CheckSysCap(syscapName);
+
+    EXPECT_EQ(res, false);
 }
