@@ -16,6 +16,7 @@
 
 #include "SingleInstance.h"
 #include "../../src/languageserver/ArkLanguageServer.h"
+#include "logger/Logger.h"
 
 #ifdef _WIN32
 #else
@@ -1429,6 +1430,8 @@ namespace test::common {
     }
 
     std::vector<TestParam> GetTestCaseList(const std::string &key) {
+        ark::Logger &logger = ark::Logger::Instance();
+        logger.LogMessage(ark::MessageType::MSG_INFO, "============GetTestCaseList================");
         std::vector<TestParam> vecParam;
         TestParam item;
         std::string pathPwd = GetPwd();
