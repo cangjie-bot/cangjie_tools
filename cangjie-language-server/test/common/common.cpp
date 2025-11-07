@@ -16,7 +16,7 @@
 
 #include "SingleInstance.h"
 #include "../../src/languageserver/ArkLanguageServer.h"
-#include "logger/Logger.h"
+#include "../../src/languageserver/logger/Logger.h"
 
 #ifdef _WIN32
 #else
