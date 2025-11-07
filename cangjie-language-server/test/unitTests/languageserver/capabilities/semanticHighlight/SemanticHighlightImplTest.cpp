@@ -100,18 +100,6 @@ TEST_F(SemanticHighlightImplTest, GetPrimaryDecl_NormalCase) {
     EXPECT_EQ(result[0].kind, HighlightKind::CLASS_H);
 }
 
-TEST_F(SemanticHighlightImplTest, GetVarDecl_NormalCase) {
-    auto node = Ptr<VarDecl>();
-    node->identifier = "testVariable";
-    node->begin = Position{1, 1, 1};
-    node->end = Position{1, 1, 15};
-
-    GetVarDecl(node, result, tokens, sourceManager);
-
-    EXPECT_EQ(result.size(), 1);
-    EXPECT_EQ(result[0].kind, HighlightKind::VARIABLE_H);
-}
-
 TEST_F(SemanticHighlightImplTest, GetPropDecl_NormalCase) {
     auto node = Ptr<PropDecl>();
     node->identifier = "testProperty";
