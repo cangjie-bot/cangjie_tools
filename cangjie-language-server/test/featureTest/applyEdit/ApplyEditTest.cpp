@@ -44,7 +44,7 @@ bool LspApplyEditTest(TestParam param)
 
     /* if case is diff show info */
     std::string info = "none";
-    bool showErr = CheckApplyEditResult(expLines, result, info);
+    bool showErr = TestUtils::CheckApplyEditResult(expLines, result, info);
     if (!showErr) {
         std::cout << "the false reason is : " << info << std::endl;
         ShowDiff(expLines, result, param, p->messagePath);
