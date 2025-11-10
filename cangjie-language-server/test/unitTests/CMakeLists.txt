@@ -15,12 +15,27 @@ set(UNIT_TESTS_SRC
         languageserver/common/ItemResolverUtilTest.cpp
         languageserver/common/SyscapCheckTest.cpp
         languageserver/common/UtilsTest.cpp
+        languageserver/common/UtilsTest2.cpp
         languageserver/index/IndexStorageTest.cpp
         languageserver/index/MemIndexTest.cpp
         languageserver/logger/LoggerTest.cpp
         languageserver/logger/CrashReporterTest.cpp
         languageserver/CompilerCangjieProjectTest.cpp
         languageserver/ArkASTTest.cpp
+        languageserver/sql/wrapper/BackupTest.cpp
+        languageserver/sql/wrapper/BindTest.cpp
+        languageserver/sql/wrapper/ColumnTest.cpp
+        languageserver/sql/wrapper/ConfigureTest.cpp
+        languageserver/sql/wrapper/ConnectionTest.cpp
+        languageserver/sql/wrapper/ExceptionTest.cpp
+        languageserver/sql/wrapper/FunctionTest.cpp
+        languageserver/sql/wrapper/MemoryTest.cpp
+        languageserver/sql/wrapper/RegexpTest.cpp
+        languageserver/sql/wrapper/ResultTest.cpp
+        languageserver/sql/wrapper/SQLiteAPITest.cpp
+        languageserver/sql/wrapper/StatementTest.cpp
+        languageserver/sql/wrapper/TransactionTest.cpp
+        languageserver/sql/wrapper/ValueTest.cpp
 )
 
 include_directories(
@@ -32,6 +47,7 @@ include_directories(
         ../../src/languageserver/index
         ../../src/languageserver/logger
         ../../src/languageserver/
+        ../../src/languageserver/sql/wrapper
 )
 
 add_library(UnitTests OBJECT ${UNIT_TESTS_SRC})
