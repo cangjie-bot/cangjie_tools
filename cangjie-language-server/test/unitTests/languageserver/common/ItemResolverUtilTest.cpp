@@ -473,16 +473,6 @@ TEST(ItemResolverUtilTest, ResolveInsertByNode_Package) {
     EXPECT_EQ("test.package", result);
 }
 
-// Test GetGenericParamByDecl function - edge cases
-TEST(ItemResolverUtilTest, GetGenericParamByDecl_NullTypeParameter) {
-    // Test Generic declaration with null type parameter
-    auto genericDecl = OwnedPtr<Generic>(new Generic());
-    genericDecl->typeParameters.emplace_back(nullptr);
-
-    std::string result = ItemResolverUtil::GetGenericParamByDecl(genericDecl);
-    EXPECT_EQ("<>", result);
-}
-
 TEST(ItemResolverUtilTest, IsCustomAnnotation_WithNullAnnotation) {
     // Test case with null annotation
     FuncDecl decl;

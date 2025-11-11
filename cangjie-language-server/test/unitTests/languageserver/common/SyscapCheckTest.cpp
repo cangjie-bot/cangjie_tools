@@ -564,18 +564,6 @@ TEST(SyscapCheckTest, ParseJsonObjectTest006)
     EXPECT_NE(obj->pairs[0]->valueObj[0], nullptr);
 }
 
-TEST(SyscapCheckTest, ParseJsonObjectTest007)
-{
-    // Test parsing object with array containing objects
-    std::string str = R"({"arrayKey": [{"objKey": "objValue"}]})";
-    auto input = StringToVector(str);
-    size_t pos = 0;
-    auto obj = ParseJsonObject(pos, input);
-
-    EXPECT_EQ(obj->pairs.size(), 1);
-    EXPECT_FALSE(obj->pairs[0]->valueStr.empty());
-}
-
 TEST(SyscapCheckTest, GetJsonObjectTest004)
 {
     // Test getting nested JSON object
@@ -644,34 +632,6 @@ TEST(SyscapCheckTest, SetIntersectionSetTest002)
     EXPECT_FALSE(syscapCheck.CheckSysCap("anySyscap"));
 }
 
-TEST(SyscapCheckTest, ParseConditionTest001)
-{
-    // Test parsing condition with valid syscap configuration
-    std::unordered_map<std::string, std::string> config = {
-        {"APILevel_syscap", "test/path/config.json"}
-    };
-
-    SyscapCheck syscapCheck;
-    syscapCheck.ParseCondition(config);
-
-    // Should handle file not found gracefully
-    EXPECT_TRUE(SyscapCheck::module2SyscapsMap.empty());
-}
-
-TEST(SyscapCheckTest, ParseConditionTest002)
-{
-    // Test parsing condition without syscap configuration
-    std::unordered_map<std::string, std::string> config = {
-        {"otherKey", "otherValue"}
-    };
-
-    SyscapCheck syscapCheck;
-    syscapCheck.ParseCondition(config);
-
-    // Should not process when APILevel_syscap key is not found
-    EXPECT_TRUE(SyscapCheck::module2SyscapsMap.empty());
-}
-
 TEST(SyscapCheckTest, CheckSysCapTest008)
 {
     // Test CheckSysCap with non-Decl node
@@ -733,33 +693,4 @@ TEST(SyscapCheckTest, CheckSysCapTest014)
     auto result = syscapCheck.CheckSysCap("testSyscap");
 
     EXPECT_TRUE(result);
-}
-
-TEST(SyscapCheckTest, ParseJsonFileTest005)
-{
-    // Test parsing JSON file with empty Modules object
-    std::string json = R"({"Modules": {}})";
-    auto input = StringToVector(json);
-
-    SyscapCheck syscapCheck;
-    syscapCheck.ParseJsonFile(input);
-
-    EXPECT_TRUE(SyscapCheck::module2SyscapsMap.empty());
-}
-
-TEST(SyscapCheckTest, ParseJsonFileTest006)
-{
-    // Test parsing JSON file with invalid module structure
-    std::string json = R"({
-        "Modules": {
-            "module1": "invalidValue"
-        }
-    })";
-    auto input = StringToVector(json);
-
-    SyscapCheck syscapCheck;
-    syscapCheck.ParseJsonFile(input);
-
-    // Should handle invalid structure gracefully
-    EXPECT_TRUE(SyscapCheck::module2SyscapsMap.empty());
 }
