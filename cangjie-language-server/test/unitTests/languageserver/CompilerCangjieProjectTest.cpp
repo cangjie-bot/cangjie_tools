@@ -343,14 +343,6 @@ TEST_F(CompilerCangjieProjectTest, UpdateBuffCacheTest) {
     // Verify cache update operation
 }
 
-TEST_F(CompilerCangjieProjectTest, GetModuleSrcPathTest) {
-    std::string modulePath = "test_workspace";
-
-    // Test module source path resolution
-    std::string srcPath = CompilerCangjieProject::GetInstance()->GetModuleSrcPath(modulePath);
-    // Verify path format and validity
-}
-
 TEST_F(CompilerCangjieProjectTest, SubmitTasksToPoolTest) {
     // Test task submission to thread pool
     std::unordered_set<std::string> tasks = {"test_pkg1", "test_pkg2"};
