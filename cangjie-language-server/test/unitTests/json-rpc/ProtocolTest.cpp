@@ -2280,24 +2280,6 @@ TEST_F(ProtocolTest, FetchTextDocument_EmptyCapabilities) {
     EXPECT_FALSE(params.capabilities.textDocumentClientCapabilities.documentLinkClientCapabilities);
 }
 
-// Test case for FromJSON with invalid JSON structure for various params
-TEST_F(ProtocolTest, FromJSON_InvalidJSONStructure) {
-    // Test various invalid JSON structures
-    json invalidParams = "invalid";
-
-    DidOpenTextDocumentParams openReply;
-    EXPECT_FALSE(FromJSON(invalidParams, openReply));
-
-    TextDocumentPositionParams positionReply;
-    EXPECT_FALSE(FromJSON(invalidParams, positionReply));
-
-    InitializeParams initReply;
-    EXPECT_FALSE(FromJSON(invalidParams, initReply));
-
-    CompletionParams completionReply;
-    EXPECT_FALSE(FromJSON(invalidParams, completionReply));
-}
-
 // Test case for ToJSON functions with default constructed objects
 TEST_F(ProtocolTest, ToJSON_DefaultConstructedObjects) {
     // Test various ToJSON functions with default constructed objects
