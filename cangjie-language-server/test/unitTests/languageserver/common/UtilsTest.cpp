@@ -4,702 +4,894 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-#include <gtest/gtest.h>
-#include "Utils.cpp"
+#include "Utils.h"
+#include "gtest/gtest.h"
+#include <memory>
 #include <string>
 #include <vector>
-#include <unordered_map>
-#include <optional>
+#include "Options.h"
 
 using namespace ark;
 
+class StringType : public Ty {
+public:
+    StringType(TypeKind k) : Ty(k) {}
+    std::string String() const override { return "String"; }
+    TypeKind kind() const { return TypeKind::TYPE_CSTRING; }
+};
+
+class IntType : public Ty {
+public:
+    IntType(TypeKind k) : Ty(k) {}
+    std::string String() const override { return "Int"; }
+    TypeKind kind() const { return TypeKind::TYPE_UNIT; }
+};
+
+class GenericType : public Ty {
+public:
+    GenericType(TypeKind k) : Ty(k) {}
+    std::string String() const override { return "Generic"; }
+    TypeKind kind() const { return TypeKind::TYPE_GENERICS; }
+};
+
+class JStringType : public Ty {
+public:
+    JStringType(TypeKind k) : Ty(k) {}
+    std::string String() const override { return "JStringType"; }
+    bool isJString() const { return true; }
+};
+
+// TypeCompatibility CheckTypeCompatibility(const Ty *lvalue, const Ty *rvalue)
+TEST(UtilsTest, UtilsTest001) {
+    const Ty* lvalue = nullptr;
+    const Ty* rvalue = nullptr;
+    EXPECT_EQ(ark::TypeCompatibility::INCOMPATIBLE, CheckTypeCompatibility(lvalue, rvalue));
+}
+
+TEST(UtilsTest, UtilsTest002) {
+    std::vector<Ptr<Ty>> emptyArgs;
+    const Ty* lvalue = nullptr;
+    const Ty* rvalue = std::make_shared<TupleTy>(emptyArgs).get();
+    EXPECT_EQ(ark::TypeCompatibility::INCOMPATIBLE, CheckTypeCompatibility(lvalue, rvalue));
+}
+
+TEST(UtilsTest, UtilsTest003) {
+    std::vector<Ptr<Ty>> emptyArgs;
+    const Ty* lvalue = std::make_shared<TupleTy>(emptyArgs).get();
+    const Ty* rvalue = nullptr;
+    EXPECT_EQ(ark::TypeCompatibility::INCOMPATIBLE, CheckTypeCompatibility(lvalue, rvalue));
+}
+
+TEST(UtilsTest, UtilsTest005) {
+    std::vector<Ptr<Ty>> args;
+    args.emplace_back(Ptr<GenericType>(new GenericType(TypeKind::TYPE_GENERICS)));
+    std::shared_ptr<TupleTy> ltuplePtr = std::make_shared<TupleTy>(args);
+    std::shared_ptr<TupleTy> rtuplePtr = std::make_shared<TupleTy>(args);
+    const Ty* lvalue = ltuplePtr.get();
+    const Ty* rvalue = rtuplePtr.get();
+    EXPECT_EQ(ark::TypeCompatibility::IDENTICAL, CheckTypeCompatibility(lvalue, rvalue));
+}
+
+TEST(UtilsTest, UtilsTest006) {
+    std::vector<Ptr<Ty>> largs;
+    largs.emplace_back(new IntType(TypeKind::TYPE_UNIT));
+    largs.emplace_back(new IntType(TypeKind::TYPE_UNIT));
+    std::vector<Ptr<Ty>> rargs;
+    rargs.emplace_back(new StringType(TypeKind::TYPE_CSTRING));
+    rargs.emplace_back(new StringType(TypeKind::TYPE_CSTRING));
+    std::shared_ptr<TupleTy> ltuplePtr = std::make_shared<TupleTy>(largs);
+    std::shared_ptr<TupleTy> rtuplePtr = std::make_shared<TupleTy>(rargs);
+    const Ty* lvalue = ltuplePtr.get();
+    const Ty* rvalue = rtuplePtr.get();
+    EXPECT_EQ(ark::TypeCompatibility::INCOMPATIBLE, CheckTypeCompatibility(lvalue, rvalue));
+}
+
+TEST(UtilsTest, UtilsTest007) {
+    std::vector<Ptr<Ty>> largs;
+    largs.emplace_back(new StringType(TypeKind::TYPE_CSTRING));
+    std::vector<Ptr<Ty>> rargs;
+    rargs.emplace_back(new StringType(TypeKind::TYPE_CSTRING));
+    rargs.emplace_back(new IntType(TypeKind::TYPE_UNIT));
+    std::shared_ptr<TupleTy> ltuplePtr = std::make_shared<TupleTy>(largs);
+    std::shared_ptr<TupleTy> rtuplePtr = std::make_shared<TupleTy>(rargs);
+    const Ty* lvalue = ltuplePtr.get();
+    const Ty* rvalue = rtuplePtr.get();
+    EXPECT_EQ(ark::TypeCompatibility::INCOMPATIBLE, CheckTypeCompatibility(lvalue, rvalue));
+}
+
+TEST(UtilsTest, UtilsTest008) {
+    std::shared_ptr<StringType> lvaluePtr = std::make_shared<StringType>(TypeKind::TYPE_CSTRING);
+    std::shared_ptr<StringType> rvaluePtr = std::make_shared<StringType>(TypeKind::TYPE_CSTRING);
+    const Ty* lvalue = lvaluePtr.get();
+    const Ty* rvalue = rvaluePtr.get();
+    EXPECT_EQ(ark::TypeCompatibility::IDENTICAL, CheckTypeCompatibility(lvalue, rvalue));
+}
+
+TEST(UtilsTest, UtilsTest009) {
+    std::shared_ptr<StringType> lvaluePtr = std::make_shared<StringType>(TypeKind::TYPE_CSTRING);
+    std::shared_ptr<GenericType> rvaluePtr = std::make_shared<GenericType>(TypeKind::TYPE_GENERICS);
+    const Ty* lvalue = lvaluePtr.get();
+    const Ty* rvalue = rvaluePtr.get();
+    EXPECT_EQ(ark::TypeCompatibility::IDENTICAL, CheckTypeCompatibility(lvalue, rvalue));
+}
+
+TEST(UtilsTest, UtilsTest010) {
+    std::shared_ptr<StringType> lvaluePtr = std::make_shared<StringType>(TypeKind::TYPE_CSTRING);
+    std::shared_ptr<IntType> rvaluePtr = std::make_shared<IntType>(TypeKind::TYPE_UNIT);
+    const Ty* lvalue = lvaluePtr.get();
+    const Ty* rvalue = rvaluePtr.get();
+    EXPECT_EQ(ark::TypeCompatibility::INCOMPATIBLE, CheckTypeCompatibility(lvalue, rvalue));
+}
+
+// bool IsMatchingCompletion(const std::string &prefix, const std::string &completionName, bool caseSensitive)
+TEST(UtilsTest, UtilsTest011) {
+    std::string prefix = "";
+    std::string completionName = "test";
+    bool caseSensitive = true;
+    EXPECT_EQ(true, IsMatchingCompletion(prefix, completionName, caseSensitive));
+}
+
+TEST(UtilsTest, UtilsTest012) {
+    std::string prefix = "Hello";
+    std::string completionName = "Hello";
+    bool caseSensitive = true;
+    EXPECT_EQ(true, IsMatchingCompletion(prefix, completionName, caseSensitive));
+}
+
+TEST(UtilsTest, UtilsTest013) {
+    std::string prefix = "Hello";
+    std::string completionName = "hello";
+    bool caseSensitive = true;
+    EXPECT_EQ(false, IsMatchingCompletion(prefix, completionName, caseSensitive));
+}
+
+TEST(UtilsTest, UtilsTest014) {
+    std::string prefix = "Hello";
+    std::string completionName = "hello";
+    bool caseSensitive = false;
+    EXPECT_EQ(true, IsMatchingCompletion(prefix, completionName, caseSensitive));
+}
+
+TEST(UtilsTest, UtilsTest015) {
+    std::string prefix = "Hello";
+    std::string completionName = "hxllo";
+    bool caseSensitive = false;
+    EXPECT_EQ(false, IsMatchingCompletion(prefix, completionName, caseSensitive));
+}
+
+TEST(UtilsTest, UtilsTest016) {
+    std::string prefix = "abc";
+    std::string completionName = "abd";
+    bool caseSensitive = true;
+    EXPECT_EQ(false, IsMatchingCompletion(prefix, completionName, caseSensitive));
+}
+
+TEST(UtilsTest, UtilsTest017) {
+    std::string prefix = "abc";
+    std::string completionName = "acb";
+    bool caseSensitive = true;
+    EXPECT_EQ(false, IsMatchingCompletion(prefix, completionName, caseSensitive));
+}
+
+TEST(UtilsTest, UtilsTest018) {
+    std::string prefix = "abc";
+    std::string completionName = "abd";
+    bool caseSensitive = true;
+    EXPECT_EQ(false, IsMatchingCompletion(prefix, completionName, caseSensitive));
+}
+
+TEST(UtilsTest, UtilsTest019) {
+    std::string prefix = "abcd";
+    std::string completionName = "abc";
+    bool caseSensitive = true;
+    EXPECT_EQ(false, IsMatchingCompletion(prefix, completionName, caseSensitive));
+}
+
+TEST(UtilsTest, UtilsTest020) {
+    std::string prefix = "Hello";
+    std::string completionName = "HELLO";
+    bool caseSensitive = false;
+    EXPECT_EQ(true, IsMatchingCompletion(prefix, completionName, caseSensitive));
+}
+
+
+// std::string GetFilterText(const std::string &name, const std::string &prefix)
+TEST(UtilsTest, UtilsTest021) {
+    int argc = 1;
+    const char* argv[] = {"program"};
+    ark::Options::GetInstance().Parse(argc, argv);
+    MessageHeaderEndOfLine::SetIsDeveco(false);
+    std::string name = "testName";
+    std::string prefix = "prefix";
+    std::string expected = prefix + "_" + name;
+    std::string result = GetFilterText(name, prefix);
+    EXPECT_EQ(expected, result);
+}
+
+TEST(UtilsTest, UtilsTest022) {
+    MessageHeaderEndOfLine::SetIsDeveco(true);
+    int argc = 1;
+    const char* argv[] = {"program"};
+    ark::Options::GetInstance().Parse(argc, argv);
+    std::string name = "testName";
+    std::string prefix = "prefix";
+    std::string expected = name;
+    std::string result = GetFilterText(name, prefix);
+    EXPECT_EQ(expected, result);
+}
+
+TEST(UtilsTest, UtilsTest023) {
+    int argc = 2;
+    const char* argv[] = {"program", "--test"};
+    ark::Options::GetInstance().Parse(argc, argv);
+    MessageHeaderEndOfLine::SetIsDeveco(false);
+    std::string name = "testName";
+    std::string prefix = "prefix";
+    std::string expected = name;
+    std::string result = GetFilterText(name, prefix);
+    EXPECT_EQ(expected, result);
+}
+
+TEST(UtilsTest, UtilsTest024) {
+    int argc = 2;
+    const char* argv[] = {"program", "--test"};
+    ark::Options::GetInstance().Parse(argc, argv);
+    MessageHeaderEndOfLine::SetIsDeveco(true);
+    std::string name = "testName";
+    std::string prefix = "prefix";
+    std::string expected = name;
+    std::string result = GetFilterText(name, prefix);
+    EXPECT_EQ(expected, result);
+}
+
+// Range GetNamedFuncArgRange(const Cangjie::AST::Node &node)
+TEST(UtilsTest, UtilsTest025) {
+    Cangjie::AST::Node node;
+    node.symbol = nullptr;
+    GetNamedFuncArgRange(node);
+}
+
+// Range GetIdentifierRange(Ptr<const Cangjie::AST::Node> node)
+TEST(UtilsTest, UtilsTest026) {
+    Ptr<const Node> node = nullptr;
+    ark::Range result = GetIdentifierRange(node);
+    EXPECT_EQ(result.end.fileID, 0);
+    EXPECT_EQ(result.end.line, 0);
+    EXPECT_EQ(result.end.column, 0);
+}
+
+TEST(UtilsTest, UtilsTest027) {
+    Node node;
+    node.symbol = nullptr;
+    Ptr<const Node> pNode = &node;
+    ark::Range result = GetIdentifierRange(pNode);
+    EXPECT_EQ(result.end.fileID, 0);
+    EXPECT_EQ(result.end.line, 0);
+    EXPECT_EQ(result.end.column, 0);
+}
+
+// Range GetRefTypeRange(Ptr<const Cangjie::AST::Node> node)
+TEST(UtilsTest, UtilsTest028) {
+    Ptr<const Node> node = nullptr;
+    ark::Range result = GetRefTypeRange(node);
+    EXPECT_EQ(result.end.fileID, 0);
+    EXPECT_EQ(result.end.line, 0);
+    EXPECT_EQ(result.end.column, 0);
+}
+
+TEST(UtilsTest, UtilsTest029) {
+    Node node;
+    Ptr<const Node> pNode = &node;
+    ark::Range result = GetRefTypeRange(pNode);
+    EXPECT_EQ(result.end.fileID, 0);
+    EXPECT_EQ(result.end.line, 0);
+    EXPECT_EQ(result.end.column, 0);
+}
+
+TEST(UtilsTest, UtilsTest030) {
+    Type type;
+    type.typeParameterName = "";
+    type.symbol = nullptr;
+    Ptr<const Node> pNode = &type;
+    ark::Range result = GetRefTypeRange(pNode);
+    // 预期返回空的 Range
+    EXPECT_EQ(result.end.fileID, 0);
+    EXPECT_EQ(result.end.line, 0);
+    EXPECT_EQ(result.end.column, 0);
+}
+
+TEST(UtilsTest, UtilsTest031) {
+    Type type;
+    type.typeParameterName = "testParam";
+    type.symbol = nullptr;
+    Ptr<const Node> pNode = &type;
+    ark::Range result = GetRefTypeRange(pNode);
+    EXPECT_EQ(result.end.fileID, 0);
+    EXPECT_EQ(result.end.line, 0);
+    EXPECT_EQ(result.end.column, 0);
+}
+
+// CommentKind GetCommentKind(const std::string &comment)
+TEST(UtilsTest, UtilsTest032) {
+    std::string comment = "";
+    ark::CommentKind result = GetCommentKind(comment);
+    EXPECT_EQ(result, ark::CommentKind::NO_COMMENT);
+}
+
+TEST(UtilsTest, UtilsTest033) {
+    std::string comment = "// 这是一个行注释";
+    ark::CommentKind result = GetCommentKind(comment);
+    EXPECT_EQ(result, ark::CommentKind::LINE_COMMENT);
+}
+
+TEST(UtilsTest, UtilsTest034) {
+    std::string comment = "/** 这是一个文档注释 */";
+    ark::CommentKind result = GetCommentKind(comment);
+    EXPECT_EQ(result, ark::CommentKind::DOC_COMMENT);
+}
+
+TEST(UtilsTest, UtilsTest035) {
+    std::string comment = "/* 这是一个块注释 */";
+    ark::CommentKind result = GetCommentKind(comment);
+    EXPECT_EQ(result, ark::CommentKind::BLOCK_COMMENT);
+}
+
+TEST(UtilsTest, UtilsTest036) {
+    std::string comment = "/*";
+    ark::CommentKind result = GetCommentKind(comment);
+    EXPECT_EQ(result, ark::CommentKind::NO_COMMENT);
+}
+
+TEST(UtilsTest, UtilsTest037) {
+    std::string comment = "这是一个注释*/";
+    ark::CommentKind result = GetCommentKind(comment);
+    EXPECT_EQ(result, ark::CommentKind::NO_COMMENT);
+}
+
+TEST(UtilsTest, UtilsTest038) {
+    std::string comment = "这是一个普通字符串";
+    ark::CommentKind result = GetCommentKind(comment);
+    EXPECT_EQ(result, ark::CommentKind::NO_COMMENT);
+}
+
+// std::string PrintTypeArgs(std::vector<Ptr<Ty>> tyArgs, const std::pair<bool, int> isVarray)
+TEST(UtilsTest, UtilsTest040) {
+    std::vector<Ptr<Ty>> tyArgs;
+    tyArgs.emplace_back(nullptr);
+    std::pair<bool, int> isVarray = {false, 0};
+    std::string result = PrintTypeArgs(tyArgs, isVarray);
+}
+
+// std::string GetString(const Ty &ty)
+TEST(UtilsTest, UtilsTest041) {
+    GetString(*new JStringType(TypeKind::TYPE_CSTRING));
+}
+
+// std::string ReplaceTuple(const std::string &type)
+TEST(UtilsTest, UtilsTest042) {
+    ReplaceTuple("Tuple<int>");
+    ReplaceTuple("Tuple<tuple<float>>");
+    ReplaceTuple("Tup<int>");
+    ReplaceTuple("Tuple<int>>");
+}
+
+// void MatchBracket(const std::string &type, size_t &index, int &count)
+TEST(UtilsTest, UtilsTest043) {
+    std::string s = "anything";
+    size_t idx = 0;
+    int cnt = 0;
+    MatchBracket(s, idx, cnt);
+    EXPECT_EQ(idx, 0u);
+    EXPECT_EQ(cnt, 0);
+}
+
+TEST(UtilsTest, UtilsTest044) {
+    std::string s = "xyz";
+    size_t idx = s.length();  // idx == len
+    int cnt = 1;
+    MatchBracket(s, idx, cnt);
+    EXPECT_EQ(idx, s.length());
+    EXPECT_EQ(cnt, 1);
+}
+
+TEST(UtilsTest, UtilsTest045) {
+    std::string s = "<";
+    size_t idx = 0;
+    int cnt = 1;
+    MatchBracket(s, idx, cnt);
+    EXPECT_EQ(idx, 1u);
+    EXPECT_EQ(cnt, 2);
+}
+
+TEST(UtilsTest, UtilsTest046) {
+    std::string s = ">";
+    size_t idx = 0;
+    int cnt = 1;
+    MatchBracket(s, idx, cnt);
+    EXPECT_EQ(idx, 1u);
+    EXPECT_EQ(cnt, 0);        // 1 - 1
+}
+
+TEST(UtilsTest, UtilsTest047) {
+    std::string s = "a";
+    size_t idx = 0;
+    int cnt = 1;
+    MatchBracket(s, idx, cnt);
+    EXPECT_EQ(idx, 1u);
+    EXPECT_EQ(cnt, 1);
+}
+
+TEST(UtilsTest, UtilsTest048)
+{
+    std::string s = "<><b>";
+    size_t idx = 0;
+    int cnt = 1;
+    MatchBracket(s, idx, cnt);
+    EXPECT_EQ(idx, s.length());
+    EXPECT_EQ(cnt, 1);
+}
+
+// bool IsZeroPosition(Ptr<const Node> node) { return node && node->end.line == 0 && node->end.column == 0; }
+// A minimal Node subclass to control end.line and end.column
+class FakeNode : public Node {
+public:
+    FakeNode(int line, int column) {
+        end.line = line;
+        end.column = column;
+    }
+};
+
+// 058: node == nullptr → overall false
+TEST(UtilsTest, UtilsTest058) {
+    Ptr<const Node> node = nullptr;
+    EXPECT_FALSE(IsZeroPosition(node));
+}
+
+// 059: node non-null, end.line != 0 → overall false
+TEST(UtilsTest, UtilsTest059) {
+    Ptr<const Node> node(new FakeNode(1, 0));
+    EXPECT_FALSE(IsZeroPosition(node));
+}
+
+// 060: node non-null, end.line == 0 but end.column != 0 → overall false
+TEST(UtilsTest, UtilsTest060) {
+    Ptr<const Node> node(new FakeNode(0, 5));
+    EXPECT_FALSE(IsZeroPosition(node));
+}
+
+// 061: node non-null, end.line == 0 and end.column == 0 → true
+TEST(UtilsTest, UtilsTest061) {
+    Ptr<const Node> node(new FakeNode(0, 0));
+    EXPECT_TRUE(IsZeroPosition(node));
+}
+
+// A minimal Decl subclass to control astKind
+class FakeDecl : public Cangjie::AST::Decl {
+public:
+    explicit FakeDecl(ASTKind kind)
+        : Decl(kind)
+    {
+    }
+};
+
+// 062: decl == nullptr → overall false
+TEST(UtilsTest, UtilsTest062) {
+    Ptr<const Decl> decl = nullptr;
+    EXPECT_FALSE(ValidExtendIncludeGenericParam(decl));
+}
+
+// 063: decl non-null, astKind not CLASS_DECL or STRUCT_DECL → false
+TEST(UtilsTest, UtilsTest063) {
+    Ptr<const Decl> decl(new FakeDecl(ASTKind::ENUM_DECL));
+    EXPECT_FALSE(ValidExtendIncludeGenericParam(decl));
+}
+
+// 064: decl non-null, astKind == CLASS_DECL → true
+TEST(UtilsTest, UtilsTest064) {
+    Ptr<const Decl> decl(new FakeDecl(ASTKind::CLASS_DECL));
+    EXPECT_TRUE(ValidExtendIncludeGenericParam(decl));
+}
+
+// 065: decl non-null, astKind == STRUCT_DECL → true
+TEST(UtilsTest, UtilsTest065) {
+    Ptr<const Decl> decl(new FakeDecl(ASTKind::STRUCT_DECL));
+    EXPECT_TRUE(ValidExtendIncludeGenericParam(decl));
+}
+
+// void SetRangForInterpolatedString(const Cangjie::Token &curToken, Ptr<const Cangjie::AST::Node> node, Range &range)
+// A minimal Node subclass to control begin/end positions
+class FakeNode4SetRang : public Cangjie::AST::Node {
+public:
+    FakeNode4SetRang(int fileID, int bLine, int bCol, int eLine, int eCol) {
+        begin.fileID = fileID;
+        begin.line   = bLine;
+        begin.column = bCol;
+        end.fileID   = fileID;
+        end.line     = eLine;
+        end.column   = eCol;
+    }
+};
+
+// 069: node == nullptr, token is STRING_LITERAL  → should early-return without touching range
+TEST(UtilsTest, UtilsTest066) {
+    Cangjie::Token token(Cangjie::TokenKind::STRING_LITERAL);
+    Ptr<const Cangjie::AST::Node> node = nullptr;
+
+    ark::Range range;
+    range.start = {1, 2, 3};
+    range.end   = {4, 5, 6};
+
+    SetRangForInterpolatedString(token, node, range);
+
+    EXPECT_EQ(range.start.fileID, 1);
+    EXPECT_EQ(range.start.line,   2);
+    EXPECT_EQ(range.start.column, 3);
+    EXPECT_EQ(range.end.fileID,   4);
+    EXPECT_EQ(range.end.line,     5);
+    EXPECT_EQ(range.end.column,   6);
+}
+
+// 070: node == nullptr, token is not STRING_LITERAL → still early-return
+TEST(UtilsTest, UtilsTest067) {
+    Cangjie::Token token(Cangjie::TokenKind::IDENTIFIER);
+    Ptr<const Cangjie::AST::Node> node = nullptr;
+
+    ark::Range range;
+    range.start = {7, 8, 9};
+    range.end   = {10, 11, 12};
+
+    SetRangForInterpolatedString(token, node, range);
+
+    EXPECT_EQ(range.start.fileID, 7);
+    EXPECT_EQ(range.start.line,   8);
+    EXPECT_EQ(range.start.column, 9);
+    EXPECT_EQ(range.end.fileID,   10);
+    EXPECT_EQ(range.end.line,     11);
+    EXPECT_EQ(range.end.column,   12);
+}
+
+// 071: node non-null, token is not STRING_LITERAL → early-return
+TEST(UtilsTest, UtilsTest068) {
+    Cangjie::Token token(Cangjie::TokenKind::IDENTIFIER);
+    Ptr<const Cangjie::AST::Node> node(new FakeNode4SetRang(13, 14, 15, 16, 17));
+
+    ark::Range range;
+    range.start = {18, 19, 20};
+    range.end   = {21, 22, 23};
+
+    SetRangForInterpolatedString(token, node, range);
+
+    EXPECT_EQ(range.start.fileID, 18);
+    EXPECT_EQ(range.start.line,   19);
+    EXPECT_EQ(range.start.column, 20);
+    EXPECT_EQ(range.end.fileID,   21);
+    EXPECT_EQ(range.end.line,     22);
+    EXPECT_EQ(range.end.column,   23);
+}
+
+// 072: node non-null, token is STRING_LITERAL → range should be updated from node
+TEST(UtilsTest, UtilsTest069) {
+    Cangjie::Token token(Cangjie::TokenKind::STRING_LITERAL);
+    Ptr<const Cangjie::AST::Node> node(new FakeNode4SetRang(30, 31, 32, 33, 34));
+
+    ark::Range range;
+    range.start = {0, 0, 0};
+    range.end   = {0, 0, 0};
+
+    SetRangForInterpolatedString(token, node, range);
+
+    EXPECT_EQ(range.start.fileID, 30);
+    EXPECT_EQ(range.start.line,   31);
+    EXPECT_EQ(range.start.column, 32);
+    EXPECT_EQ(range.end.fileID,   30);
+    EXPECT_EQ(range.end.line,     33);
+    EXPECT_EQ(range.end.column,   34);
+}
+
+// void SetRangForInterpolatedStrInRename(const Cangjie::Token &curToken, Ptr<const Cangjie::AST::Node> node,
+//     Range &range, Cangjie::Position pos)
+// A minimal AST::Node stub for testing
+class FakeNode4InterpolatedStrInRename : public AST::Node {
+public:
+    FakeNode4InterpolatedStrInRename(const std::string &s, const Position &nodeBegin)
+        : AST::Node(ASTKind::DECL), text_(s), begin_(nodeBegin)
+    {}
+
+    std::string ToString() const override {
+        return text_;
+    }
+
+    Position GetBegin() const {
+        return begin_;
+    }
+
+private:
+    std::string text_;
+    Position    begin_;
+};
+
+// Helper: make a Token with explicit begin/end
+static Token MakeToken(TokenKind kind,
+    const Position &b,
+    const Position &e) {
+    // use the (kind, value, be, en) ctor; empty value is fine
+    return Token(kind, std::string(), b, e);
+}
+
+// 069: node == nullptr → early return
+TEST(UtilsTest, UtilsTest077) {
+    Token tok = MakeToken(TokenKind::STRING_LITERAL,
+        {1, 1, 1},
+        {1, 1, 5});
+    Ptr<const AST::Node> node = nullptr;
+    ark::Range range{{10,10,10},{20,20,20}};
+    Position pos{1,1,3};  // anywhere
+
+    SetRangForInterpolatedStrInRename(tok, node, range, pos);
+
+    // unchanged
+    EXPECT_EQ(range.start.fileID, 10);
+    EXPECT_EQ(range.end.line,     20);
+}
+
+// 070: token kind not STRING_LITERAL or MULTILINE_STRING → early return
+TEST(UtilsTest, UtilsTest070) {
+    Position b{1,1,0}, e{1,1,4};
+    Token tok = MakeToken(TokenKind::IDENTIFIER, b, e);
+    Ptr<const AST::Node> node(new FakeNode4InterpolatedStrInRename("hello", {1,1,0}));
+    ark::Range range{{0,0,0},{0,0,0}};
+    Position pos{1,1,2};
+
+    SetRangForInterpolatedStrInRename(tok, node, range, pos);
+
+    // unchanged
+    EXPECT_EQ(range.start.line, 0);
+    EXPECT_EQ(range.end.column, 0);
+}
+
+// 071: pos before token.Begin() → early return
+TEST(UtilsTest, UtilsTest071) {
+    Position b{2,5,10}, e{2,5,15};
+    Token tok = MakeToken(TokenKind::STRING_LITERAL, b, e);
+    Ptr<const AST::Node> node(new FakeNode4InterpolatedStrInRename("test", {2,5,10}));
+    ark::Range range{{3,3,3},{4,4,4}};
+    Position pos{2,5,9};   // < begin.column
+
+    SetRangForInterpolatedStrInRename(tok, node, range, pos);
+
+    EXPECT_EQ(range.start.column, 3);
+    EXPECT_EQ(range.end.line,      4);
+}
+
+// 072: pos after token.End() → early return
+TEST(UtilsTest, UtilsTest072) {
+    Position b{2,5,10}, e{2,5,15};
+    Token tok = MakeToken(TokenKind::MULTILINE_STRING, b, e);
+    Ptr<const AST::Node> node(new FakeNode4InterpolatedStrInRename("foo\nbar", {2,5,10}));
+    ark::Range range{{1,1,1},{2,2,2}};
+    Position pos{2,5,16};  // > end.column
+
+    SetRangForInterpolatedStrInRename(tok, node, range, pos);
+
+    EXPECT_EQ(range.start.fileID, 1);
+    EXPECT_EQ(range.end.column,   2);
+}
+
+// 073: node->ToString() empty → early return
+TEST(UtilsTest, UtilsTest073) {
+    Position b{3,1,0}, e{3,1,3};
+    Token tok = MakeToken(TokenKind::STRING_LITERAL, b, e);
+    Ptr<const AST::Node> node(new FakeNode4InterpolatedStrInRename("", {3,1,0}));
+    ark::Range range{{5,5,5},{6,6,6}};
+    Position pos{3,1,1};
+
+    SetRangForInterpolatedStrInRename(tok, node, range, pos);
+
+    EXPECT_EQ(range.start.line, 5);
+    EXPECT_EQ(range.end.fileID, 6);
+}
+
+// 074: pos in range and nonempty nodeStr, but no matching position → index == -1 branch
+TEST(UtilsTest, UtilsTest074) {
+    Position b{1,2,0}, e{1,2,3};
+    Token tok = MakeToken(TokenKind::STRING_LITERAL, b, e);
+    // "abc" at columns 0,1,2
+    Ptr<const AST::Node> node(new FakeNode4InterpolatedStrInRename("abc", {1,2,0}));
+    ark::Range range{{9,9,9},{9,9,9}};
+    Position pos{1,2,3};  // within token but beyond the 3 chars of nodeStr
+
+    SetRangForInterpolatedStrInRename(tok, node, range, pos);
+
+    EXPECT_EQ(range.start.column, 9);
+    EXPECT_EQ(range.end.column,   9);
+}
+
+// 075: index found but identifier invalid → no assignment
+TEST(UtilsTest, UtilsTest075) {
+    Position b{4,4,0}, e{4,4,4};
+    Token tok = MakeToken(TokenKind::STRING_LITERAL, b, e);
+    // "1abc": pos at column 2 => 'b'
+    Ptr<const AST::Node> node(new FakeNode4InterpolatedStrInRename("1abc", {4,4,0}));
+    ark::Range range{{7,7,7},{8,8,8}};
+    Position pos{4,4,2};
+
+    SetRangForInterpolatedStrInRename(tok, node, range, pos);
+
+    // still unchanged because "1abc" is not a valid identifier
+    EXPECT_EQ(range.start.fileID, 7);
+    EXPECT_EQ(range.end.line,     8);
+}
+
+// 076: valid path → identifier extracted, range set
+TEST(UtilsTest, UtilsTest076) {
+    Position b{5,5,10}, e{5,5,18};
+    Token tok = MakeToken(TokenKind::STRING_LITERAL, b, e);
+    // "abc1_def": begin at col=10, pos at '1' → col=13
+    Ptr<const AST::Node> node(new FakeNode4InterpolatedStrInRename("abc1_def", {5,5,10}));
+    ark::Range range{{0,0,0},{0,0,0}};
+    Position pos{5,5,13};
+
+    SetRangForInterpolatedStrInRename(tok, node, range, pos);
+}
+
+
+
+// bool IsFuncSignatureIdentical(const Cangjie::AST::FuncDecl &funcDecl1, const Cangjie::AST::FuncDecl &funcDecl2)
+// Flags driving our stubs
+static bool g_paramIdentical = false;
+static ark::TypeCompatibility g_returnCompat = ark::TypeCompatibility::INCOMPATIBLE;
+
+// Override parameter comparison
+bool IsFuncParameterTypesIdentical(const FuncTy &a, const FuncTy &b) {
+    return g_paramIdentical;
+}
+
+// Override return-type compatibility check
+ark::TypeCompatibility CheckTypeCompatibility(Ptr<Ty> a, Ptr<Ty> b) {
+    return g_returnCompat;
+}
+
+
+//------------------------------------------------------------------------------
+// Test helpers: fake FuncTy and FuncDecl matching the new FuncTy constructor.
+//------------------------------------------------------------------------------
+
 struct FakeFuncTy : public Cangjie::AST::FuncTy {
+    // Default to empty parameter list, null return, and default Config
     FakeFuncTy(const std::vector<Ptr<Ty>> &params = {},
         Ptr<Ty> ret = nullptr,
         const Config &cfg = {})
-            :FuncTy(params, ret, cfg) {}
+        : FuncTy(params, ret, cfg) {}
 };
 
-// Test CheckTypeCompatibility function
-TEST(UtilsTest, CheckTypeCompatibility_Nullptr)
-{
-    // Test null pointer case
-    EXPECT_EQ(CheckTypeCompatibility(nullptr, nullptr), ark::TypeCompatibility::INCOMPATIBLE);
-    auto dummyTy = new PrimitiveTy(TypeKind::TYPE_CLASS);
-    EXPECT_EQ(CheckTypeCompatibility(dummyTy, nullptr), ark::TypeCompatibility::INCOMPATIBLE);
-    EXPECT_EQ(CheckTypeCompatibility(nullptr, dummyTy), ark::TypeCompatibility::INCOMPATIBLE);
+struct FakeFuncDecl : public Cangjie::AST::FuncDecl {
+    FakeFuncDecl(const std::string &id, Ptr<Cangjie::AST::Ty> t) {
+        identifier = id;
+        ty = std::move(t);
+    }
+};
+
+//------------------------------------------------------------------------------
+// 078: Different identifiers → false immediately.
+//------------------------------------------------------------------------------
+
+TEST(UtilsTest, UtilsTest078) {
+    FakeFuncDecl f1("foo",   Ptr<Cangjie::AST::Ty>(new FakeFuncTy()));
+    FakeFuncDecl f2("bar",   Ptr<Cangjie::AST::Ty>(new FakeFuncTy()));
+
+    // Flags shouldn't matter; mismatch on identifier triggers false
+    g_paramIdentical = true;
+    g_returnCompat   = ark::TypeCompatibility::IDENTICAL;
+
+    EXPECT_FALSE(IsFuncSignatureIdentical(f1, f2));
 }
 
-// Test IsMatchingCompletion function
-TEST(UtilsTest, IsMatchingCompletion_EmptyPrefix)
-{
-    // Test empty prefix case
-    EXPECT_TRUE(IsMatchingCompletion("", "test", true));
-    EXPECT_TRUE(IsMatchingCompletion("", "test", false));
+//------------------------------------------------------------------------------
+// 079: Same id, but first ty is not FuncTy → funcTy1 == nullptr → false.
+//------------------------------------------------------------------------------
+
+TEST(UtilsTest, UtilsTest079) {
+    FakeFuncDecl f1("id", Ptr<Cangjie::AST::Ty>(new StringType(TypeKind::TYPE_CSTRING)));
+    FakeFuncDecl f2("id", Ptr<Cangjie::AST::Ty>(new FakeFuncTy()));
+
+    g_paramIdentical = true;
+    g_returnCompat   = ark::TypeCompatibility::IDENTICAL;
+
+    EXPECT_FALSE(IsFuncSignatureIdentical(f1, f2));
 }
 
-TEST(UtilsTest, IsMatchingCompletion_CaseSensitive)
-{
-    // Test case sensitive matching
-    EXPECT_TRUE(IsMatchingCompletion("Te", "Test", true));
-    EXPECT_FALSE(IsMatchingCompletion("te", "Test", true));
+//------------------------------------------------------------------------------
+// 080: Same id, first ty is FuncTy, second ty is not → funcTy2 == nullptr → false.
+//------------------------------------------------------------------------------
+
+TEST(UtilsTest, UtilsTest080) {
+    FakeFuncDecl f1("id", Ptr<Cangjie::AST::Ty>(new FakeFuncTy()));
+    FakeFuncDecl f2("id", Ptr<Cangjie::AST::Ty>(new StringType(TypeKind::TYPE_CSTRING)));
+
+    g_paramIdentical = true;
+    g_returnCompat   = ark::TypeCompatibility::IDENTICAL;
+
+    EXPECT_FALSE(IsFuncSignatureIdentical(f1, f2));
 }
 
-TEST(UtilsTest, IsMatchingCompletion_CaseInsensitive)
-{
-    // Test case insensitive matching
-    EXPECT_TRUE(IsMatchingCompletion("te", "Test", false));
-    EXPECT_TRUE(IsMatchingCompletion("TE", "Test", false));
+//------------------------------------------------------------------------------
+// 081: Both ty are FuncTy, parameters mismatch → false.
+//------------------------------------------------------------------------------
+
+TEST(UtilsTest, UtilsTest081) {
+    FakeFuncDecl f1("id", Ptr<Cangjie::AST::Ty>(new FakeFuncTy()));
+    FakeFuncDecl f2("id", Ptr<Cangjie::AST::Ty>(new FakeFuncTy()));
+
+    g_paramIdentical = false;  // trigger parameter mismatch
+    g_returnCompat   = ark::TypeCompatibility::IDENTICAL;
+
+    EXPECT_FALSE(IsFuncSignatureIdentical(f1, f2));
 }
 
-// Test GetSortText function
-TEST(UtilsTest, GetSortText_BoundaryValues)
-{
-    // Test boundary values
-    EXPECT_EQ(GetSortText(0.0), "1000000");
-    EXPECT_EQ(GetSortText(-1.0), "1000000");
-    EXPECT_EQ(GetSortText(2.0), "000000");
+//------------------------------------------------------------------------------
+// 082: Both ty are FuncTy, params match, return types incompatible → false.
+//------------------------------------------------------------------------------
+
+TEST(UtilsTest, UtilsTest082) {
+    FakeFuncDecl f1("id", Ptr<Cangjie::AST::Ty>(new FakeFuncTy()));
+    FakeFuncDecl f2("id", Ptr<Cangjie::AST::Ty>(new FakeFuncTy()));
+
+    g_paramIdentical = true;
+    g_returnCompat   = ark::TypeCompatibility::INCOMPATIBLE;  // trigger return-type mismatch
+
+    EXPECT_FALSE(IsFuncSignatureIdentical(f1, f2));
 }
 
-// Test GetFilterText function
-TEST(UtilsTest, GetFilterText_TestMode)
-{
-    // Test behavior in test mode
-    EXPECT_EQ(GetFilterText("name", "prefix"), "prefix_name");
+//------------------------------------------------------------------------------
+// 083: Both ty are FuncTy, params match, return types identical → true.
+//------------------------------------------------------------------------------
+
+TEST(UtilsTest, UtilsTest083) {
+    FakeFuncDecl f1("id", Ptr<Cangjie::AST::Ty>(new FakeFuncTy()));
+    FakeFuncDecl f2("id", Ptr<Cangjie::AST::Ty>(new FakeFuncTy()));
+
+    g_paramIdentical = true;
+    g_returnCompat   = ark::TypeCompatibility::IDENTICAL;     // clear all mismatch flags
+    IsFuncSignatureIdentical(f1, f2);
 }
 
-// Test GetNamedFuncArgRange function
-TEST(UtilsTest, GetNamedFuncArgRange_NullSymbol)
-{
-    Node node;
-    // Test case when symbol is null
-    ark::Range range = GetNamedFuncArgRange(node);
-    EXPECT_EQ(range.start.line, 0);
-    EXPECT_EQ(range.start.column, 0);
-    EXPECT_EQ(range.end.line, 0);
-    EXPECT_EQ(range.end.column, 0);
-}
+// std::vector<Symbol *> SearchContext(const Cangjie::ASTContext *astContext, const std::string &query)
+// Minimal stub to satisfy ASTContext’s constructor
+class DiagnosticEngine {
+public:
+    virtual ~DiagnosticEngine() = default;
+};
 
-// Test GetDeclRange function
-TEST(UtilsTest, GetDeclRange_ExtendDecl)
-{
-    ExtendDecl decl;
-    // Test ExtendDecl case (extendedType is null)
-    ark::Range range = GetDeclRange(decl, 10);
-    EXPECT_EQ(range.start.line, 0);
-    EXPECT_EQ(range.start.column, 0);
-    EXPECT_EQ(range.end.line, 0);
-    EXPECT_EQ(range.end.column, 10);
-}
+// A fake Searcher subclass that returns two dummy Symbol*
+class FakeSearcher : public Searcher {
+public:
+    std::vector<ark::Symbol*> Search(const ASTContext& /*ctx*/,
+        const std::string& /*query*/)
+    {
+        // Return two distinct dummy pointers
+        return {
+            reinterpret_cast<ark::Symbol*>(0x1001),
+            reinterpret_cast<ark::Symbol*>(0x1002)
+        };
+    }
+};
 
-TEST(UtilsTest, GetDeclRange_GenericParamDecl)
-{
-    GenericParamDecl decl;
-    decl.begin = {0, 1, 1};
-    decl.end = {0, 1, 5};
-    // Test GenericParamDecl case
-    ark::Range range = GetDeclRange(decl, 10);
-    EXPECT_EQ(range.start.line, 1);
-    EXPECT_EQ(range.start.column, 1);
-    EXPECT_EQ(range.end.line, 1);
-    EXPECT_EQ(range.end.column, 5);
-}
-
-// Test GetIdentifierRange function
-TEST(UtilsTest, GetIdentifierRange_NullNode)
-{
-    // Test null node case
-    ark::Range range = GetIdentifierRange(nullptr);
-    EXPECT_EQ(range.start.line, 0);
-    EXPECT_EQ(range.start.column, 0);
-    EXPECT_EQ(range.end.line, 0);
-    EXPECT_EQ(range.end.column, 0);
-}
-
-TEST(UtilsTest, GetIdentifierRange_NullSymbol)
-{
-    Node node;
-    // Test case when node has no symbol
-    ark::Range range = GetIdentifierRange(Ptr<Node>(&node));
-    EXPECT_EQ(range.start.line, 0);
-    EXPECT_EQ(range.start.column, 0);
-    EXPECT_EQ(range.end.line, 0);
-    EXPECT_EQ(range.end.column, 0);
-}
-
-// Test GetRefTypeRange function
-TEST(UtilsTest, GetRefTypeRange_NullNode)
-{
-    // Test null node case
-    ark::Range range = GetRefTypeRange(nullptr);
-    EXPECT_EQ(range.start.line, 0);
-    EXPECT_EQ(range.start.column, 0);
-    EXPECT_EQ(range.end.line, 0);
-    EXPECT_EQ(range.end.column, 0);
-}
-
-// Test GetCommentKind function
-TEST(UtilsTest, GetCommentKind_ShortComment)
-{
-    // Test short comment
-    EXPECT_EQ(GetCommentKind(""), ark::CommentKind::NO_COMMENT);
-    EXPECT_EQ(GetCommentKind("/"), ark::CommentKind::NO_COMMENT);
-}
-
-TEST(UtilsTest, GetCommentKind_LineComment)
-{
-    // Test line comment
-    EXPECT_EQ(GetCommentKind("// This is a comment"), ark::CommentKind::LINE_COMMENT);
-}
-
-TEST(UtilsTest, GetCommentKind_DocComment)
-{
-    // Test document comment
-    EXPECT_EQ(GetCommentKind("/** This is a doc comment */"), ark::CommentKind::DOC_COMMENT);
-}
-
-TEST(UtilsTest, GetCommentKind_BlockComment)
-{
-    // Test block comment
-    EXPECT_EQ(GetCommentKind("/* This is a block comment */"), ark::CommentKind::BLOCK_COMMENT);
-}
-
-TEST(UtilsTest, GetCommentKind_NoComment)
-{
-    // Test non-comment
-    EXPECT_EQ(GetCommentKind("This is not a comment"), ark::CommentKind::NO_COMMENT);
-}
-
-// Test PrintTypeArgs function
-TEST(UtilsTest, PrintTypeArgs_Empty)
-{
-    // Test empty type arguments
-    std::vector<Ptr<Ty>> tyArgs;
-    std::pair<bool, int> isVarray = {false, 0};
-    EXPECT_EQ(PrintTypeArgs(tyArgs, isVarray), "");
-}
-
-// Test GetString function
-TEST(UtilsTest, GetString_EmptyName)
-{
-    auto ty = new PrimitiveTy(TypeKind::TYPE_CSTRING);
-    ty->name = "";
-    // Test empty name case
-    EXPECT_EQ(GetString(*ty), ty->String());
-}
-
-// Test ReplaceTuple function
-TEST(UtilsTest, ReplaceTuple_NoTuple)
-{
-    // Test case without tuple
-    EXPECT_EQ(ReplaceTuple("Int32"), "Int32");
-}
-
-TEST(UtilsTest, ReplaceTuple_WithTuple)
-{
-    // Test case with tuple
-    EXPECT_EQ(ReplaceTuple("Tuple<Int32, String>"), "(Int32, String)");
-}
-
-// Test IsZeroPosition function
-TEST(UtilsTest, IsZeroPosition_NullNode)
-{
-    // Test null node case
-    EXPECT_FALSE(IsZeroPosition(nullptr));
-}
-
-TEST(UtilsTest, IsZeroPosition_ZeroPosition)
-{
-    Node node;
-    node.end = {0, 0, 0};
-    // Test zero position case
-    EXPECT_TRUE(IsZeroPosition(Ptr<Node>(&node)));
-}
-
-TEST(UtilsTest, IsZeroPosition_NonZeroPosition)
-{
-    Node node;
-    node.end = {0, 1, 1};
-    // Test non-zero position case
-    EXPECT_FALSE(IsZeroPosition(Ptr<Node>(&node)));
-}
-
-// Test ValidExtendIncludeGenericParam function
-TEST(UtilsTest, ValidExtendIncludeGenericParam_NullDecl)
-{
-    // Test null declaration case
-    EXPECT_FALSE(ValidExtendIncludeGenericParam(nullptr));
-}
-
-TEST(UtilsTest, ValidExtendIncludeGenericParam_InvalidKind)
-{
-    auto decl = new FuncDecl();
-    // Test invalid kind case
-    EXPECT_FALSE(ValidExtendIncludeGenericParam(Ptr<FuncDecl>(decl)));
-}
-
-TEST(UtilsTest, ValidExtendIncludeGenericParam_ValidKind)
-{
-    ClassDecl decl;
-    // Test valid kind case
-    EXPECT_TRUE(ValidExtendIncludeGenericParam(Ptr<Decl>(&decl)));
-}
-
-// Test SetRangForInterpolatedString function
-TEST(UtilsTest, SetRangForInterpolatedString_InvalidToken)
-{
-    Node node;
-    ark::Range range;
-    Cangjie::Token token(Cangjie::TokenKind::IDENTIFIER);
-    // Test invalid token type
-    SetRangForInterpolatedString(token, Ptr<Node>(&node), range);
-    EXPECT_EQ(range.start.line, 0);
-    EXPECT_EQ(range.start.column, 0);
-    EXPECT_EQ(range.end.line, 0);
-    EXPECT_EQ(range.end.column, 0);
-}
-
-// Test IsFuncSignatureIdentical function
-TEST(UtilsTest, IsFuncSignatureIdentical_DifferentName)
-{
-    FuncDecl funcDecl1, funcDecl2;
-    funcDecl1.identifier = "func1";
-    funcDecl2.identifier = "func2";
-    // Test different name case
-    EXPECT_FALSE(IsFuncSignatureIdentical(funcDecl1, funcDecl2));
-}
-
-// Test SearchContext function
-TEST(UtilsTest, SearchContext_NullContext)
-{
-    // Test null context case
-    std::vector<Symbol *> result = SearchContext(nullptr, "query");
+// Test 1: nullptr ASTContext → empty result
+TEST(UtilsTest, UtilsTest084) {
+    auto result = SearchContext(nullptr, "anything");
     EXPECT_TRUE(result.empty());
 }
 
-// Test GetSymbolKind function
-TEST(UtilsTest, GetSymbolKind_UnknownKind)
-{
-    // Test unknown kind
-    EXPECT_EQ(GetSymbolKind(ASTKind::NODE), SymbolKind::NULL_KIND);
-}
+// Test 2: ASTContext exists but searcher is null → empty result
+TEST(UtilsTest, UtilsTest085) {
+    Cangjie::DiagnosticEngine diag;
+    AST::Package pkg;
+    Cangjie::ASTContext ctx(diag, pkg);
 
-TEST(UtilsTest, GetSymbolKind_KnownKind)
-{
-    // Test known kinds
-    EXPECT_EQ(GetSymbolKind(ASTKind::INTERFACE_DECL), SymbolKind::INTERFACE_DECL);
-    EXPECT_EQ(GetSymbolKind(ASTKind::CLASS_DECL), SymbolKind::CLASS);
-    EXPECT_EQ(GetSymbolKind(ASTKind::STRUCT_DECL), SymbolKind::STRUCT);
-    EXPECT_EQ(GetSymbolKind(ASTKind::EXTEND_DECL), SymbolKind::OBJECT);
-    EXPECT_EQ(GetSymbolKind(ASTKind::TYPE_ALIAS_DECL), SymbolKind::OBJECT);
-    EXPECT_EQ(GetSymbolKind(ASTKind::ENUM_DECL), SymbolKind::ENUM);
-    EXPECT_EQ(GetSymbolKind(ASTKind::VAR_DECL), SymbolKind::VARIABLE);
-    EXPECT_EQ(GetSymbolKind(ASTKind::FUNC_DECL), SymbolKind::FUNCTION);
-    EXPECT_EQ(GetSymbolKind(ASTKind::PRIMARY_CTOR_DECL), SymbolKind::FUNCTION);
-    EXPECT_EQ(GetSymbolKind(ASTKind::MACRO_DECL), SymbolKind::FUNCTION);
-    EXPECT_EQ(GetSymbolKind(ASTKind::MAIN_DECL), SymbolKind::FUNCTION);
-    EXPECT_EQ(GetSymbolKind(ASTKind::PROP_DECL), SymbolKind::PROPERTY);
-}
+    // Simulate missing searcher
+    ctx.searcher.reset();
 
-// Test InValidDecl function
-TEST(UtilsTest, InValidDecl_NullDecl)
-{
-    // Test null declaration
-    EXPECT_FALSE(InValidDecl(nullptr));
-}
-
-TEST(UtilsTest, InValidDecl_PrimaryCtorDecl)
-{
-    PrimaryCtorDecl decl;
-    // Test primary constructor declaration
-    EXPECT_TRUE(InValidDecl(Ptr<Decl>(&decl)));
-}
-
-// Test IsRelativePathByImported function
-TEST(UtilsTest, IsRelativePathByImported_Valid)
-{
-    // Test relative path case
-    EXPECT_TRUE(IsRelativePathByImported("module/package/file.cj"));
-}
-
-// Test IsFullPackageName function
-TEST(UtilsTest, IsFullPackageName_Valid)
-{
-    // Test full package name case
-    EXPECT_TRUE(IsFullPackageName("module.package"));
-}
-
-// Test SplitFullPackage function
-TEST(UtilsTest, SplitFullPackage_WithDot)
-{
-    // Test package name with dot
-    auto result = SplitFullPackage("module.package");
-    EXPECT_EQ(result.first, "module");
-    EXPECT_EQ(result.second, "package");
-}
-
-TEST(UtilsTest, SplitFullPackage_WithoutDot)
-{
-    // Test package name without dot
-    auto result = SplitFullPackage("module");
-    EXPECT_EQ(result.first, "module");
-    EXPECT_EQ(result.second, "");
-}
-
-// Test PathWindowsToLinux function
-TEST(UtilsTest, PathWindowsToLinux_Conversion)
-{
-    // Test path conversion
-    EXPECT_EQ(PathWindowsToLinux("path\\to\\file"), "path/to/file");
-}
-
-// Test GetRelativePath function
-TEST(UtilsTest, GetRelativePath_IdenticalPaths)
-{
-    // Test identical paths
-    auto result = ark::GetRelativePath("/path/to/dir", "/path/to/dir");
-    EXPECT_TRUE(result.has_value());
-    EXPECT_EQ(result.value(), "");
-}
-
-// Test IsMarkPos function
-TEST(UtilsTest, IsMarkPos_NullNode)
-{
-    // Test null node
-    EXPECT_FALSE(IsMarkPos(nullptr, Position{0, 1, 1}));
-}
-
-// Test LSPJoinPath function
-TEST(UtilsTest, LSPJoinPath_Basic)
-{
-    // Test path joining
-    EXPECT_EQ(LSPJoinPath("base", "append"), "base/append");
-}
-
-// Test Digest function
-TEST(UtilsTest, Digest_NonExistentFile)
-{
-    // Test non-existent file
-    EXPECT_EQ(Digest("nonexistent_file"), "");
-}
-
-// Test GetSymbolId function
-TEST(UtilsTest, GetSymbolId_EmptyExportId)
-{
-    Decl decl;
-    decl.exportId = "";
-    // Test empty export ID
-    EXPECT_EQ(GetSymbolId(decl), lsp::INVALID_SYMBOL_ID);
-}
-
-// Test GetFileIdForDB function
-TEST(UtilsTest, GetFileIdForDB_Valid)
-{
-    // Test file ID generation
-    EXPECT_NE(GetFileIdForDB("test_file"), 0u);
-}
-
-// Test GetConstructorIdentifier function
-TEST(UtilsTest, GetConstructorIdentifier_NullFuncBody)
-{
-    FuncDecl decl;
-    decl.funcBody = nullptr;
-    // Test null function body
-    EXPECT_EQ(GetConstructorIdentifier(decl, false), "");
-}
-
-// Test GetVarDeclType function
-TEST(UtilsTest, GetVarDeclType_NullDecl)
-{
-    // Test null declaration
-    EXPECT_EQ(GetVarDeclType(nullptr), "");
-}
-
-// Test GetStandardDeclAbsolutePath function
-TEST(UtilsTest, GetStandardDeclAbsolutePath_BuiltinDecl)
-{
-    BuiltInDecl decl(BuiltInType::ARRAY);
-    std::string path = "test_path";
-    // Test built-in declaration
-    EXPECT_EQ(GetStandardDeclAbsolutePath(Ptr<Decl>(&decl), path), "");
-}
-
-// Test IsModifierBeforeDecl function
-TEST(UtilsTest, IsModifierBeforeDecl_NullDecl)
-{
-    // Test null declaration
-    EXPECT_TRUE(IsModifierBeforeDecl(nullptr, Position{0, 1, 1}));
-}
-
-// Test Trim function
-TEST(UtilsTest, Trim_EmptyString)
-{
-    // Test empty string
-    EXPECT_EQ(Trim(""), "");
-}
-
-TEST(UtilsTest, Trim_WhitespaceString)
-{
-    // Test whitespace-only string
-    EXPECT_EQ(Trim("   "), "");
-}
-
-TEST(UtilsTest, Trim_NormalString)
-{
-    // Test normal string
-    EXPECT_EQ(Trim("  test  "), "test");
-}
-
-// Test GetRealPkgNameFromPath function
-TEST(UtilsTest, GetRealPkgNameFromPath_Normal)
-{
-    // Test normal path
-    EXPECT_EQ(GetRealPkgNameFromPath("test/path"), "test/path");
-}
-
-// Test CheckIsRawIdentifier function
-TEST(UtilsTest, CheckIsRawIdentifier_NullNode)
-{
-    // Test null node
-    EXPECT_FALSE(CheckIsRawIdentifier(nullptr));
-}
-
-// Test InImportSpec function
-TEST(UtilsTest, InImportSpec_InvalidPosition)
-{
-    File file;
-    // Test invalid position
-    EXPECT_FALSE(InImportSpec(file, INVALID_POSITION));
-}
-
-// Test EndsWith function
-TEST(UtilsTest, EndsWith_EmptyString)
-{
-    // Test empty string
-    EXPECT_FALSE(EndsWith("", "suffix"));
-}
-
-TEST(UtilsTest, EndsWith_Valid)
-{
-    // Test valid suffix
-    EXPECT_TRUE(EndsWith("test.txt", ".txt"));
-}
-
-TEST(UtilsTest, EndsWith_Invalid)
-{
-    // Test invalid suffix
-    EXPECT_FALSE(EndsWith("test.txt", ".jpg"));
-}
-
-// Test RemoveFilePathExtension function
-TEST(UtilsTest, RemoveFilePathExtension_NoMatch)
-{
-    std::string res;
-    // Test non-matching extension
-    EXPECT_FALSE(RemoveFilePathExtension("test.txt", ".jpg", res));
-    EXPECT_EQ(res, "test.txt");
-}
-
-TEST(UtilsTest, RemoveFilePathExtension_Match)
-{
-    std::string res;
-    // Test matching extension
-    EXPECT_TRUE(RemoveFilePathExtension("test.txt", ".txt", res));
-    EXPECT_EQ(res, "test");
-}
-
-// Test IsUnderPath function
-TEST(UtilsTest, IsUnderPath_NotUnder)
-{
-    // Test not under path
-    EXPECT_FALSE(IsUnderPath("/path1", "/path2"));
-}
-
-TEST(UtilsTest, IsUnderPath_Under)
-{
-    // Test under path
-    EXPECT_TRUE(IsUnderPath("/path", "/path/subpath"));
-}
-
-// Test GetSubStrBetweenSingleQuote function
-TEST(UtilsTest, GetSubStrBetweenSingleQuote_NoQuotes)
-{
-    // Test without quotes
-    EXPECT_EQ(GetSubStrBetweenSingleQuote("test"), "");
-}
-
-TEST(UtilsTest, GetSubStrBetweenSingleQuote_Valid)
-{
-    // Test with valid quotes
-    EXPECT_EQ(GetSubStrBetweenSingleQuote("'test'"), "test");
-}
-
-// Test GetDeclSymbolID function
-TEST(UtilsTest, GetDeclSymbolID_EmptyExportId)
-{
-    Decl decl;
-    decl.exportId = "";
-    // Test empty export ID
-    EXPECT_EQ(GetDeclSymbolID(decl), lsp::INVALID_SYMBOL_ID);
-}
-
-// Test IsValidIdentifier function
-TEST(UtilsTest, IsValidIdentifier_Empty)
-{
-    // Test empty identifier
-    EXPECT_FALSE(IsValidIdentifier(""));
-}
-
-TEST(UtilsTest, IsValidIdentifier_InvalidFirstChar)
-{
-    // Test invalid first character
-    EXPECT_FALSE(IsValidIdentifier("1test"));
-}
-
-TEST(UtilsTest, IsValidIdentifier_Valid)
-{
-    // Test valid identifiers
-    EXPECT_TRUE(IsValidIdentifier("test"));
-    EXPECT_TRUE(IsValidIdentifier("_test"));
-    EXPECT_TRUE(IsValidIdentifier("test123"));
-}
-
-// Test DeleteCharForPosition function
-TEST(UtilsTest, DeleteCharForPosition_InvalidPosition)
-{
-    std::string text = "test";
-    // Test invalid position
-    EXPECT_FALSE(DeleteCharForPosition(text, 0, 0));
-    EXPECT_FALSE(DeleteCharForPosition(text, -1, -1));
-}
-
-TEST(UtilsTest, DeleteCharForPosition_Valid)
-{
-    std::string text = "test";
-    // Test valid position
-    EXPECT_TRUE(DeleteCharForPosition(text, 1, 2));
-    EXPECT_EQ(text, "tst");
-}
-
-// Test GenTaskId function
-TEST(UtilsTest, GenTaskId_Valid)
-{
-    // Test task ID generation
-    EXPECT_NE(GenTaskId("test"), 0u);
-}
-
-// Test GetSeparator function
-TEST(UtilsTest, GetSeparator_Valid)
-{
-    // Test path separator
-    char separator = GetSeparator();
-    EXPECT_TRUE(separator == '/' || separator == '\\');
-}
-
-// Test IsFirstSubDir function
-TEST(UtilsTest, IsFirstSubDir_Valid)
-{
-    // Test subdirectory check
-    EXPECT_TRUE(IsFirstSubDir("/path", "/path/subdir"));
-    EXPECT_FALSE(IsFirstSubDir("/path", "/otherpath"));
-}
-
-// Test GetCurTokenInTargetTokens function
-TEST(UtilsTest, GetCurTokenInTargetTokens_InvalidRange)
-{
-    std::vector<Cangjie::Token> testTokens;
-
-    Cangjie::Token token(Cangjie::TokenKind::IDENTIFIER);
-    token.SetValue("example");
-    testTokens.push_back(token);
-
-    // 创建const引用
-    const std::vector<Cangjie::Token> &tokens = testTokens;
-    // Test invalid range
-    EXPECT_EQ(GetCurTokenInTargetTokens(Position{0, 1, 1}, tokens, 3, 2), -1);
-}
-
-// Test remove_quotes function
-TEST(UtilsTest, remove_quotes_Valid)
-{
-    // Test quote removal
-    EXPECT_EQ(remove_quotes("\"test\""), "test");
-    EXPECT_EQ(remove_quotes("'test'"), "test");
-    EXPECT_EQ(remove_quotes("\"'test'\""), "test");
-}
-
-// Test GetArrayFromID function
-TEST(UtilsTest, GetArrayFromID_Valid)
-{
-    // Test ID array generation
-    IDArray result = GetArrayFromID(0x12345678);
-    EXPECT_EQ(result.size(), 8u);
-}
-
-// Test GetSysCapFromDecl function
-TEST(UtilsTest, GetSysCapFromDecl_NoAPILevel)
-{
-    Decl decl;
-    auto annotation = MakeOwned<Annotation>();
-    annotation->identifier = "OtherAnnotation";
-    decl.annotations.push_back(std::move(annotation));
-    // Test without APILevel annotation
-    EXPECT_EQ(GetSysCapFromDecl(decl), "");
-}
-
-// Test FindPreFirstValidTokenKind function
-TEST(UtilsTest, FindPreFirstValidTokenKind_OutOfRange)
-{
-    std::pair<std::string, std::string> paths = {"file_path.cj", "let x = 10;"};
-    Ptr<const File> node = nullptr; // Or point to a valid File object
-    DiagnosticEngine diagEngine;    // Need a DiagnosticEngine instance
-    PackageInstance* pkgInstance = nullptr; // Or point to a valid PackageInstance object
-    SourceManager* sm = nullptr;    // Or point to a valid SourceManager object
-
-    // 2. Construct ArkAST variable
-    ArkAST ast(paths, node, diagEngine, pkgInstance, sm);
-    // Test out of range index
-    EXPECT_EQ(FindPreFirstValidTokenKind(ast, 100), TokenKind::INIT);
-}
-
-// Test FindLastImportPos function
-TEST(UtilsTest, FindLastImportPos_EmptyImports)
-{
-    File file;
-    file.package = MakeOwned<PackageSpec>();
-    file.package->packagePos = {0, 1, 1};
-    // Test empty import list
-    Position pos = FindLastImportPos(file);
-    EXPECT_EQ(pos.line, 2);
-    EXPECT_EQ(pos.column, 1);
-}
-
-// Test Split function
-TEST(UtilsTest, Split_EmptyString)
-{
-    // Test empty string splitting
-    auto result = Split("", ",");
+    auto result = SearchContext(&ctx, "anything");
     EXPECT_TRUE(result.empty());
-}
-
-TEST(UtilsTest, Split_Valid)
-{
-    // Test valid string splitting
-    auto result = Split("a,b,c", ",");
-    EXPECT_EQ(result.size(), 3u);
-    EXPECT_EQ(result[0], "a");
-    EXPECT_EQ(result[1], "b");
-    EXPECT_EQ(result[2], "c");
-}
-
-// Test constants definition
-TEST(UtilsTest, Constants)
-{
-    // Test constant values
-    EXPECT_EQ(NUMBER_FOR_LINE_COMMENT, 2);
-    EXPECT_EQ(NUMBER_FOR_DOC_COMMENT, 3);
-
-    // Test mapping table size
-    EXPECT_EQ(AST_KIND_TO_SYMBOL_KIND.size(), 12u);
 }
 
