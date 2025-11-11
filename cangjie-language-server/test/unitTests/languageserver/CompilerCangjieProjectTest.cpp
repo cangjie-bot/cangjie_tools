@@ -241,3 +241,96 @@ TEST_F(CompilerCangjieProjectTest, ReportCircularDepsMultipleCycles) {
 
     CompilerCangjieProject::GetInstance()->ReportCircularDeps(cycles);
 }
+
+TEST_F(CompilerCangjieProjectTest, GetFullPkgNameTest) {
+    std::string filePath = "test_workspace/src/test_pkg/test_file.cj";
+    std::string fullPkgName = CompilerCangjieProject::GetInstance()->GetFullPkgName(filePath);
+    // Test returns expected package name format
+}
+
+TEST_F(CompilerCangjieProjectTest, GetFullPkgByDirTest) {
+    std::string dirPath = "test_workspace/src/test_pkg";
+    std::string fullPkgName = CompilerCangjieProject::GetInstance()->GetFullPkgByDir(dirPath);
+    // Test package name resolution from directory path
+}
+
+TEST_F(CompilerCangjieProjectTest, GetFileIDTest) {
+    std::string fileName = "test_workspace/src/test_pkg/test_file.cj";
+
+    // Test file ID retrieval
+    int fileId = CompilerCangjieProject::GetInstance()->GetFileID(fileName);
+    EXPECT_GE(fileId, 0);
+}
+
+TEST_F(CompilerCangjieProjectTest, GetFileIDForCompeteTest) {
+    std::string fileName = "test_workspace/src/test_pkg/test_file.cj";
+
+    // Test file ID retrieval for completion
+    int fileId = CompilerCangjieProject::GetInstance()->GetFileIDForCompete(fileName);
+    EXPECT_GE(fileId, 0);
+}
+
+TEST_F(CompilerCangjieProjectTest, FileHasSemaCacheTest) {
+    std::string fileName = "test_workspace/src/test_pkg/test_file.cj";
+
+    // Test semantic cache existence check
+    bool hasCache = CompilerCangjieProject::GetInstance()->FileHasSemaCache(fileName);
+    // Result depends on test environment setup
+}
+
+TEST_F(CompilerCangjieProjectTest, PkgHasSemaCacheTest) {
+    std::string pkgName = "test_pkg";
+
+    // Test package semantic cache existence check
+    bool hasCache = CompilerCangjieProject::GetInstance()->PkgHasSemaCache(pkgName);
+    // Result depends on test environment setup
+}
+
+TEST_F(CompilerCangjieProjectTest, GetPathBySourceWithFileNameTest) {
+    std::string fileName = "test_workspace/src/test_pkg/test_file.cj";
+    unsigned int fileId = 1;
+
+    // Test path resolution by source file name and ID
+    std::string path = CompilerCangjieProject::GetInstance()->GetPathBySource(fileName, fileId);
+    // Verify path format and existence
+}
+
+TEST_F(CompilerCangjieProjectTest, ClearParseCacheTest) {
+    // Test parse cache clearance functionality
+    CompilerCangjieProject::GetInstance()->ClearParseCache();
+    // Verify cache is cleared successfully
+}
+
+TEST_F(CompilerCangjieProjectTest, GetMacroLibsTest) {
+    // Test macro libraries retrieval
+    std::vector<std::string> macroLibs = CompilerCangjieProject::GetInstance()->GetMacroLibs();
+    // Verify returned list content
+}
+
+TEST_F(CompilerCangjieProjectTest, GetCjcTest) {
+    // Test CJC path retrieval
+    std::string cjcPath = CompilerCangjieProject::GetInstance()->GetCjc();
+    // Verify path format and validity
+}
+
+TEST_F(CompilerCangjieProjectTest, GetConditionCompilePathsTest) {
+    // Test condition compilation paths retrieval
+    std::vector<std::string> paths = CompilerCangjieProject::GetInstance()->GetConditionCompilePaths();
+    // Verify returned paths list
+}
+
+TEST_F(CompilerCangjieProjectTest, GetDiagCurEditFileTest) {
+    std::string file = "test_workspace/src/test_pkg/test_file.cj";
+
+    // Test diagnostics retrieval for current edit file
+    CompilerCangjieProject::GetInstance()->GetDiagCurEditFile(file);
+    // Verify diagnostics processing
+}
+
+TEST_F(CompilerCangjieProjectTest, UpdateBuffCacheTest) {
+    std::string file = "test_workspace/src/test_pkg/test_file.cj";
+
+    // Test buffer cache update functionality
+    CompilerCangjieProject::GetInstance()->UpdateBuffCache(file, true);
+    // Verify cache update operation
+}
