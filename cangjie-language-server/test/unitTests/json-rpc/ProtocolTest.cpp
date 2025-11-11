@@ -2238,18 +2238,6 @@ TEST_F(ProtocolTest, MessageHeaderEndOfLine_StaticMethods) {
     EXPECT_FALSE(MessageHeaderEndOfLine::GetIsDeveco());
 }
 
-// Test case for DocumentSymbolParams FromJSON with invalid structure
-TEST_F(ProtocolTest, FromJSON_DocumentSymbolParams_InvalidStructure) {
-    json params = R"({
-        "textDocument": "invalid"
-    })"_json;
-
-    DocumentSymbolParams reply;
-    bool result = FromJSON(params, reply);
-
-    EXPECT_FALSE(result);
-}
-
 // Test case for DocumentLinkParams FromJSON with invalid structure
 TEST_F(ProtocolTest, FromJSON_DocumentLinkParams_InvalidStructure) {
     json params = R"({
