@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-#include <fstream>
 #include "CjdIndex.h"
 
 namespace Cangjie {
@@ -86,7 +85,7 @@ void CjdIndexer::LoadAllCJDResource()
 void CjdIndexer::ParsePackageDependencies()
 {
     // 2. parse package dependencies
-    Trace::Log("ParsePackageDependencies start");
+    Trace::Log("ParseCJDPackageDependencies start");
     for (auto &item: pkgMap) {
         auto ci = std::make_unique<DCompilerInstance>(
                 callback, *item.second->compilerInvocation, *item.second->diag, item.first);
@@ -98,7 +97,7 @@ void CjdIndexer::ParsePackageDependencies()
         ci->UpdateDepGraph(graph, item.first);
         ciMap[fullPackageName] = std::move(ci);
     }
-    Trace::Log("ParsePackageDependencies end");
+    Trace::Log("ParseCJDPackageDependencies end");
 }
 
 void CjdIndexer::BuildCJDIndex()
@@ -111,7 +110,7 @@ void CjdIndexer::BuildCJDIndex()
         std::unordered_set<uint64_t> dependencies;
         auto allDependencies = graph->FindAllDependencies(package);
         auto task = [this, package, taskId]() {
-            Trace::Log("start execute task ", package);
+            Trace::Log("start execute cjd task ", package);
             (void) ciMap[package]->ImportCjoToManager(cjoManager, graph);
             (void) ciMap[package]->ImportPackage();
             (void) ciMap[package]->MacroExpand();
@@ -135,7 +134,7 @@ void CjdIndexer::BuildCJDIndex()
             shard.crossSymbos = sc.GetCrossSymbolMap();
             cacheManager->StoreIndexShard(package, shardIdentifier, shard);
             thrdPool->TaskCompleted(taskId);
-            Trace::Log("finish execute task ", package);
+            Trace::Log("finish execute cjd task ", package);
         };
         thrdPool->AddTask(taskId, dependencies, task);
     }
@@ -302,10 +301,9 @@ bool CjdIndexer::CheckCjdCache()
 {
     const std::string validFile = JoinPath(cjdCachePath, "valid.txt");
     std::string reason;
-    if (FileExist(validFile) && ReadFileContent(validFile, reason).value_or("") == GetValidCode()) {
-        return true;
-    }
-    return false;
+    const std::string indexCacheDir = JoinPath(JoinPath(cjdCachePath, ".cache"), "index");
+    return FileExist(indexCacheDir) && FileExist(validFile) &&
+        ReadFileContent(validFile, reason).value_or("") == GetValidCode();
 }
 
 std::string CjdIndexer::GetValidCode()
@@ -320,18 +318,18 @@ std::string CjdIndexer::GetValidCode()
 
 void CjdIndexer::GenerateValidFile()
 {
-    Trace::Log("Generate Cjd Index Valid Files Start");
+    Trace::Log("Generate CJD Index Valid Files Start");
     std::ofstream validFile;
     validFile.open(Normalize(JoinPath(cjdCachePath, "valid.txt")));
     if (!validFile.is_open()) {
-        Trace::Log("Create cjd index files valid file failed");
+        Trace::Log("Create CJD index files valid file failed");
     }
     validFile << GetValidCode();
     if (validFile.fail()) {
-        Trace::Log("Write cjd index files valid file failed");
+        Trace::Log("Write CJD index files valid file failed");
     }
     validFile.close();
-    Trace::Log("Generate Cjd Index Valid Files End");
+    Trace::Log("Generate CJD Index Valid Files End");
 }
 } // namespace lsp
 } // namespace ark

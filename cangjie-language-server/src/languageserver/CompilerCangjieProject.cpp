@@ -1143,7 +1143,7 @@ void CompilerCangjieProject::EraseOtherCache(const std::string &fullPkgName)
 // LCOV_EXCL_STOP
 void CompilerCangjieProject::FullCompilation()
 {
-    if (MessageHeaderEndOfLine::GetIsDeveco() && lsp::CjdIndexer::GetInstance() != nullptr) {
+    if (lsp::CjdIndexer::GetInstance() != nullptr) {
         lsp::CjdIndexer::GetInstance()->Build();
     }
     // Construct a dummy instance to load the CJO.
@@ -1298,7 +1298,7 @@ bool CompilerCangjieProject::Compiler(const std::string &moduleUri,
 
     InitPkgInfoAndParse();
     std::string stdCjdPathOption;
-    if (MessageHeaderEndOfLine::GetIsDeveco() && initializationOptions.contains(STD_CJD_PATH_OPTION)) {
+    if (initializationOptions.contains(STD_CJD_PATH_OPTION)) {
         stdCjdPathOption = initializationOptions.value(STD_CJD_PATH_OPTION, "");
 #ifdef _WIN32
         stdCjdPathOption = Cangjie::StringConvertor::NormalizeStringToGBK(stdCjdPathOption).value();
@@ -1314,14 +1314,14 @@ bool CompilerCangjieProject::Compiler(const std::string &moduleUri,
         ohosCjdPathOption = FileStore::NormalizePath(ohosCjdPathOption);
     }
     std::string cjdCachePathOption;
-    if (MessageHeaderEndOfLine::GetIsDeveco() && initializationOptions.contains(CJD_CACHE_PATH_OPTION)) {
+    if (initializationOptions.contains(CJD_CACHE_PATH_OPTION)) {
         cjdCachePathOption = initializationOptions.value(CJD_CACHE_PATH_OPTION, "");
 #ifdef _WIN32
         cjdCachePathOption = Cangjie::StringConvertor::NormalizeStringToGBK(cjdCachePathOption).value();
 #endif
         cjdCachePathOption = FileStore::NormalizePath(cjdCachePathOption);
     }
-    if (MessageHeaderEndOfLine::GetIsDeveco()) {
+    if (!stdCjdPathOption.empty() || !ohosCjdPathOption.empty()) {
         lsp::CjdIndexer::InitInstance(callback, stdCjdPathOption, ohosCjdPathOption, cjdCachePathOption);
     }
     FullCompilation();
