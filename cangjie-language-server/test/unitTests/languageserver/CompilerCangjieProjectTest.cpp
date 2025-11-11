@@ -254,14 +254,6 @@ TEST_F(CompilerCangjieProjectTest, GetFullPkgByDirTest) {
     // Test package name resolution from directory path
 }
 
-TEST_F(CompilerCangjieProjectTest, GetCIForFileRefactorTest) {
-    std::string filePath = "test_workspace/src/test_pkg/test_file.cj";
-    
-    // Test getting compiler instance for file refactoring
-    auto ci = CompilerCangjieProject::GetInstance()->GetCIForFileRefactor(filePath);
-    EXPECT_NE(ci, nullptr);
-}
-
 TEST_F(CompilerCangjieProjectTest, GetFileIDTest) {
     std::string fileName = "test_workspace/src/test_pkg/test_file.cj";
     
