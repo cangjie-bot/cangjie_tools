@@ -323,3 +323,219 @@ TEST(ItemResolverUtilTest, IsCustomAnnotation_WithCustomAnnotation) {
     bool result = ItemResolverUtil::IsCustomAnnotation(decl);
     EXPECT_TRUE(result);
 }
+
+// Test ResolveNameByNode function - MacroExpandDecl path
+TEST(ItemResolverUtilTest, ResolveNameByNode_MacroExpandDeclWithDecl) {
+    // Create MacroExpandDecl node with valid declaration
+    auto macroExpandDecl = OwnedPtr<MacroExpandDecl>(new MacroExpandDecl());
+    auto innerDecl = OwnedPtr<VarDecl>(new VarDecl());
+    innerDecl->identifier = "innerVar";
+    macroExpandDecl->invocation.decl = std::move(innerDecl);
+
+    std::string result = ItemResolverUtil::ResolveNameByNode(*macroExpandDecl);
+    EXPECT_EQ("innerVar", result);
+}
+
+// Test ResolveKindByNode function - uncovered branches
+TEST(ItemResolverUtilTest, ResolveKindByNode_MacroDecl) {
+    // Create MacroDecl node
+    auto macroDecl = OwnedPtr<MacroDecl>(new MacroDecl());
+
+    CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*macroDecl);
+    EXPECT_EQ(CompletionItemKind::CIK_METHOD, result);
+}
+
+TEST(ItemResolverUtilTest, ResolveKindByNode_GenericParamDecl) {
+    // Create GenericParamDecl node
+    auto genericParamDecl = OwnedPtr<GenericParamDecl>(new GenericParamDecl());
+
+    CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*genericParamDecl);
+    EXPECT_EQ(CompletionItemKind::CIK_VARIABLE, result);
+}
+
+TEST(ItemResolverUtilTest, ResolveKindByNode_PrimaryCtorDecl) {
+    // Create PrimaryCtorDecl node
+    auto primaryCtorDecl = OwnedPtr<PrimaryCtorDecl>(new PrimaryCtorDecl());
+
+    CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*primaryCtorDecl);
+    EXPECT_EQ(CompletionItemKind::CIK_METHOD, result);
+}
+
+TEST(ItemResolverUtilTest, ResolveKindByNode_VarWithPatternDecl) {
+    // Create VarWithPatternDecl node
+    auto varWithPatternDecl = OwnedPtr<VarWithPatternDecl>(new VarWithPatternDecl());
+
+    CompletionItemKind result = ItemResolverUtil::ResolveKindByNode(*varWithPatternDecl);
+    EXPECT_EQ(CompletionItemKind::CIK_VARIABLE, result);
+}
+
+// Test ResolveKindByASTKind function - uncovered branches
+TEST(ItemResolverUtilTest, ResolveKindByASTKind_MacroDecl) {
+    ASTKind astKind = ASTKind::MACRO_DECL;
+
+    CompletionItemKind result = ItemResolverUtil::ResolveKindByASTKind(astKind);
+    EXPECT_EQ(CompletionItemKind::CIK_METHOD, result);
+}
+
+TEST(ItemResolverUtilTest, ResolveKindByASTKind_GenericParamDecl) {
+    ASTKind astKind = ASTKind::GENERIC_PARAM_DECL;
+
+    CompletionItemKind result = ItemResolverUtil::ResolveKindByASTKind(astKind);
+    EXPECT_EQ(CompletionItemKind::CIK_VARIABLE, result);
+}
+
+TEST(ItemResolverUtilTest, ResolveKindByASTKind_BuiltInDecl) {
+    ASTKind astKind = ASTKind::BUILTIN_DECL;
+
+    CompletionItemKind result = ItemResolverUtil::ResolveKindByASTKind(astKind);
+    EXPECT_EQ(CompletionItemKind::CIK_CLASS, result);
+}
+
+TEST(ItemResolverUtilTest, ResolveKindByASTKind_PrimaryCtorDecl) {
+    ASTKind astKind = ASTKind::PRIMARY_CTOR_DECL;
+
+    CompletionItemKind result = ItemResolverUtil::ResolveKindByASTKind(astKind);
+    EXPECT_EQ(CompletionItemKind::CIK_METHOD, result);
+}
+
+TEST(ItemResolverUtilTest, ResolveKindByASTKind_VarWithPatternDecl) {
+    ASTKind astKind = ASTKind::VAR_WITH_PATTERN_DECL;
+
+    CompletionItemKind result = ItemResolverUtil::ResolveKindByASTKind(astKind);
+    EXPECT_EQ(CompletionItemKind::CIK_VARIABLE, result);
+}
+
+TEST(ItemResolverUtilTest, ResolveKindByASTKind_MacroExpandDecl) {
+    ASTKind astKind = ASTKind::MACRO_EXPAND_DECL;
+
+    CompletionItemKind result = ItemResolverUtil::ResolveKindByASTKind(astKind);
+    EXPECT_EQ(CompletionItemKind::CIK_METHOD, result);
+}
+
+// Test ResolveSignatureByNode function - uncovered branches
+TEST(ItemResolverUtilTest, ResolveSignatureByNode_MainDecl) {
+    // Create MainDecl node
+    auto mainDecl = OwnedPtr<MainDecl>(new MainDecl());
+    mainDecl->identifier = "main";
+
+    std::string result = ItemResolverUtil::ResolveSignatureByNode(*mainDecl, nullptr);
+    EXPECT_EQ("main()", result);
+}
+
+TEST(ItemResolverUtilTest, ResolveSignatureByNode_Package) {
+    // Create Package node
+    auto package = OwnedPtr<Package>(new Package());
+    package->fullPackageName = "test.package";
+
+    std::string result = ItemResolverUtil::ResolveSignatureByNode(*package, nullptr);
+    EXPECT_EQ("test.package", result);
+}
+
+TEST(ItemResolverUtilTest, ResolveSignatureByNode_TypeAliasDecl) {
+    // Create TypeAliasDecl node
+    auto typeAliasDecl = OwnedPtr<TypeAliasDecl>(new TypeAliasDecl());
+    typeAliasDecl->identifier = "MyType";
+
+    std::string result = ItemResolverUtil::ResolveSignatureByNode(*typeAliasDecl, nullptr);
+    EXPECT_EQ("MyType", result);
+}
+
+TEST(ItemResolverUtilTest, ResolveSignatureByNode_TypeAliasDeclWithGeneric) {
+    // Create TypeAliasDecl node with generic parameters
+    auto typeAliasDecl = OwnedPtr<TypeAliasDecl>(new TypeAliasDecl());
+    typeAliasDecl->identifier = "MyType";
+    auto generic = OwnedPtr<Generic>(new Generic());
+    auto param = OwnedPtr<GenericParamDecl>(new GenericParamDecl());
+    param->identifier = "T";
+    generic->typeParameters.emplace_back(std::move(param));
+    typeAliasDecl->generic = std::move(generic);
+
+    std::string result = ItemResolverUtil::ResolveSignatureByNode(*typeAliasDecl, nullptr);
+    EXPECT_EQ("MyType<T>", result);
+}
+
+// Test ResolveInsertByNode function - basic coverage
+TEST(ItemResolverUtilTest, ResolveInsertByNode_VarDecl) {
+    // Create VarDecl node
+    auto varDecl = OwnedPtr<VarDecl>(new VarDecl());
+    varDecl->identifier = "testVar";
+
+    std::string result = ItemResolverUtil::ResolveInsertByNode(*varDecl, nullptr);
+    EXPECT_EQ("testVar", result);
+}
+
+TEST(ItemResolverUtilTest, ResolveInsertByNode_Package) {
+    // Create Package node
+    auto package = OwnedPtr<Package>(new Package());
+    package->fullPackageName = "test.package";
+
+    std::string result = ItemResolverUtil::ResolveInsertByNode(*package, nullptr);
+    EXPECT_EQ("test.package", result);
+}
+
+// Test GetGenericParamByDecl function - edge cases
+TEST(ItemResolverUtilTest, GetGenericParamByDecl_NullTypeParameter) {
+    // Test Generic declaration with null type parameter
+    auto genericDecl = OwnedPtr<Generic>(new Generic());
+    genericDecl->typeParameters.emplace_back(nullptr);
+
+    std::string result = ItemResolverUtil::GetGenericParamByDecl(genericDecl);
+    EXPECT_EQ("<>", result);
+}
+
+TEST(ItemResolverUtilTest, IsCustomAnnotation_WithNullAnnotation) {
+    // Test case with null annotation
+    FuncDecl decl;
+    auto outerDecl = OwnedPtr<FuncDecl>(new FuncDecl());
+    outerDecl->annotations.emplace_back(nullptr);
+    decl.outerDecl = outerDecl.get();
+
+    bool result = ItemResolverUtil::IsCustomAnnotation(decl);
+    EXPECT_FALSE(result);
+}
+
+// Test ResolveSourceByNode function
+TEST(ItemResolverUtilTest, ResolveSourceByNode_NullDecl) {
+    // Test with null declaration pointer
+    Ptr<Decl> decl = nullptr;
+
+    std::string result = ItemResolverUtil::ResolveSourceByNode(decl, "test/path");
+    EXPECT_EQ("", result);
+}
+
+// Test FetchTypeString function - basic coverage
+TEST(ItemResolverUtilTest, FetchTypeString_NullType) {
+    // Test with null type
+    Type type;
+    type.ty = nullptr;
+
+    std::string result = ItemResolverUtil::FetchTypeString(type);
+    EXPECT_EQ("", result);
+}
+
+// Test AddGenericInsertByDecl function
+TEST(ItemResolverUtilTest, AddGenericInsertByDecl_NullGeneric) {
+    std::string detail = "test";
+    int result = ItemResolverUtil::AddGenericInsertByDecl(detail, nullptr);
+    EXPECT_EQ(0, result);
+    EXPECT_EQ("test", detail);
+}
+
+TEST(ItemResolverUtilTest, AddGenericInsertByDecl_WithGeneric) {
+    auto genericDecl = OwnedPtr<Generic>(new Generic());
+    auto param = OwnedPtr<GenericParamDecl>(new GenericParamDecl());
+    param->identifier = "T";
+    genericDecl->typeParameters.emplace_back(std::move(param));
+
+    std::string detail = "test";
+    int result = ItemResolverUtil::AddGenericInsertByDecl(detail, genericDecl);
+    EXPECT_EQ(2, result); // Starts from 1, so with one parameter it becomes 2
+    EXPECT_EQ("test<${1:T}>", detail);
+}
+
+// Test GetDeclByTy function
+TEST(ItemResolverUtilTest, GetDeclByTy_NullTy) {
+    Ty* ty = nullptr;
+    Ptr<Decl> result = ItemResolverUtil::GetDeclByTy(ty);
+    EXPECT_EQ(nullptr, result);
+}

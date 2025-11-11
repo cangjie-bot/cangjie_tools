@@ -338,3 +338,274 @@ TEST(FindDeclUsageTest, FindDeclUsage_NormalDecl) {
     // Should call FindUsage
     EXPECT_TRUE(result.empty()); // Should be empty in this simple test
 }
+
+// CheckTypeEqual additional tests
+TEST(FindDeclUsageTest, CheckTypeEqual_DifferentTypeArgCount) {
+    // Create types with different type argument counts
+    auto srcType = new PrimitiveTy(TypeKind::TYPE_INT32);
+    auto targetType = new PrimitiveTy(TypeKind::TYPE_INT32);
+
+    // Add different number of type arguments
+    srcType->typeArgs.emplace_back(new PrimitiveTy(TypeKind::TYPE_INT32));
+
+    EXPECT_FALSE(CheckTypeEqual(*srcType, *targetType));
+}
+
+TEST(FindDeclUsageTest, CheckTypeEqual_OneNullTypeArg) {
+    // Create types where one has null type argument
+    auto srcType = new PrimitiveTy(TypeKind::TYPE_INT32);
+    auto targetType = new PrimitiveTy(TypeKind::TYPE_INT32);
+
+    srcType->typeArgs.emplace_back(nullptr);
+    targetType->typeArgs.emplace_back(new PrimitiveTy(TypeKind::TYPE_INT32));
+
+    EXPECT_FALSE(CheckTypeEqual(*srcType, *targetType));
+}
+
+TEST(FindDeclUsageTest, CheckTypeEqual_FuncTypeInvalidCast) {
+    // Create function types where dynamic cast fails
+    auto srcType = new PrimitiveTy(TypeKind::TYPE_FUNC);
+    auto targetType = new PrimitiveTy(TypeKind::TYPE_FUNC);
+
+    // PrimitiveTy cannot be cast to FuncTy
+    EXPECT_FALSE(CheckTypeEqual(*srcType, *targetType));
+}
+
+// CheckParamListEqual additional tests
+TEST(FindDeclUsageTest, CheckParamListEqual_NullParam) {
+    // Create parameter lists with null parameters
+    auto srcList = new FuncParamList();
+    auto targetList = new FuncParamList();
+
+    srcList->params.emplace_back(nullptr);
+    targetList->params.emplace_back(new FuncParam());
+
+    EXPECT_FALSE(CheckParamListEqual(*srcList, *targetList));
+}
+
+TEST(FindDeclUsageTest, CheckParamListEqual_NullParamType) {
+    // Create parameter lists with parameters having null types
+    auto srcList = new FuncParamList();
+    auto targetList = new FuncParamList();
+
+    auto srcParam = new FuncParam();
+    auto targetParam = new FuncParam();
+
+    srcParam->ty = nullptr;
+    targetParam->ty = new PrimitiveTy(TypeKind::TYPE_INT32);
+
+    srcList->params.emplace_back(srcParam);
+    targetList->params.emplace_back(targetParam);
+
+    EXPECT_FALSE(CheckParamListEqual(*srcList, *targetList));
+}
+
+TEST(FindDeclUsageTest, CheckParamListEqual_DifferentParamTypes) {
+    // Create parameter lists with different parameter types
+    auto srcList = new FuncParamList();
+    auto targetList = new FuncParamList();
+
+    auto srcParam = new FuncParam();
+    auto targetParam = new FuncParam();
+
+    srcParam->ty = new PrimitiveTy(TypeKind::TYPE_INT32);
+    targetParam->ty = new PrimitiveTy(TypeKind::TYPE_INT64);
+
+    srcList->params.emplace_back(srcParam);
+    targetList->params.emplace_back(targetParam);
+
+    EXPECT_FALSE(CheckParamListEqual(*srcList, *targetList));
+}
+
+// CheckFunctionEqual additional tests
+TEST(FindDeclUsageTest, CheckFunctionEqual_DifferentParamLists) {
+    // Create functions with different parameter lists
+    FuncDecl srcFunc;
+    FuncDecl targetFunc;
+
+    srcFunc.funcBody = OwnedPtr<FuncBody>(new FuncBody());
+    targetFunc.funcBody = OwnedPtr<FuncBody>(new FuncBody());
+
+    auto srcParamList = Ptr<FuncParamList>(new FuncParamList());
+    auto targetParamList = Ptr<FuncParamList>(new FuncParamList());
+
+    // Add different parameters to make lists unequal
+    auto srcParam = new FuncParam();
+    auto targetParam = new FuncParam();
+
+    srcParam->ty = new PrimitiveTy(TypeKind::TYPE_INT32);
+    targetParam->ty = new PrimitiveTy(TypeKind::TYPE_INT64);
+
+    srcParamList->params.emplace_back(srcParam);
+    targetParamList->params.emplace_back(targetParam);
+
+    srcFunc.funcBody->paramLists.emplace_back(srcParamList);
+    targetFunc.funcBody->paramLists.emplace_back(targetParamList);
+
+    EXPECT_FALSE(CheckFunctionEqual(srcFunc, targetFunc));
+}
+
+// CheckDeclEqual additional tests
+TEST(FindDeclUsageTest, CheckDeclEqual_DifferentASTKind) {
+    // Create declarations with different AST kinds
+    ClassDecl srcDecl;
+    VarDecl targetDecl;
+
+    srcDecl.fullPackageName = "test.package";
+    srcDecl.identifier = "test";
+    targetDecl.fullPackageName = "test.package";
+    targetDecl.identifier = "test";
+
+    EXPECT_FALSE(CheckDeclEqual(srcDecl, targetDecl));
+}
+
+TEST(FindDeclUsageTest, CheckDeclEqual_FuncDeclDifferentOuter) {
+    // Create function declarations with different outer contexts
+    FuncDecl srcFunc;
+    FuncDecl targetFunc;
+
+    srcFunc.fullPackageName = "test.package";
+    srcFunc.identifier = "testFunc";
+    targetFunc.fullPackageName = "test.package";
+    targetFunc.identifier = "testFunc";
+
+    // Create different outer declarations
+    ClassDecl srcOuter;
+    ClassDecl targetOuter;
+
+    srcOuter.identifier = "Class1";
+    targetOuter.identifier = "Class2";
+
+    srcFunc.outerDecl = Ptr<Decl>(&srcOuter);
+    targetFunc.outerDecl = Ptr<Decl>(&targetOuter);
+
+    // Functions should be different due to different outer contexts
+    EXPECT_FALSE(CheckDeclEqual(srcFunc, targetFunc));
+}
+
+TEST(FindDeclUsageTest, CheckDeclEqual_FuncDeclInvalidCast) {
+    // Test function declaration comparison with invalid casts
+    FuncDecl srcFunc;
+    ClassDecl targetDecl; // Wrong type
+
+    srcFunc.fullPackageName = "test.package";
+    srcFunc.identifier = "test";
+    targetDecl.fullPackageName = "test.package";
+    targetDecl.identifier = "test";
+
+    EXPECT_FALSE(CheckDeclEqual(srcFunc, targetDecl));
+}
+
+// GetRealNode additional tests
+TEST(FindDeclUsageTest, GetRealNode_MemberAccessWithoutBuiltinOperator) {
+    // Create member access without builtin operator
+    auto ma = Ptr<MemberAccess>(new MemberAccess());
+    ma->field = "normalField"; // Not a builtin operator
+
+    auto result = GetRealNode(ma);
+    EXPECT_EQ(ma.get(), result.get());
+}
+
+TEST(FindDeclUsageTest, GetRealNode_MemberAccessWithNullCall) {
+    // Create member access with null callOrPattern
+    auto ma = Ptr<MemberAccess>(new MemberAccess());
+    ma->field = "+"; // Builtin operator
+    ma->callOrPattern = nullptr;
+
+    auto result = GetRealNode(ma);
+    EXPECT_EQ(ma.get(), result.get());
+}
+
+TEST(FindDeclUsageTest, GetRealNode_MemberAccessCallWithoutSource) {
+    // Create member access with call expression without source
+    auto ma = Ptr<MemberAccess>(new MemberAccess());
+    ma->field = "+"; // Builtin operator
+
+    auto callExpr = Ptr<CallExpr>(new CallExpr());
+    callExpr->sourceExpr = nullptr; // No source expression
+    ma->callOrPattern = callExpr;
+
+    auto result = GetRealNode(ma);
+    EXPECT_EQ(ma.get(), result.get());
+}
+
+// checkMacroFunc additional tests
+TEST(FindDeclUsageTest, CheckMacroFunc_NullTarget) {
+    // Test checkMacroFunc with null target
+    Decl decl;
+    decl.isInMacroCall = true;
+    decl.ty = Ptr<Ty>(new PrimitiveTy(TypeKind::TYPE_FUNC));
+    decl.identifier = "testFunc";
+
+    EXPECT_FALSE(checkMacroFunc(decl, nullptr));
+}
+
+TEST(FindDeclUsageTest, CheckMacroFunc_DifferentTypes) {
+    // Test checkMacroFunc with different types
+    Decl decl;
+    auto target = Ptr<FuncDecl>(new FuncDecl());
+
+    decl.isInMacroCall = true;
+    decl.ty = Ptr<Ty>(new PrimitiveTy(TypeKind::TYPE_INT32));
+    target->ty = Ptr<Ty>(new PrimitiveTy(TypeKind::TYPE_INT64));
+    decl.identifier = "testFunc";
+    target->identifier = "testFunc";
+
+    EXPECT_FALSE(checkMacroFunc(decl, target));
+}
+
+TEST(FindDeclUsageTest, CheckMacroFunc_NonFunctionType) {
+    // Test checkMacroFunc with non-function type
+    Decl decl;
+    auto target = Ptr<FuncDecl>(new FuncDecl());
+
+    decl.isInMacroCall = true;
+    decl.ty = Ptr<Ty>(new PrimitiveTy(TypeKind::TYPE_INT32)); // Not function type
+    target->ty = Ptr<Ty>(new PrimitiveTy(TypeKind::TYPE_INT32));
+    decl.identifier = "testFunc";
+    target->identifier = "testFunc";
+
+    EXPECT_FALSE(checkMacroFunc(decl, target));
+}
+
+// FindNamedFuncParamUsage additional tests
+TEST(FindDeclUsageTest, FindNamedFuncParamUsage_ValidCase) {
+    // Test valid named parameter usage finding
+    FuncParam fp;
+    fp.isNamedParam = true;
+    fp.identifier = "testParam";
+
+    // Create function declaration as outer
+    auto funcDecl = Ptr<FuncDecl>(new FuncDecl());
+    fp.outerDecl = funcDecl;
+
+    Node root;
+
+    // This should exercise the full logic path
+    auto result = FindNamedFuncParamUsage(fp, root);
+    EXPECT_TRUE(result.empty()); // Empty in simple test
+}
+
+// FindUsage and FindDeclUsage additional tests
+TEST(FindDeclUsageTest, FindUsage_WithRenameAndAliasTarget) {
+    // Test FindUsage with rename and alias target
+    ClassDecl decl;
+    decl.identifier = "TestClass";
+
+    Node root;
+
+    // Test with isRename = true
+    auto result = FindUsage(decl, root, true);
+    EXPECT_TRUE(result.empty());
+}
+
+TEST(FindDeclUsageTest, FindDeclUsage_WithRename) {
+    // Test FindDeclUsage with rename flag
+    ClassDecl decl;
+    decl.identifier = "TestClass";
+
+    Node root;
+
+    auto result = FindDeclUsage(decl, root, true);
+    EXPECT_TRUE(result.empty());
+}
