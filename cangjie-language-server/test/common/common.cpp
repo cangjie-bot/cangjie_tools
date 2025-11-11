@@ -169,14 +169,21 @@ namespace {
 
         nlohmann::json root;
         std::string errs;
+        if (message == "\r") {
+            return "";
+        }
+#ifndef NO_EXCEPTIONS
         try {
+#endif
             if (message.empty()) {
                 return "";
             }
             root = nlohmann::json::parse(message);
+#ifndef NO_EXCEPTIONS
         } catch (nlohmann::detail::parse_error &errs) {
             return "";;
         }
+#endif
         if (root.empty() || root.contains("caseFolder")) {
             return "";
         }
@@ -221,16 +228,21 @@ namespace {
 
         nlohmann::json root;
         std::string errs;
-
+        if (message == "\r") {
+            return pair;
+        }
+#ifndef NO_EXCEPTIONS
         try {
+#endif
             if (message.empty()) {
                 return pair;
             }
             root = nlohmann::json::parse(message);
+#ifndef NO_EXCEPTIONS
         } catch (nlohmann::detail::parse_error &errs) {
             return pair;
         }
-
+#endif
         if (!root.contains("caseFolder")) {
             return pair;
         }
@@ -845,7 +857,12 @@ namespace test::common {
             if (loc != std::string::npos) {
                 message = message.substr(0, loc);
             }
+            if (message == "\r") {
+                continue;
+            }
+#ifndef NO_EXCEPTIONS
             try {
+#endif
                 if (message.empty()) {
                     continue;
                 }
@@ -854,9 +871,11 @@ namespace test::common {
                     (!root.contains("id") && id.empty())) {
                     return root;
                 }
+#ifndef NO_EXCEPTIONS
             } catch (nlohmann::detail::parse_error &errs) {
                 continue;
             }
+#endif
         }
         infile.close();
         return {};
@@ -883,7 +902,12 @@ namespace test::common {
             if (loc != std::string::npos) {
                 message = message.substr(0, loc);
             }
+            if (message == "\r") {
+                continue;
+            }
+#ifndef NO_EXCEPTIONS
             try {
+#endif
                 if (message.empty()) {
                     continue;
                 }
@@ -891,9 +915,11 @@ namespace test::common {
                 if (root.contains("method") && std::regex_replace(root["method"].dump(), quotePattern, "") == method) {
                     return root;
                 }
+#ifndef NO_EXCEPTIONS
             } catch (nlohmann::detail::parse_error &errs) {
                 continue;
             }
+#endif
         }
         infile.close();
         return {};
@@ -1123,16 +1149,18 @@ namespace test::common {
 
         nlohmann::json root;
         std::string errs;
-
+#ifndef NO_EXCEPTIONS
         try {
+#endif
             if (message.empty()) {
                 return false;
             }
             root = nlohmann::json::parse(message);
+#ifndef NO_EXCEPTIONS
         } catch (nlohmann::detail::parse_error &errs) {
             return false; // GCOVR_EXCL_LINE
         }
-
+#endif
         if (!root.contains("useDB")) {
             return false;
         }
@@ -1216,15 +1244,21 @@ namespace test::common {
             char buf[MAX_LEN] = {0};
             infile.getline(buf, MAX_LEN);
             std::string message = std::string(buf);
-
+            if (message == "\r") {
+                continue;
+            }
+#ifndef NO_EXCEPTIONS
             try {
+#endif
                 if (message.empty()) {
                     continue;
                 }
                 root = nlohmann::json::parse(message);
+#ifndef NO_EXCEPTIONS
             } catch (nlohmann::detail::parse_error &errs) {
                 continue;
             }
+#endif
             if (root.empty()) {
                 continue;
             }
@@ -1254,14 +1288,21 @@ namespace test::common {
             char buf[MAX_LEN] = {0};
             infile.getline(buf, MAX_LEN);
             std::string message = std::string(buf);
+            if (message == "\r") {
+                continue;
+            }
+#ifndef NO_EXCEPTIONS
             try {
+#endif
                 if (message.empty()) {
                     continue;
                 }
                 root = nlohmann::json::parse(message);
+#ifndef NO_EXCEPTIONS
             } catch (nlohmann::detail::parse_error &errs) {
                 continue;
             }
+#endif
             if (root.empty()) {
                 continue;
             }
@@ -1574,14 +1615,21 @@ namespace test::common {
             char buf[MAX_LEN] = {0};
             infile.getline(buf, MAX_LEN);
             std::string message = std::string(buf);
+            if (message == "\r") {
+                continue;
+            }
+#ifndef NO_EXCEPTIONS
             try {
+#endif
                 if (message.empty()) {
                     continue;
                 }
                 root = nlohmann::json::parse(message);
+#ifndef NO_EXCEPTIONS
             } catch (nlohmann::detail::parse_error &errs) {
                 continue;
             }
+#endif
             if (root.contains(key)) {
                 item.testFile = root[key].value("testFile", "");
                 item.baseFile = item.testFile.substr(0, item.testFile.rfind(".")) + ".base";
@@ -1757,14 +1805,21 @@ namespace test::common {
             char buf[MAX_LEN] = {0};
             infile.getline(buf, MAX_LEN);
             std::string message = std::string(buf);
+            if (message == "\r") {
+                continue;
+            }
+#ifndef NO_EXCEPTIONS
             try {
+#endif
                 if (message.empty()) {
                     continue;
                 }
                 root = nlohmann::json::parse(message);
+#ifndef NO_EXCEPTIONS
             } catch (nlohmann::detail::parse_error &errs) {
                 continue;
             }
+#endif
             if (root.empty()) {
                 continue;
             }
@@ -1831,14 +1886,21 @@ namespace test::common {
             char buf[MAX_LEN] = {0};
             infile.getline(buf, MAX_LEN);
             std::string message = std::string(buf);
+            if (message == "\r") {
+                continue;
+            }
+#ifndef NO_EXCEPTIONS
             try {
+#endif
                 if (message.empty()) {
                     continue;
                 }
                 root = nlohmann::json::parse(message);
+#ifndef NO_EXCEPTIONS
             } catch (nlohmann::detail::parse_error &errs) {
                 continue;
             }
+#endif
             if (root.empty()) {
                 continue;
             }
@@ -1913,14 +1975,21 @@ namespace test::common {
             char buf[MAX_LEN] = {0};
             infile.getline(buf, MAX_LEN);
             std::string message = std::string(buf);
+            if (message == "\r") {
+                continue;
+            }
+#ifndef NO_EXCEPTIONS
             try {
+#endif
                 if (message.empty()) {
                     continue;
                 }
                 root = nlohmann::json::parse(message);
+#ifndef NO_EXCEPTIONS
             } catch (nlohmann::detail::parse_error &errs) {
                 continue;
             }
+#endif
             if (root.empty()) {
                 continue;
             }
@@ -1989,14 +2058,21 @@ namespace test::common {
             char buf[MAX_LEN] = {0};
             infile.getline(buf, MAX_LEN);
             std::string message = std::string(buf);
+            if (message == "\r") {
+                continue;
+            }
+#ifndef NO_EXCEPTIONS
             try {
+#endif
                 if (message.empty()) {
                     continue;
                 }
                 root = nlohmann::json::parse(message);
+#ifndef NO_EXCEPTIONS
             } catch (nlohmann::detail::parse_error &errs) {
                 continue;
             }
+#endif
             if (root.empty()) {
                 continue;
             }
