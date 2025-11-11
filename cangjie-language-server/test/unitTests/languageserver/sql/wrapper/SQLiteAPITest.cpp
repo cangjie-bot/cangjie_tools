@@ -465,6 +465,39 @@ TEST(SQLiteAPITest, Test012)
     );
 
     char* errMsg = nullptr;
+    sqlite3_exec(
+        db,
+        "SELECT my_function(10, 20)",
+        [](void* data, int argc, char** argv, char** colName) -> int {
+            std::cout << "Result: " << argv[0] << std::endl;
+            return 0;
+        },
+        nullptr,
+        &errMsg
+    );
+
+    if (errMsg) {
+        std::cerr << "Error: " << errMsg << std::endl;
+        sqlite3_free(errMsg);
+    }
+
+    sqlite3_close(db);
+
+    EXPECT_EQ(1, 1);
+}
+
+static void MyCustomFunction13(sqlite3_context* ctx, int argc, sqlite3_value** argv) {
+    int a = sqlite3_value_int(argv[0]);
+    sqlite3_destructor_type dtor = SQLITE_STATIC;
+    result_null(ctx);
+    sqlite3_result_int(ctx, a);
+}
+
+TEST(SQLiteAPITest, Test013)
+{
+    const std::string dbPath = "mydatabase.db";
+    sqlite3* db = openDatabase7(dbPath);
+    if (!db) {
         std::cerr << "Failed to open database." << std::endl;
     }
     createTable3(db);
