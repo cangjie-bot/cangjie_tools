@@ -541,8 +541,8 @@ void ItemResolverUtil::AddTypeByNodeAndType(std::string &detail, const std::stri
     } catch (NullPointerException &e) {
         Trace::Log("Invoke compiler api ToString() catch a NullPointerException");
     }
-    detail += result;
 #endif
+    detail += result;
 }
 
 void ItemResolverUtil::ResolveVarDeclDetail(std::string &detail, const Cangjie::AST::VarDecl &decl,

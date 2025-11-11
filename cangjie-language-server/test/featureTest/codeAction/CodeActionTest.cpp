@@ -44,7 +44,7 @@ bool LspCodeActionTest(TestParam param)
 
     /* if case is diff show info */
     std::string reason = "none";
-    bool showErr = TestUtils::CheckCodeActionResult(expLines, result, reason);
+    bool showErr = CheckCodeActionResult(expLines, result, reason);
     if (!showErr) {
         std::cout << "the false reason is : " << reason << std::endl;
         ShowDiff(expLines, result, param, p->messagePath);
