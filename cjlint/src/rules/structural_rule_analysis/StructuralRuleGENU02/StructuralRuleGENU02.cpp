@@ -49,15 +49,18 @@ bool StructuralRuleGENU02::IsEqual(Cangjie::AST::Ty* base, Cangjie::AST::Ty* der
 {
     if (!base->IsClassLike()) {
         if (base->kind == derived->kind) {
+
             return true;
         } else {
             return false;
         }
     }
     return CheckTyEqualityHelper(base, derived) || CheckTyEqualityHelper(derived, base);
+
 }
 
 void StructuralRuleGENU02::DuplicatedEnumCtrOrFuncHelper(const Cangjie::AST::FuncDecl& funcDecl)
+
 {
     for (auto modifier : funcDecl.modifiers) {
         if (modifier.modifier== TokenKind::COMMON || modifier.modifier == TokenKind::PLATFORM) {
@@ -92,6 +95,7 @@ void StructuralRuleGENU02::DuplicatedEnumCtrOrFuncHelper(const Cangjie::AST::Fun
 }
 
 void StructuralRuleGENU02::CheckEnumCtrOverload(const Cangjie::AST::EnumDecl& enumDecl)
+
 {
     for (auto modifier : enumDecl.modifiers) {
         if (modifier.modifier== TokenKind::COMMON || modifier.modifier == TokenKind::PLATFORM) {
@@ -107,6 +111,7 @@ void StructuralRuleGENU02::CheckEnumCtrOverload(const Cangjie::AST::EnumDecl& en
 }
 
 void StructuralRuleGENU02::CheckFuncOverload(const Cangjie::AST::FuncDecl& funcDecl)
+
 {
     for (auto modifier : funcDecl.modifiers) {
         if (modifier.modifier== TokenKind::COMMON || modifier.modifier == TokenKind::PLATFORM) {
@@ -119,6 +124,7 @@ void StructuralRuleGENU02::CheckFuncOverload(const Cangjie::AST::FuncDecl& funcD
 }
 
 void StructuralRuleGENU02::FindEnumDeclHelper(Ptr<Node> node)
+
 {
     if (!node) {
         return;
@@ -161,8 +167,15 @@ void StructuralRuleGENU02::FindExtendHelper(Ptr<Cangjie::AST::Node> node)
 void StructuralRuleGENU02::MatchPattern(ASTContext& ctx, Ptr<Node> node)
 {
     (void)ctx;
-    // Collect the inheritance relationships between classes/interfaces through extendDecl
-    FindExtendHelper(node);
-    // Check enum's constructor and top-level functions
-    FindEnumDeclHelper(node);
+    if (node->astKind ==  ASTKind::PACKAGE) {
+        auto pkg = static_cast<Package*>(node.get());
+        for (auto& file: pkg->files) {
+            enumCtrSet.clear();
+            inheritedClassMap.clear();
+            // Collect the inheritance relationships between classes/interfaces through extendDecl
+            FindExtendHelper(file);
+            // Check enum's constructor and top-level functions
+            FindEnumDeclHelper(file);
+        }
+    }
 }

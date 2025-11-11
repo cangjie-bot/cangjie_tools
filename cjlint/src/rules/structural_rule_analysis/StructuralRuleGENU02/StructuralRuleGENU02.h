@@ -35,16 +35,22 @@ private:
     std::map<AST::Ty*, std::vector<AST::Type*>> inheritedClassMap;
     /** @brief Check whether there is an inheritance relationship between two Ty. */
     bool CheckTyEqualityHelper(Cangjie::AST::Ty* base, Cangjie::AST::Ty* derived);
+
     /** @brief If there is an inheritance relationship, the two types are considered to be the same. */
     bool IsEqual(Cangjie::AST::Ty* base, Cangjie::AST::Ty* derived);
+
     /** @brief Check and collect constructors of enum. */
     void FindEnumDeclHelper(Ptr<Cangjie::AST::Node> node);
+
     /** @brief Record the inheritance relationship implemented through Extend. */
     void FindExtendHelper(Ptr<Cangjie::AST::Node> node);
+
     /** @brief Check whether a function or constructor is duplicated. */
     void DuplicatedEnumCtrOrFuncHelper(const Cangjie::AST::FuncDecl& funcDecl);
+
     /** @brief Check whether enum constructor is overloaded. */
     void CheckEnumCtrOverload(const Cangjie::AST::EnumDecl& enumDecl);
+
     /** @brief Check whether a function is overloaded. */
     void CheckFuncOverload(const Cangjie::AST::FuncDecl& funcDecl);
 };
