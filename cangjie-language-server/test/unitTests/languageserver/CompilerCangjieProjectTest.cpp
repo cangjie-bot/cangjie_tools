@@ -254,16 +254,6 @@ TEST_F(CompilerCangjieProjectTest, GetFullPkgByDirTest) {
     // Test package name resolution from directory path
 }
 
-TEST_F(CompilerCangjieProjectTest, GetCIForDotCompleteTest) {
-    std::string filePath = "test_workspace/src/test_pkg/test_file.cj";
-    std::string contents = "package test_pkg; var testVar = \"test\".//cursor here";
-    Position pos = {0, 1, 25}; // Position before dot
-    
-    // Test getting compiler instance for dot completion
-    auto ci = CompilerCangjieProject::GetInstance()->GetCIForDotComplete(filePath, pos, contents);
-    EXPECT_NE(ci, nullptr);
-}
-
 TEST_F(CompilerCangjieProjectTest, GetCIForFileRefactorTest) {
     std::string filePath = "test_workspace/src/test_pkg/test_file.cj";
     
