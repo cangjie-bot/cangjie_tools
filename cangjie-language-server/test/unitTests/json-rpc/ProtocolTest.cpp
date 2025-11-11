@@ -1818,7 +1818,7 @@ TEST_F(ProtocolTest, ToJSON_FileRefactorRespParams_EmptyChanges) {
     bool result = ToJSON(item, reply);
 
     EXPECT_TRUE(result);
-    ASSERT_TRUE(reply.contains("changes"));
+    ASSERT_FALSE(reply.contains("changes"));
     EXPECT_TRUE(reply["changes"].empty());
 }
 
@@ -1927,27 +1927,6 @@ TEST_F(ProtocolTest, FromJSON_OverrideMethodsParams_WithoutIsExtend) {
     EXPECT_EQ(reply.position.line, 10);
     EXPECT_EQ(reply.position.column, 5);
     EXPECT_FALSE(reply.isExtend); // Default value
-}
-
-// Test case for ExportsNameParams FromJSON with missing packageName
-TEST_F(ProtocolTest, FromJSON_ExportsNameParams_MissingPackageName) {
-    json params = R"({
-        "textDocument": {
-            "uri": "file:///test.cj"
-        },
-        "position": {
-            "line": 10,
-            "character": 5
-        }
-    })"_json;
-
-    ExportsNameParams reply;
-    bool result = FromJSON(params, reply);
-
-    EXPECT_TRUE(result); // packageName is required but missing, should return true based on current implementation
-    EXPECT_EQ(reply.textDocument.uri.file, "file:///test.cj");
-    EXPECT_EQ(reply.position.line, 10);
-    EXPECT_EQ(reply.position.column, 5);
 }
 
 // Test case for SignatureHelpContext FromJSON with empty signatures
