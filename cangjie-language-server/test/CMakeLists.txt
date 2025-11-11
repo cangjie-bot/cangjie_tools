@@ -52,6 +52,7 @@ add_subdirectory(featureTest/codeLens)
 add_subdirectory(featureTest/crossLanguageDefinition)
 add_subdirectory(featureTest/overrideMethods)
 add_subdirectory(featureTest/findFileReference)
+add_subdirectory(unitTests)
 
 # Add test main file
 add_executable(gtest_LSPServer_test main.cpp)
@@ -84,6 +85,7 @@ target_link_libraries(gtest_LSPServer_test
     CodeLensTest
     CrossLanguageDefinitionTest
     OverrideMethodsTest
+    UnitTests
     Common
     libflatbuffers.a
     sqlite3
