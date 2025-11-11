@@ -29,24 +29,31 @@ private:
         EnumCtr(std::string identifier,
             std::vector<AST::Ty*> args, bool isCtr) : identifier(identifier), args(args), isCtr(isCtr){};
     };
-    /** @brief Records information about all enum constructors. */
-    std::vector<EnumCtr> enumCtrSet;
-    /** @brief Map describing class inheritance introduced by extendDecl. */
-    std::map<AST::Ty*, std::vector<AST::Type*>> inheritedClassMap;
+    // /** @brief Records information about all enum constructors. */
+    // std::vector<EnumCtr> enumCtrSet;
+    // /** @brief Map describing class inheritance introduced by extendDecl. */
+    // std::map<AST::Ty*, std::vector<AST::Type*>> inheritedClassMap;
     /** @brief Check whether there is an inheritance relationship between two Ty. */
-    bool CheckTyEqualityHelper(Cangjie::AST::Ty* base, Cangjie::AST::Ty* derived);
+    bool CheckTyEqualityHelper(Cangjie::AST::Ty* base, Cangjie::AST::Ty* derived,
+        std::map<AST::Ty*, std::vector<AST::Type*>>& inheritedClassMap);
     /** @brief If there is an inheritance relationship, the two types are considered to be the same. */
-    bool IsEqual(Cangjie::AST::Ty* base, Cangjie::AST::Ty* derived);
+    bool IsEqual(Cangjie::AST::Ty* base, Cangjie::AST::Ty* derived, std::map<AST::Ty*,
+        std::vector<AST::Type*>>& inheritedClassMap);
     /** @brief Check and collect constructors of enum. */
-    void FindEnumDeclHelper(Ptr<Cangjie::AST::Node> node);
+    void FindEnumDeclHelper(Ptr<Cangjie::AST::Node> node, std::vector<EnumCtr>& enumCtrSet,
+        std::map<AST::Ty*, std::vector<AST::Type*>>& inheritedClassMap);
     /** @brief Record the inheritance relationship implemented through Extend. */
-    void FindExtendHelper(Ptr<Cangjie::AST::Node> node);
+    void FindExtendHelper(Ptr<Cangjie::AST::Node> node, std::map<AST::Ty*,
+        std::vector<AST::Type*>>& inheritedClassMap);
     /** @brief Check whether a function or constructor is duplicated. */
-    void DuplicatedEnumCtrOrFuncHelper(const Cangjie::AST::FuncDecl& funcDecl);
+    void DuplicatedEnumCtrOrFuncHelper(const Cangjie::AST::FuncDecl& funcDecl, std::vector<EnumCtr>& enumCtrSet,
+        std::map<AST::Ty*, std::vector<AST::Type*>>& inheritedClassMap);
     /** @brief Check whether enum constructor is overloaded. */
-    void CheckEnumCtrOverload(const Cangjie::AST::EnumDecl& enumDecl);
+    void CheckEnumCtrOverload(const Cangjie::AST::EnumDecl& enumDecl, std::vector<EnumCtr>& enumCtrSet,
+        std::map<AST::Ty*, std::vector<AST::Type*>>& inheritedClassMap);
     /** @brief Check whether a function is overloaded. */
-    void CheckFuncOverload(const Cangjie::AST::FuncDecl& funcDecl);
+    void CheckFuncOverload(const Cangjie::AST::FuncDecl& funcDecl, std::vector<EnumCtr>& enumCtrSet,
+        std::map<AST::Ty*, std::vector<AST::Type*>>& inheritedClassMap);
 };
 } // namespace Cangjie::CodeCheck
 #endif // CANGJIECODECHECK_STRUCTURAL_RULE_G_ENU_02_H

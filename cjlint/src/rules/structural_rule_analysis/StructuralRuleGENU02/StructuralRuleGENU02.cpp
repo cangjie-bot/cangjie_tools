@@ -13,20 +13,20 @@ using namespace Meta;
 using namespace CodeCheck;
 
 // Check whether there is an inheritance relationship between classes/interfaces.
-bool StructuralRuleGENU02::CheckTyEqualityHelper(Cangjie::AST::Ty* base, Cangjie::AST::Ty* derived)
+bool StructuralRuleGENU02::CheckTyEqualityHelper(Ty* base, Ty* derived, std::map<Ty*, std::vector<Type*>>& inheritedClassMap)
 {
     if (derived->IsClassLike()) {
         // Same Class/Interface
         if (base == derived) {
             return true;
         }
-        auto classDecl = static_cast<Cangjie::AST::ClassLikeDecl*>(Cangjie::AST::Ty::GetDeclOfTy(derived).get());
+        auto classDecl = static_cast<ClassLikeDecl*>(Ty::GetDeclOfTy(derived).get());
         // Explicit Inheritance When Class Is Declared
         for (auto& super : classDecl->inheritedTypes) {
             if (super->ty == base) {
                 return true;
             }
-            if (CheckTyEqualityHelper(base, super->ty)) {
+            if (CheckTyEqualityHelper(base, super->ty, inheritedClassMap)) {
                 return true;
             }
         }
@@ -35,7 +35,7 @@ bool StructuralRuleGENU02::CheckTyEqualityHelper(Cangjie::AST::Ty* base, Cangjie
             if (super->ty == base) {
                 return true;
             }
-            if (CheckTyEqualityHelper(base, super->ty)) {
+            if (CheckTyEqualityHelper(base, super->ty, inheritedClassMap)) {
                 return true;
             }
         }
@@ -45,25 +45,23 @@ bool StructuralRuleGENU02::CheckTyEqualityHelper(Cangjie::AST::Ty* base, Cangjie
 
 // For non-class types, the types must be the same.
 // For class/interface, types must be the same or have the inheritance relationship.
-bool StructuralRuleGENU02::IsEqual(Cangjie::AST::Ty* base, Cangjie::AST::Ty* derived)
+bool StructuralRuleGENU02::IsEqual(Ty* base, Ty* derived, std::map<Ty*, std::vector<Type*>>& inheritedClassMap)
 {
     if (!base->IsClassLike()) {
-        if (base->kind == derived->kind) {
+        if (base->kind == derived->kind || base->kind == TypeKind::TYPE_GENERICS ||
+            derived->kind == TypeKind::TYPE_GENERICS) {
             return true;
         } else {
             return false;
         }
     }
-    return CheckTyEqualityHelper(base, derived) || CheckTyEqualityHelper(derived, base);
+    return CheckTyEqualityHelper(base, derived, inheritedClassMap) ||
+        CheckTyEqualityHelper(derived, base, inheritedClassMap);
 }
 
-void StructuralRuleGENU02::DuplicatedEnumCtrOrFuncHelper(const Cangjie::AST::FuncDecl& funcDecl)
+void StructuralRuleGENU02::DuplicatedEnumCtrOrFuncHelper(const FuncDecl& funcDecl, std::vector<EnumCtr>& enumCtrSet,
+    std::map<Ty*, std::vector<Type*>>& inheritedClassMap)
 {
-    for (auto modifier : funcDecl.modifiers) {
-        if (modifier.modifier== TokenKind::COMMON || modifier.modifier == TokenKind::PLATFORM) {
-            return;
-        }
-    }
     auto& params = funcDecl.funcBody->paramLists[0]->params;
     std::vector<AST::Ty*> args;
     for (size_t i = 0; i < params.size(); i++) {
@@ -71,12 +69,12 @@ void StructuralRuleGENU02::DuplicatedEnumCtrOrFuncHelper(const Cangjie::AST::Fun
     }
     auto isEnumCtr = funcDecl.TestAttr(Attribute::ENUM_CONSTRUCTOR);
     auto enumCtr = EnumCtr(funcDecl.identifier, args, isEnumCtr);
-    auto filter = [&enumCtr, this](const EnumCtr& item) {
+    auto filter = [&inheritedClassMap, &enumCtr, this](const EnumCtr& item) {
         if (item.identifier != enumCtr.identifier || item.args.size() != enumCtr.args.size()) {
             return false;
         }
         for (size_t i = 0; i < item.args.size(); i++) {
-            if (!IsEqual(item.args[i], enumCtr.args[i])) {
+            if (!IsEqual(item.args[i], enumCtr.args[i], inheritedClassMap)) {
                 return false;
             }
         }
@@ -91,46 +89,39 @@ void StructuralRuleGENU02::DuplicatedEnumCtrOrFuncHelper(const Cangjie::AST::Fun
     }
 }
 
-void StructuralRuleGENU02::CheckEnumCtrOverload(const Cangjie::AST::EnumDecl& enumDecl)
+void StructuralRuleGENU02::CheckEnumCtrOverload(const EnumDecl& enumDecl, std::vector<EnumCtr>& enumCtrSet,
+    std::map<Ty*, std::vector<Type*>>& inheritedClassMap)
 {
-    for (auto modifier : enumDecl.modifiers) {
-        if (modifier.modifier== TokenKind::COMMON || modifier.modifier == TokenKind::PLATFORM) {
-            return;
-        }
-    }
     for (auto& constructor : enumDecl.constructors) {
         if (constructor->astKind == ASTKind::FUNC_DECL) {
             auto funcDecl = static_cast<FuncDecl*>(constructor.get().get());
-            DuplicatedEnumCtrOrFuncHelper(*funcDecl);
+            DuplicatedEnumCtrOrFuncHelper(*funcDecl, enumCtrSet, inheritedClassMap);
         }
     }
 }
 
-void StructuralRuleGENU02::CheckFuncOverload(const Cangjie::AST::FuncDecl& funcDecl)
+void StructuralRuleGENU02::CheckFuncOverload(const FuncDecl& funcDecl, std::vector<EnumCtr>& enumCtrSet,
+    std::map<Ty*, std::vector<Type*>>& inheritedClassMap)
 {
-    for (auto modifier : funcDecl.modifiers) {
-        if (modifier.modifier== TokenKind::COMMON || modifier.modifier == TokenKind::PLATFORM) {
-            return;
-        }
-    }
     if (funcDecl.scopeLevel == 0 && !funcDecl.outerDecl) {
-        DuplicatedEnumCtrOrFuncHelper(funcDecl);
+        DuplicatedEnumCtrOrFuncHelper(funcDecl, enumCtrSet, inheritedClassMap);
     }
 }
 
-void StructuralRuleGENU02::FindEnumDeclHelper(Ptr<Node> node)
+void StructuralRuleGENU02::FindEnumDeclHelper(Ptr<Node> node, std::vector<EnumCtr>& enumCtrSet,
+    std::map<Ty*, std::vector<Type*>>& inheritedClassMap)
 {
     if (!node) {
         return;
     }
-    Walker walker(node, [this](Ptr<Node> node) -> VisitAction {
+    Walker walker(node, [this, &enumCtrSet, &inheritedClassMap](Ptr<Node> node) -> VisitAction {
         return match(*node)(
-            [this](const FuncDecl& funcDecl) {
-                CheckFuncOverload(funcDecl);
+            [this, &enumCtrSet, &inheritedClassMap](const FuncDecl& funcDecl) {
+                CheckFuncOverload(funcDecl, enumCtrSet, inheritedClassMap);
                 return VisitAction::SKIP_CHILDREN;
             },
-            [this](const EnumDecl& enumDecl) {
-                CheckEnumCtrOverload(enumDecl);
+            [this, &enumCtrSet, &inheritedClassMap](const EnumDecl& enumDecl) {
+                CheckEnumCtrOverload(enumDecl, enumCtrSet, inheritedClassMap);
                 return VisitAction::SKIP_CHILDREN;
             },
             []() { return VisitAction::WALK_CHILDREN; });
@@ -138,14 +129,14 @@ void StructuralRuleGENU02::FindEnumDeclHelper(Ptr<Node> node)
     walker.Walk();
 }
 
-void StructuralRuleGENU02::FindExtendHelper(Ptr<Cangjie::AST::Node> node)
+void StructuralRuleGENU02::FindExtendHelper(Ptr<Node> node, std::map<Ty*, std::vector<Type*>>& inheritedClassMap)
 {
     if (node == nullptr) {
         return;
     }
-    Walker walker(node, [this](Ptr<Node> node) -> VisitAction {
+    Walker walker(node, [&inheritedClassMap](Ptr<Node> node) -> VisitAction {
         return match(*node)(
-            [this](const ExtendDecl& extendDecl) {
+            [&inheritedClassMap](const ExtendDecl& extendDecl) {
                 if (extendDecl.extendedType->ty->IsClassLike()) {
                     for (auto& type : extendDecl.inheritedTypes) {
                         inheritedClassMap[extendDecl.extendedType->ty].emplace_back(type.get());
@@ -161,8 +152,18 @@ void StructuralRuleGENU02::FindExtendHelper(Ptr<Cangjie::AST::Node> node)
 void StructuralRuleGENU02::MatchPattern(ASTContext& ctx, Ptr<Node> node)
 {
     (void)ctx;
-    // Collect the inheritance relationships between classes/interfaces through extendDecl
-    FindExtendHelper(node);
-    // Check enum's constructor and top-level functions
-    FindEnumDeclHelper(node);
+    if (node->astKind ==  ASTKind::PACKAGE) {
+        auto pkg = static_cast<Package*>(node.get());
+        for (auto& file: pkg->files) {
+            /** @brief Records information about all enum constructors. */
+            std::vector<EnumCtr> enumCtrSet;
+            /** @brief Map describing class inheritance introduced by extendDecl. */
+            std::map<AST::Ty*, std::vector<AST::Type*>> inheritedClassMap;
+
+            // Collect the inheritance relationships between classes/interfaces through extendDecl
+            FindExtendHelper(file, inheritedClassMap);
+            // Check enum's constructor and top-level functions
+            FindEnumDeclHelper(file, enumCtrSet, inheritedClassMap);
+        }
+    }
 }
