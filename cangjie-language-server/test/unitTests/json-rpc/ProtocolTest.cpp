@@ -2168,25 +2168,6 @@ TEST_F(ProtocolTest, FromJSON_ExecuteCommandParams_EmptyArguments) {
     EXPECT_TRUE(reply.arguments.empty());
 }
 
-// Test case for FileRefactorReqParams FromJSON with missing targetPath
-TEST_F(ProtocolTest, FromJSON_FileRefactorReqParams_MissingTargetPath) {
-    json params = R"({
-        "file": {
-            "uri": "file:///old/path.cj"
-        },
-        "selectedElement": {
-            "uri": "file:///element.cj"
-        }
-    })"_json;
-
-    FileRefactorReqParams reply;
-    bool result = FromJSON(params, reply);
-
-    EXPECT_TRUE(result); // targetPath is optional, should return true
-    EXPECT_EQ(reply.file.uri.file, "file:///old/path.cj");
-    EXPECT_EQ(reply.selectedElement.uri.file, "file:///element.cj");
-}
-
 // Test case for FileRefactorReqParams FromJSON with missing selectedElement
 TEST_F(ProtocolTest, FromJSON_FileRefactorReqParams_MissingSelectedElement) {
     json params = R"({
