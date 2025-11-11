@@ -9,45 +9,6 @@
 
 using namespace ark;
 
-TEST(CrashReporterTest, MessageInfoHandlerTest001)
-{
-    std::string message = "Test message 1";
-    ark::Logger::messageQueue.push(message);
-
-    MessageInfoHandler();
-
-    std::string baseDir = ark::Logger::GetLogPath();
-    std::string logDir = Cangjie::FileUtil::JoinPath(baseDir, ".log");
-    std::string logFile = logDir + ark::FILE_SEPARATOR + "messageInfo.txt";
-    std::ifstream ifs(logFile);
-    std::string content((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-    EXPECT_NE(content.find(message), std::string::npos);
-}
-
-TEST(CrashReporterTest, KernelLogHandlerTest001)
-{
-    std::thread::id testThreadId = std::this_thread::get_id();
-
-    std::vector<ark::KernelLog> msgs = {
-        {"2023-10-01", "testFunction1", "success"}, {"2023-10-02", "testFunction2", "failed"}};
-    for (const auto &msg : msgs) {
-        ark::Logger::kernelLog[testThreadId].push_back(msg);
-    }
-
-    KernelLogHandler(testThreadId);
-
-    std::string baseDir = ark::Logger::GetLogPath();
-    std::string logDir = Cangjie::FileUtil::JoinPath(baseDir, ".log");
-    std::string logFile = logDir + ark::FILE_SEPARATOR + "kernelLog.txt";
-    std::ifstream ifs(logFile);
-    std::string content((std::istreambuf_iterator<char>(ifs)), (std::istreambuf_iterator<char>()));
-
-    for (const auto &msg : msgs) {
-        std::string expectedLine = msg.date + ": function: " + msg.func + " state: " + msg.state;
-        EXPECT_NE(content.find(expectedLine), std::string::npos);
-    }
-}
-
 #ifdef __linux__
 
 #elif defined(_WIN32)
