@@ -4,43 +4,31 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-#include "Memory.h"
+#include "Regexp.cpp"
 #include <gtest/gtest.h>
 
-using namespace sqldb;
-
-TEST(MemoryTest, MemoryTest001)
+TEST(RegexpTest, regexpTest001)
 {
-    getMemoryUsed();
-    EXPECT_EQ(1, 1);
+    std::optional<std::string_view> regex = "abc";
+    std::optional<std::string_view> text = "abcdef";
+    auto result = sqldb::regexp(regex, text);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value());
 }
 
-TEST(MemoryTest, MemoryTest002)
+TEST(RegexpTest, regexpTest002)
 {
-    getMemoryHighWater();
-    EXPECT_EQ(1, 1);
+    std::optional<std::string_view> regex = "abc";
+    std::optional<std::string_view> text = "def";
+    auto result = sqldb::regexp(regex, text);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_FALSE(result.value());
 }
 
-TEST(MemoryTest, MemoryTest003)
+TEST(RegexpTest, regexpTest003)
 {
-    getSoftHeapLimit();
-    EXPECT_EQ(1, 1);
-}
-
-TEST(MemoryTest, MemoryTest004)
-{
-    getHardHeapLimit();
-    EXPECT_EQ(1, 1);
-}
-
-TEST(MemoryTest, MemoryTest005)
-{
-    setSoftHeapLimit(-1);
-    EXPECT_EQ(1, 1);
-}
-
-TEST(MemoryTest, MemoryTest006)
-{
-    setHardHeapLimit(-1);
+    std::optional<std::string_view> regex;
+    std::optional<std::string_view> text;
+    auto result = sqldb::regexp(regex, text);
     EXPECT_EQ(1, 1);
 }
