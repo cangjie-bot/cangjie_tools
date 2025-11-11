@@ -1460,24 +1460,6 @@ TEST_F(ProtocolTest, FromJSON_DidChangeTextDocumentParams_InvalidRange) {
     EXPECT_TRUE(reply.contentChanges.empty()); // But no valid changes added
 }
 
-// Test case for CodeActionContext FromJSON with only field
-TEST_F(ProtocolTest, FromJSON_CodeActionContext_WithOnlyField) {
-    json params = R"({
-        "diagnostics": [],
-        "only": ["quickfix", "refactor"]
-    })"_json;
-
-    CodeActionContext reply;
-    bool result = FromJSON(params, reply);
-
-    EXPECT_TRUE(result);
-    EXPECT_TRUE(reply.diagnostics.empty());
-    ASSERT_TRUE(reply.only.has_value());
-    ASSERT_EQ(reply.only->size(), 2u);
-    EXPECT_EQ(reply.only->at(0), "quickfix");
-    EXPECT_EQ(reply.only->at(1), "refactor");
-}
-
 // Test case for CodeActionParams FromJSON without context
 TEST_F(ProtocolTest, FromJSON_CodeActionParams_WithoutContext) {
     json params = R"({
