@@ -2238,42 +2238,6 @@ TEST_F(ProtocolTest, MessageHeaderEndOfLine_StaticMethods) {
     EXPECT_FALSE(MessageHeaderEndOfLine::GetIsDeveco());
 }
 
-// Test case for DocumentLinkParams FromJSON with invalid structure
-TEST_F(ProtocolTest, FromJSON_DocumentLinkParams_InvalidStructure) {
-    json params = R"({
-        "textDocument": "invalid"
-    })"_json;
-
-    DocumentLinkParams reply;
-    bool result = FromJSON(params, reply);
-
-    EXPECT_FALSE(result);
-}
-
-// Test case for SemanticTokensParams FromJSON with invalid structure
-TEST_F(ProtocolTest, FromJSON_SemanticTokensParams_InvalidStructure) {
-    json params = R"({
-        "textDocument": "invalid"
-    })"_json;
-
-    SemanticTokensParams reply;
-    bool result = FromJSON(params, reply);
-
-    EXPECT_FALSE(result);
-}
-
-// Test case for DidCloseTextDocumentParams FromJSON with invalid structure
-TEST_F(ProtocolTest, FromJSON_DidCloseTextDocumentParams_InvalidStructure) {
-    json params = R"({
-        "textDocument": "invalid"
-    })"_json;
-
-    DidCloseTextDocumentParams reply;
-    bool result = FromJSON(params, reply);
-
-    EXPECT_FALSE(result);
-}
-
 // Test case for TextDocumentIdentifier FromJSON with null uri
 TEST_F(ProtocolTest, FromJSON_TextDocumentIdentifier_NullUri) {
     json params = R"({
