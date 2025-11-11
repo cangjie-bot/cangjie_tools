@@ -335,14 +335,6 @@ TEST_F(CompilerCangjieProjectTest, GetDiagCurEditFileTest) {
     // Verify diagnostics processing
 }
 
-TEST_F(CompilerCangjieProjectTest, GetOneModuleDirectDepsTest) {
-    std::string curModule = "test_module";
-
-    // Test direct module dependencies retrieval
-    auto deps = CompilerCangjieProject::GetInstance()->GetOneModuleDirectDeps(curModule);
-    // Verify direct dependencies list
-}
-
 TEST_F(CompilerCangjieProjectTest, UpdateBuffCacheTest) {
     std::string file = "test_workspace/src/test_pkg/test_file.cj";
 
