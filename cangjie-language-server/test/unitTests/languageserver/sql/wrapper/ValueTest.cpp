@@ -81,7 +81,7 @@ TEST(ValueTest, Test001)
     sqlite3_exec(
         db,
         "SELECT my_function(10, 20)",
-        [](void* data, int argc, char argv, char colName) -> int {
+        [](void* data, int argc, char** argv, char** colName) -> int {
             std::cout << "Result: " << argv[0] << std::endl;
             return 0;
         },
