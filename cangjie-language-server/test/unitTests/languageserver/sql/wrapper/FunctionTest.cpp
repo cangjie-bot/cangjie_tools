@@ -103,7 +103,7 @@ TEST(FunctionTest, resultTest001)
     sqlite3_exec(
         db,
         "SELECT my_function(10, 20)",
-        [](void* data, int argc, char argv, char colName) -> int {
+        [](void* data, int argc, char** argv, char** colName) -> int {
             std::cout << "Result: " << argv[0] << std::endl;
             return 0;
         },
@@ -151,7 +151,7 @@ TEST(FunctionTest, callTest001)
     sqlite3_exec(
         db,
         "SELECT my_function(42)",
-        [](void* data, int argc, char argv, char colName) -> int {
+        [](void* data, int argc, char** argv, char** colName) -> int {
             std::cout << "Result: " << argv[0] << std::endl;
             return 0;
         },
@@ -204,7 +204,7 @@ TEST(FunctionTest, callTest002)
     sqlite3_exec(
         db,
         "SELECT my_function(1, -1)",
-        [](void* data, int argc, char argv, char colName) -> int {
+        [](void* data, int argc, char** argv, char** colName) -> int {
             std::cout << "Result: " << argv[0] << std::endl;
             return 0;
         },
@@ -259,7 +259,7 @@ TEST(FunctionTest, callTest003)
     sqlite3_exec(
         db,
         "SELECT my_function(1, -1)",
-        [](void* data, int argc, char argv, char colName) -> int {
+        [](void* data, int argc, char** argv, char** colName) -> int {
             std::cout << "Result: " << argv[0] << std::endl;
             return 0;
         },
