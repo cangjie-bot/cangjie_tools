@@ -323,54 +323,54 @@ TEST(FindOverrideMethodUtilsTest, ResolvePropDetailTest002) {
 }
 
 // TypeDetail tests
-TEST(TypeDetailTest, ToStringTest001) {
+TEST(FindOverrideMethodUtilsTest, ToStringTest001) {
     TypeDetail detail("MyType");
     EXPECT_EQ(detail.ToString(), "MyType");
 }
 
-TEST(TypeDetailTest, ToStringTest002) {
+TEST(FindOverrideMethodUtilsTest, ToStringTest002) {
     TypeDetail detail("");
     EXPECT_EQ(detail.ToString(), "");
 }
 
-TEST(TypeDetailTest, SetIdentifierTest001) {
+TEST(FindOverrideMethodUtilsTest, SetIdentifierTest001) {
     TypeDetail detail("OldType");
     detail.SetIdentifier("OldType", "NewType");
     EXPECT_EQ(detail.identifier, "OldType"); // Base class doesn't change
 }
 
 // CommonTypeDetail tests
-TEST(CommonTypeDetailTest, ToStringTest001) {
+TEST(CommonFindOverrideMethodUtilsTest, ToStringTest001) {
     CommonTypeDetail detail("GenericType");
     EXPECT_EQ(detail.ToString(), "GenericType");
 }
 
-TEST(CommonTypeDetailTest, SetIdentifierTest001) {
+TEST(CommonFindOverrideMethodUtilsTest, SetIdentifierTest001) {
     CommonTypeDetail detail("OldType");
     detail.SetIdentifier("OldType", "NewType");
     EXPECT_EQ(detail.identifier, "NewType");
 }
 
-TEST(CommonTypeDetailTest, SetIdentifierTest002) {
+TEST(CommonFindOverrideMethodUtilsTest, SetIdentifierTest002) {
     CommonTypeDetail detail("OldType");
     detail.SetIdentifier("DifferentType", "NewType");
     EXPECT_EQ(detail.identifier, "OldType"); // Should not change
 }
 
 // ClassLikeTypeDetail tests
-TEST(ClassLikeTypeDetailTest, ToStringTest001) {
+TEST(ClassLikeFindOverrideMethodUtilsTest, ToStringTest001) {
     ClassLikeTypeDetail detail("MyClass");
     EXPECT_EQ(detail.ToString(), "MyClass");
 }
 
-TEST(ClassLikeTypeDetailTest, ToStringTest002) {
+TEST(ClassLikeFindOverrideMethodUtilsTest, ToStringTest002) {
     ClassLikeTypeDetail detail("MyGenericClass");
     detail.generics.push_back(std::make_unique<CommonTypeDetail>("T"));
     detail.generics.push_back(std::make_unique<CommonTypeDetail>("U"));
     EXPECT_EQ(detail.ToString(), "MyGenericClass<T, U>");
 }
 
-TEST(ClassLikeTypeDetailTest, SetIdentifierTest001) {
+TEST(ClassLikeFindOverrideMethodUtilsTest, SetIdentifierTest001) {
     ClassLikeTypeDetail detail("Container");
     detail.generics.push_back(std::make_unique<CommonTypeDetail>("T"));
     detail.SetIdentifier("T", "NewType");
@@ -378,14 +378,14 @@ TEST(ClassLikeTypeDetailTest, SetIdentifierTest001) {
 }
 
 // FuncLikeTypeDetail tests
-TEST(FuncLikeTypeDetailTest, ToStringTest001) {
+TEST(FuncLikeFindOverrideMethodUtilsTest, ToStringTest001) {
     FuncLikeTypeDetail detail;
     detail.params.push_back(std::make_unique<CommonTypeDetail>("int32"));
     detail.ret = std::make_unique<CommonTypeDetail>("void");
     EXPECT_EQ(detail.ToString(), "(int32) -> void");
 }
 
-TEST(FuncLikeTypeDetailTest, ToStringTest002) {
+TEST(FuncLikeFindOverrideMethodUtilsTest, ToStringTest002) {
     FuncLikeTypeDetail detail;
     detail.params.push_back(std::make_unique<CommonTypeDetail>("string"));
     detail.params.push_back(std::make_unique<CommonTypeDetail>("bool"));
@@ -393,7 +393,7 @@ TEST(FuncLikeTypeDetailTest, ToStringTest002) {
     EXPECT_EQ(detail.ToString(), "(string, bool) -> Result");
 }
 
-TEST(FuncLikeTypeDetailTest, SetIdentifierTest001) {
+TEST(FuncLikeFindOverrideMethodUtilsTest, SetIdentifierTest001) {
     FuncLikeTypeDetail detail;
     detail.params.push_back(std::make_unique<CommonTypeDetail>("T"));
     detail.ret = std::make_unique<CommonTypeDetail>("T");
@@ -403,7 +403,7 @@ TEST(FuncLikeTypeDetailTest, SetIdentifierTest001) {
 }
 
 // VArrayTypeDetail tests
-TEST(VArrayTypeDetailTest, ToStringTest001) {
+TEST(VArrayFindOverrideMethodUtilsTest, ToStringTest001) {
     VArrayTypeDetail detail;
     detail.identifier = "Array";
     detail.tyArg = std::make_unique<CommonTypeDetail>("int32");
@@ -411,7 +411,7 @@ TEST(VArrayTypeDetailTest, ToStringTest001) {
     EXPECT_EQ(detail.ToString(), "Array<int32, $10>");
 }
 
-TEST(VArrayTypeDetailTest, ToStringTest002) {
+TEST(VArrayFindOverrideMethodUtilsTest, ToStringTest002) {
     VArrayTypeDetail detail;
     detail.identifier = "Matrix";
     detail.tyArg = std::make_unique<CommonTypeDetail>("float64");
@@ -420,27 +420,27 @@ TEST(VArrayTypeDetailTest, ToStringTest002) {
 }
 
 // TupleTypeDetail tests
-TEST(TupleTypeDetailTest, ToStringTest001) {
+TEST(TupleFindOverrideMethodUtilsTest, ToStringTest001) {
     TupleTypeDetail detail;
     detail.params.push_back(std::make_unique<CommonTypeDetail>("int32"));
     detail.params.push_back(std::make_unique<CommonTypeDetail>("string"));
     EXPECT_EQ(detail.ToString(), "(int32, string)");
 }
 
-TEST(TupleTypeDetailTest, ToStringTest002) {
+TEST(TupleFindOverrideMethodUtilsTest, ToStringTest002) {
     TupleTypeDetail detail;
     EXPECT_EQ(detail.ToString(), "()");
 }
 
 // FuncParamDetail tests
-TEST(FuncParamDetailTest, ToStringTest001) {
+TEST(FindOverrideMethodUtilsTest, ToStringTest001) {
     FuncParamDetail param;
     param.identifier = "value";
     param.type = std::make_unique<CommonTypeDetail>("int32");
     EXPECT_EQ(param.ToString(), "value: int32");
 }
 
-TEST(FuncParamDetailTest, ToStringTest002) {
+TEST(FindOverrideMethodUtilsTest, ToStringTest002) {
     FuncParamDetail param;
     param.identifier = "name";
     param.isNamed = true;
@@ -448,7 +448,7 @@ TEST(FuncParamDetailTest, ToStringTest002) {
     EXPECT_EQ(param.ToString(), "name!: string");
 }
 
-TEST(FuncParamDetailTest, SetGenericTypeTest001) {
+TEST(FindOverrideMethodUtilsTest, SetGenericTypeTest001) {
     FuncParamDetail param;
     param.type = std::make_unique<CommonTypeDetail>("T");
     param.SetGenericType("T", "ConcreteType");
