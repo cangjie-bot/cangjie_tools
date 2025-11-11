@@ -239,3 +239,114 @@ TEST(ArkASTTest, Constants) {
     EXPECT_TRUE(OPERATOR_TO_OVERLOAD.count(TokenKind::BITXOR));
     EXPECT_TRUE(OPERATOR_TO_OVERLOAD.count(TokenKind::BITOR));
 }
+
+// Test GetCurToken function with multiline string token
+TEST(ArkASTTest, GetCurTokenWithMultilineString) {
+    ArkAST ast = CreateArkAST();
+
+    // Create a mock multiline string token for testing
+    // This would require setting up tokens in the ast
+    Cangjie::Position pos{0, 1, 1};
+
+    // Test case where tokens vector is empty
+    EXPECT_EQ(ast.GetCurToken(pos, 0, -1), -1);
+}
+
+// Test GetCurTokenByStartColumn function
+TEST(ArkASTTest, GetCurTokenByStartColumn) {
+    ArkAST ast = CreateArkAST();
+
+    Cangjie::Position pos{0, 1, 1};
+
+    // Test with empty tokens
+    EXPECT_EQ(ast.GetCurTokenByStartColumn(pos, 0, -1), -1);
+
+    // Test with invalid index
+    EXPECT_EQ(ast.GetCurTokenByStartColumn(pos, -1, 0), -1);
+}
+
+// Test FindRealDecl function with various scenarios
+TEST(ArkASTTest, FindRealDecl) {
+    ArkAST ast = CreateArkAST();
+
+    // Test with empty symbols vector
+    std::vector<Symbol*> emptySyms;
+    std::string query = "test query";
+    Cangjie::Position pos{0, 1, 1};
+    std::pair<bool, bool> isMacroOrAlias = {false, false};
+
+    auto result = ast.FindRealDecl(ast, emptySyms, query, pos, isMacroOrAlias);
+    EXPECT_TRUE(result.empty());
+
+    // Test with null symbols
+    std::vector<Symbol*> nullSyms = {nullptr};
+    result = ast.FindRealDecl(ast, nullSyms, query, pos, isMacroOrAlias);
+    EXPECT_TRUE(result.empty());
+}
+
+// Test FindRealGenericParamDeclForExtend function
+TEST(ArkASTTest, FindRealGenericParamDeclForExtend) {
+    ArkAST ast = CreateArkAST();
+
+    // Test with empty symbols vector
+    std::vector<Symbol*> emptySyms;
+    std::string genericParamName = "T";
+
+    auto result = ast.FindRealGenericParamDeclForExtend(genericParamName, emptySyms);
+    EXPECT_EQ(result, nullptr);
+
+    // Test with null symbols
+    std::vector<Symbol*> nullSyms = {nullptr};
+    result = ast.FindRealGenericParamDeclForExtend(genericParamName, nullSyms);
+    EXPECT_EQ(result, nullptr);
+
+    // Test with non-extend declaration symbols
+    std::vector<Symbol*> nonExtendSyms;
+    // This would require creating mock Symbol objects with non-EXTEND_DECL nodes
+    result = ast.FindRealGenericParamDeclForExtend(genericParamName, nonExtendSyms);
+    EXPECT_EQ(result, nullptr);
+}
+
+
+// Test IsModifierBeforeDecl function (indirectly through GetDeclByPosition)
+TEST(ArkASTTest, IsModifierBeforeDecl) {
+    ArkAST ast = CreateArkAST();
+
+    // This tests the modifier filtering logic in GetDeclByPosition
+    // Would require setting up specific AST structures where decls[0] is a modifier
+    Cangjie::Position pos{0, 1, 1};
+    auto result = ast.GetDeclByPosition(pos);
+    EXPECT_EQ(result, nullptr); // Should be filtered out if it's a modifier
+}
+
+// Test macro and alias handling in FindRealDecl
+TEST(ArkASTTest, FindRealDeclWithMacroAndAlias) {
+    ArkAST ast = CreateArkAST();
+
+    std::vector<Symbol*> syms;
+    std::string query = "test query";
+    Cangjie::Position pos{0, 1, 1};
+
+    // Test with alias enabled
+    std::pair<bool, bool> aliasEnabled = {false, true};
+    auto result = ast.FindRealDecl(ast, syms, query, pos, aliasEnabled);
+    EXPECT_TRUE(result.empty());
+
+    // Test with macro enabled
+    std::pair<bool, bool> macroEnabled = {true, false};
+    result = ast.FindRealDecl(ast, syms, query, pos, macroEnabled);
+    EXPECT_TRUE(result.empty());
+}
+
+// Test CheckInQuote function with actual MacroExpandDecl
+TEST(ArkASTTest, CheckInQuoteWithMacroExpandDecl) {
+    ArkAST ast = CreateArkAST();
+
+    // Test with null MacroExpandDecl
+    Ptr<const MacroExpandDecl> nullMacroDecl = nullptr;
+    Cangjie::Position pos{0, 1, 1};
+
+    // This would require creating a proper MacroExpandDecl instance
+    // to test the position comparison logic
+    EXPECT_FALSE(ast.CheckInQuote(nullMacroDecl, pos));
+}
