@@ -65,7 +65,7 @@ public:
           enablePackaged(enablePackaged)
     {
         if (CreateDirs(this->cjdCachePath) == -1) {
-            Trace::Log("cjd cache dir build failed");
+            Trace::Log("cjd cache dir created failed");
         }
         cacheManager = std::make_unique<CacheManager>(this->cjdCachePath);
         cacheManager->InitDir();

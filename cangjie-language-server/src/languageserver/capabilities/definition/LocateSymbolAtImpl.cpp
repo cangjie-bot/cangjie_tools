@@ -69,8 +69,7 @@ bool GetDefinitionItems(const Decl &decl, LocatedSymbol &result)
         return true;
     }
     if (!FileUtil::FileExist(path)) {
-        if (MessageHeaderEndOfLine::GetIsDeveco() && !symFromIndex.IsInvalidSym() &&
-            !symFromIndex.declaration.IsZeroLoc()) {
+        if (!symFromIndex.IsInvalidSym() && !symFromIndex.declaration.IsZeroLoc()) {
             uri.file = URI::URIFromAbsolutePath(symFromIndex.declaration.fileUri).ToString();
             range.start = symFromIndex.declaration.begin;
             range.end = symFromIndex.declaration.end;

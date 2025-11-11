@@ -1,3 +1,4 @@
+
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
@@ -5,12 +6,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 #include "SymbolCollector.h"
-#include <cangjie/AST/PrintNode.h>
-#include <queue>
-
-#include "../CompilerCangjieProject.h"
 #include "CjdIndex.h"
-#include "MemIndex.h"
 
 namespace {
 using namespace Cangjie;
@@ -60,8 +56,8 @@ void GetAliasInImportMulti(std::unordered_map<std::string, std::string> aliasMap
 
 inline bool NeedToObtainCjdDeclPos(bool isCjoPkg)
 {
-    return ark::MessageHeaderEndOfLine::GetIsDeveco() && ark::lsp::CjdIndexer::GetInstance() != nullptr && isCjoPkg &&
-           !ark::lsp::CjdIndexer::GetInstance()->GetRunningState();
+    return ark::lsp::CjdIndexer::GetInstance() != nullptr && isCjoPkg &&
+        !ark::lsp::CjdIndexer::GetInstance()->GetRunningState();
 }
 
 Ptr<const Node> GetCurMacro(const Decl& decl)
