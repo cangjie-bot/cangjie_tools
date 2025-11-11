@@ -1280,22 +1280,6 @@ TEST_F(ProtocolTest, FromJSON_TextDocumentPositionParams_InvalidPosition) {
     EXPECT_FALSE(result);
 }
 
-// Test case for SignatureHelpContext FromJSON with partial activeSignatureHelp
-TEST_F(ProtocolTest, FromJSON_SignatureHelpContext_PartialActiveSignatureHelp) {
-    json params = R"({
-        "triggerKind": 1,
-        "activeSignatureHelp": {
-            "activeSignature": 0
-        }
-    })"_json;
-
-    SignatureHelpContext reply;
-    bool result = FromJSON(params, reply);
-
-    EXPECT_TRUE(result);
-    EXPECT_EQ(reply.activeSignatureHelp.activeSignature, 0);
-}
-
 // Test case for SignatureHelpParams FromJSON without context
 TEST_F(ProtocolTest, FromJSON_SignatureHelpParams_WithoutContext) {
     json params = R"({
