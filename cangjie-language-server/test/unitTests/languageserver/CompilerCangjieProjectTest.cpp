@@ -335,14 +335,6 @@ TEST_F(CompilerCangjieProjectTest, GetDiagCurEditFileTest) {
     // Verify diagnostics processing
 }
 
-TEST_F(CompilerCangjieProjectTest, GetOneModuleDepsTest) {
-    std::string curModule = "test_module";
-
-    // Test module dependencies retrieval
-    auto deps = CompilerCangjieProject::GetInstance()->GetOneModuleDeps(curModule);
-    // Verify dependencies list
-}
-
 TEST_F(CompilerCangjieProjectTest, GetOneModuleDirectDepsTest) {
     std::string curModule = "test_module";
 
