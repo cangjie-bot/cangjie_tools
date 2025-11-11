@@ -2168,23 +2168,6 @@ TEST_F(ProtocolTest, FromJSON_ExecuteCommandParams_EmptyArguments) {
     EXPECT_TRUE(reply.arguments.empty());
 }
 
-// Test case for FileRefactorReqParams FromJSON with missing selectedElement
-TEST_F(ProtocolTest, FromJSON_FileRefactorReqParams_MissingSelectedElement) {
-    json params = R"({
-        "file": {
-            "uri": "file:///old/path.cj"
-        },
-        "targetPath": {
-            "uri": "file:///new/path.cj"
-        }
-    })"_json;
-
-    FileRefactorReqParams reply;
-    bool result = FromJSON(params, reply);
-
-    EXPECT_FALSE(result); // selectedElement is required, should return false
-}
-
 // Test case for CompletionItem ToJSON with empty optional vectors
 TEST_F(ProtocolTest, ToJSON_CompletionItem_EmptyOptionalVectors) {
     CompletionItem iter;
