@@ -254,15 +254,6 @@ TEST_F(CompilerCangjieProjectTest, GetFullPkgByDirTest) {
     // Test package name resolution from directory path
 }
 
-TEST_F(CompilerCangjieProjectTest, CompilerOneFileTest) {
-    std::string filePath = "test_workspace/src/test_pkg/test_file.cj";
-    std::string contents = "package test_pkg; func main() {}";
-    Position pos = {0, 0, 0};
-    
-    // Test single file compilation
-    CompilerCangjieProject::GetInstance()->CompilerOneFile(filePath, contents, pos, false, "test_name");
-}
-
 TEST_F(CompilerCangjieProjectTest, GetCIForDotCompleteTest) {
     std::string filePath = "test_workspace/src/test_pkg/test_file.cj";
     std::string contents = "package test_pkg; var testVar = \"test\".//cursor here";

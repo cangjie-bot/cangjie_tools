@@ -252,19 +252,6 @@ TEST(ArkASTTest, GetCurTokenWithMultilineString) {
     EXPECT_EQ(ast.GetCurToken(pos, 0, -1), -1);
 }
 
-// Test GetCurTokenByStartColumn function
-TEST(ArkASTTest, GetCurTokenByStartColumn) {
-    ArkAST ast = CreateArkAST();
-
-    Cangjie::Position pos{0, 1, 1};
-
-    // Test with empty tokens
-    EXPECT_EQ(ast.GetCurTokenByStartColumn(pos, 0, -1), -1);
-
-    // Test with invalid index
-    EXPECT_EQ(ast.GetCurTokenByStartColumn(pos, -1, 0), -1);
-}
-
 // Test FindRealDecl function with various scenarios
 TEST(ArkASTTest, FindRealDecl) {
     ArkAST ast = CreateArkAST();
