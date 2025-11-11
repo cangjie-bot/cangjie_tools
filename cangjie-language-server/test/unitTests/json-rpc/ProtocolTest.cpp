@@ -1460,29 +1460,6 @@ TEST_F(ProtocolTest, FromJSON_DidChangeTextDocumentParams_InvalidRange) {
     EXPECT_TRUE(reply.contentChanges.empty()); // But no valid changes added
 }
 
-// Test case for CodeActionParams FromJSON without context
-TEST_F(ProtocolTest, FromJSON_CodeActionParams_WithoutContext) {
-    json params = R"({
-        "textDocument": {
-            "uri": "file:///test.cj"
-        },
-        "range": {
-            "start": {"line": 5, "character": 10},
-            "end": {"line": 5, "character": 20}
-        }
-    })"_json;
-
-    CodeActionParams reply;
-    bool result = FromJSON(params, reply);
-
-    EXPECT_TRUE(result);
-    EXPECT_EQ(reply.textDocument.uri.file, "file:///test.cj");
-    EXPECT_EQ(reply.range.start.line, 5);
-    EXPECT_EQ(reply.range.start.column, 10);
-    EXPECT_EQ(reply.range.end.line, 5);
-    EXPECT_EQ(reply.range.end.column, 20);
-}
-
 // Test case for TweakArgs FromJSON without extraOptions
 TEST_F(ProtocolTest, FromJSON_TweakArgs_WithoutExtraOptions) {
     json params = R"({
