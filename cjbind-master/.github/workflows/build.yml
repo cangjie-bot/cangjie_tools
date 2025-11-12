@@ -1,0 +1,145 @@
+name: Build
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+  release:
+    types: ["created"]
+
+permissions:
+  contents: "write"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os:
+          - runner: "ubuntu-22.04"
+            sys: "linux"
+            arch: "x64"
+            friendly_name: "Linux (x64)"
+            ext: ""
+          - runner: "ubuntu-22.04-arm"
+            sys: "linux"
+            arch: "arm64"
+            friendly_name: "Linux (ARM64)"
+            ext: ""
+          - runner: "macos-14"
+            sys: "darwin"
+            arch: "arm64"
+            friendly_name: "macOS (Apple Silicon)"
+            ext: ""
+          - runner: "windows-2022"
+            sys: "windows"
+            arch: "x64"
+            friendly_name: "Windows (x64)"
+            ext: ".exe"
+        build:
+          - channel: "release"
+            flag: ""
+          # - channel: "debug"
+          #   flag: "-g"
+      fail-fast: false
+
+    runs-on: ${{ matrix.os.runner }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          cache-dependency-glob: "**/*.py.lock"
+
+      - name: Restore cached libclang
+        id: cache-libclang-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: lib/libclang
+          key: libclang-${{ matrix.os.runner }}-${{ matrix.os.arch }}-20.1.0-v2
+
+      - name: Download libclang
+        if: steps.cache-libclang-restore.outputs.cache-hit != 'true'
+        run: |
+          uv run scripts/download.py
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+          cache: true
+
+      - name: Setup Cangjie
+        uses: Zxilly/setup-cangjie@v2
+        with:
+          channel: "lts"
+          version: "auto"
+
+      - name: Patch Cangjie
+        run: |
+          uv run scripts/patch_opt.py
+
+      - name: Setup MSYS2
+        if: matrix.os.sys == 'windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+          path-type: inherit
+
+      - name: Build unix ${{ matrix.build.channel }}
+        if: matrix.os.sys != 'windows'
+        run: |
+          uv run scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
+
+      - name: Build windows ${{ matrix.build.channel }}
+        if: matrix.os.sys == 'windows'
+        shell: msys2 {0}
+        run: |
+          uv run python scripts/cjpm.py build --cfg_verbose -V ${{ matrix.build.flag }}
+
+      - name: Test binary
+        shell: bash
+        run: |
+          ./target/${{ matrix.build.channel }}/bin/main${{ matrix.os.ext }} --version
+
+      - name: Upload artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cjbind-${{ matrix.os.runner }}-${{ matrix.os.arch }}-${{ matrix.build.channel }}
+          path: |
+            target/${{ matrix.build.channel }}/bin/main*
+
+      - name: Rename binary
+        if: github.event_name == 'release' && matrix.build.channel == 'release'
+        shell: bash
+        run: |
+          cd target/release/bin
+          mv main${{ matrix.os.ext }} cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}${{ matrix.os.ext }}
+
+      - name: Upload to Release
+        if: github.event_name == 'release' && matrix.build.channel == 'release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ASSET_PATH: target/release/bin/cjbind-${{ matrix.os.sys }}-${{ matrix.os.arch }}${{ matrix.os.ext }}
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} "$ASSET_PATH#${{ matrix.os.friendly_name }}" \
+            --clobber
+
+      - name: Always Save libclang
+        id: cache-libclang-save
+        if: always() && steps.cache-libclang-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          key: ${{ steps.cache-libclang-restore.outputs.cache-primary-key }}
+          path: |
+            lib/libclang
+
