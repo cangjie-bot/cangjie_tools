@@ -76,7 +76,7 @@ def generate_flat_header():
     flatbuffers_build_dir = os.path.join(flatbuffers_dir, "build")
     if not os.path.exists(flatbuffers_build_dir):
         os.makedirs(flatbuffers_build_dir)
-    compile_cmd = ["cmake", flatbuffers_dir, "-G", get_generator(), "-DFLATBUFFERS_BUILD_TESTS=OFF"]
+    compile_cmd = ["cmake", flatbuffers_dir, "-G", "MinGW Makefiles", "-DFLATBUFFERS_BUILD_TESTS=OFF"]
     output = subprocess.Popen(compile_cmd, cwd=flatbuffers_build_dir, stdout=PIPE)
     for line in output.stdout:
         print(line.decode("ascii", "ignore").rstrip())
@@ -299,7 +299,7 @@ def get_run_test_command(cangjie_sdk_path):
     if not IS_WINDOWS:
         result.extend(["bash", "-c", "source " + env_path + " && " + test_path])
     else:
-        result.extend([env_path, "&&", test_path])
+        result.extend([env_path, "&&", test_path , "stdout=sys.out", "stderr=sys.stderr"])
     return result
 
 def test(args):
