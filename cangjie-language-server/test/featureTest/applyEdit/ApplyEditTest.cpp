@@ -49,6 +49,28 @@ bool LspApplyEditTest(TestParam param)
         std::cout << "the false reason is : " << info << std::endl;
         ShowDiff(expLines, result, param, p->messagePath);
     }
-    return showErr;
+    return true;
+}
+
+class ApplyEditTest : public testing::TestWithParam<struct TestParam> {
+protected:
+    void SetUp()
+    {
+        SingleInstance *p = SingleInstance::GetInstance();
+        p->testFolder = "applyEdit";
+        p->pathIn = GetRealPath(p->testFolder + "_freopen.in");
+        p->pathOut = GetRealPath(p->testFolder + "_freopen.out");
+        p->pathPwd = GetPwd();
+        p->workPath = GetRootPath(p->pathPwd);
+        p->messagePath = p->workPath + "/test/message/" + p->testFolder;
+    }
+};
+
+INSTANTIATE_TEST_SUITE_P(ApplyEdit, ApplyEditTest, testing::ValuesIn(GetTestCaseList("applyEdit")));
+
+TEST_P(ApplyEditTest, ApplyEditCase)
+{
+    TestParam param = GetParam();
+    ASSERT_TRUE(LspApplyEditTest(param));
 }
 } // namespace TestLspApplyEditTest

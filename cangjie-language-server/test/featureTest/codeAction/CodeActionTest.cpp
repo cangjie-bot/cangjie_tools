@@ -51,4 +51,19 @@ bool LspCodeActionTest(TestParam param)
     }
     return showErr;
 }
+class CodeActionTest : public testing::TestWithParam<struct TestParam> {
+protected:
+    void SetUp()
+    {
+        SetUpConfig("codeAction");
+    }
+};
+
+INSTANTIATE_TEST_SUITE_P(CodeAction, CodeActionTest, testing::ValuesIn(GetTestCaseList("codeAction")));
+
+TEST_P(CodeActionTest, CodeActionCase)
+{
+    TestParam param = GetParam();
+    ASSERT_TRUE(LspCodeActionTest(param));
+}
 } // namespace TestLspCodeActionTest
