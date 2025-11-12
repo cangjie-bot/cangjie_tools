@@ -104,7 +104,15 @@ public class A2CJ {
         //interfaces
         if (cns.interfaces.size > 0) {
             objectToken.append(addComment("**********OBJECT**********"))
-            for ((_, i) in cns.interfaces) {
+            // Sort interface names to ensure deterministic output
+            let interfaceNames = ArrayList<String>()
+            for ((name, _) in cns.interfaces) {
+                interfaceNames.add(name)
+            }
+            sort<String>(interfaceNames, stable: true)
+            
+            for (name in interfaceNames) {
+                let i = cns.interfaces[name]
                 objectToken.append(transInterface(i))
             }
         }
@@ -125,7 +133,15 @@ public class A2CJ {
 
         //class
         if (cns.classes.size > 0) {
-            for ((_, c) in cns.classes) {
+            // Sort class names to ensure deterministic output
+            let classNames = ArrayList<String>()
+            for ((name, _) in cns.classes) {
+                classNames.add(name)
+            }
+            sort<String>(classNames, stable: true)
+            
+            for (name in classNames) {
+                let c = cns.classes[name]
                 objectToken.append(transClass(c))
             }
         }
