@@ -286,7 +286,7 @@ def get_run_test_command(cangjie_sdk_path):
     if not IS_WINDOWS:
         result.extend(["bash", "-c", "source " + env_path + " && " + test_path])
     else:
-        result.extend([env_path, "&&", test_path])
+        result.extend([env_path, "&&", test_path , "stdout=sys.out", "stderr=sys.stderr"])
     return result
 
 def test(args):
