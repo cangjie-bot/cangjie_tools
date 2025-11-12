@@ -42,6 +42,9 @@ Options:
   -d <directory>        The absolute path of the directory containing d.ts or d.ets file (required if -i is not used)
   -o <directory>        The directory to save the binding code (optional, defaults to the current directory)
   -j <file>             The absolute path of the d.ts or d.ets file analyzer (optional)
+  -c                    Execute cjbind command (requires -i and -o options)
+  -I <path>             Include path for cjbind (can be specified multiple times, only used with -c)
+  --no-detect-include-path  Disable automatic include path detection for cjbind (only used with -c)
   --module-name <name>  Customize the generated Cangjie package name (optional)
   --arkui               Generate bindings for arkui (optional)
   --lib                 Generate bindings for third-party library (optional)
@@ -54,10 +57,78 @@ Examples:
         Process the d.ts or d.ets file in the specified folder, use the d.ts file analyzer, and output to the specified directory
   main -d /path/to/input/folder -o /path/to/output -j /path/to/analysis.js --module-name=ohos.hilog
         Process the d.ts or d.ets file in the specified folder, use the d.ts file analyzer, customize the package name, and output to the specified directory
+  main -c -i /path/to/header.h -o /path/to/output.cj
+        Execute cjbind to generate Cangjie bindings from a C header file (uses default include paths)
+  main -c --no-detect-include-path -i /path/to/header.h -o /path/to/output.cj -I /usr/include -I /custom/include
+        Execute cjbind with custom include paths and disabled automatic include path detection
 """
 
 func printHelp(): Unit {
     println(HELP_INFO)
+}
+
+func executeCjbind(pa: ParsedArguments, args: Array<String>): Int64 {
+    let cjbindPath = "/home/danny/Huawei/projects/cangjie_tools_combine/cangjie_tools/cjbind-master/target/release/bin/main"
+    
+    let headerPath = pa.options.get("i") ?? ""
+    let outputPath = pa.options.get("o") ?? ""
+    
+    if (headerPath.isEmpty()) {
+        eprintln("Error: -i option is required when using -c flag")
+        return 1
+    }
+    
+    if (outputPath.isEmpty()) {
+        eprintln("Error: -o option is required when using -c flag")
+        return 1
+    }
+    
+    // Parse all -I include paths from the original args
+    let includePaths = ArrayList<String>()
+    var i = 0
+    while (i < args.size) {
+        if (args[i] == "-I" && i + 1 < args.size) {
+            includePaths.add(args[i + 1])
+            i += 2
+        } else {
+            i += 1
+        }
+    }
+    
+    // If no include paths were provided, use default paths
+    if (includePaths.isEmpty()) {
+        includePaths.add("/usr/lib/llvm-14/lib/clang/14.0.0/include")
+        includePaths.add("/usr/include")
+        includePaths.add("/usr/include/x86_64-linux-gnu")
+    }
+    
+    let arguments = ArrayList<String>()
+    
+    // Add --no-detect-include-path if specified
+    if (pa.options.contains("no-detect-include-path")) {
+        arguments.add("--no-detect-include-path")
+    }
+    
+    // Add output and header arguments
+    arguments.add("-o")
+    arguments.add(outputPath)
+    arguments.add(headerPath)
+    arguments.add("--")
+    
+    // Add include paths
+    for (includePath in includePaths) {
+        arguments.add("-I")
+        arguments.add(includePath)
+    }
+    
+    try {
+        let subProcess = launch(cjbindPath, arguments.toArray())
+        let returnCode = subProcess.wait()
+        return if (returnCode == 0) { 0 } else { returnCode }
+    } catch (e: Exception) {
+        eprintln("Error executing cjbind: ${e.message}")
+        return 1
+    }
 }
 
 main(args: Array<String>) {
@@ -68,17 +139,23 @@ main(args: Array<String>) {
         Long("arkui", NoValue),
         Long("lib", NoValue),
         Long("help", NoValue),
+        Long("no-detect-include-path", NoValue),
         Short(r'r', RequiredValue),
         Short(r'i', RequiredValue),
         Short(r'o', RequiredValue),
         Short(r'j', RequiredValue),
         Short(r'd', RequiredValue),
-        Short(r'h', NoValue)
+        Short(r'c', NoValue),
+        Short(r'h', NoValue),
+        Short(r'I', RequiredValue)
     ]
     let pa = parseArguments(args, argSpecs)
     if (pa.options.contains("help") || pa.options.contains("h")) {
         printHelp()
         return 0
+    }
+    if (pa.options.contains("c")) {
+        return executeCjbind(pa, args)
     }
     if (!pa.nonOptions.isEmpty()) {
         println("Error: Unkonwn option: '${pa.nonOptions}'\n")
