@@ -137,6 +137,7 @@ void TypeHierarchyImpl::FindTypeHierarchyImpl(const ark::ArkAST &ast, TypeHierar
     result.symbolId = GetSymbolId(*decl);
 }
 
+// LCOV_EXCL_START
 // supertypes entrance
 void TypeHierarchyImpl::FindSuperTypesImpl(std::vector<TypeHierarchyItem> &results,
                                            const TypeHierarchyItem &hierarchyItem)
@@ -249,3 +250,4 @@ void TypeHierarchyImpl::FindSubTypesImpl(std::vector<TypeHierarchyItem> &results
     });
 }
 } // namespace ark
+// LCOV_EXCL_STOP

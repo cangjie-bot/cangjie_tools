@@ -10,6 +10,7 @@ set(UNIT_TESTS_SRC
         languageserver/capabilities/fileRefactor/FileRefactorTest.cpp
         languageserver/capabilities/overrideMethods/FindOverrideMethodsUtilsTest.cpp
         languageserver/capabilities/semanticHighlight/SemanticHighlightImplTest.cpp
+        languageserver/capabilities/prepareRename/PrepareRenameTest.cpp
         languageserver/common/BasicHelperTest.cpp
         languageserver/common/FindDeclUsageTest.cpp
         languageserver/common/ItemResolverUtilTest.cpp
@@ -43,6 +44,7 @@ include_directories(
         ../../src/languageserver/capabilities/fileRefactor
         ../../src/languageserver/capabilities/overrideMethods
         ../../src/languageserver/capabilities/semanticHighlight
+        ../../src/languageserver/capabilities/prepareRename
         ../../src/languageserver/common
         ../../src/languageserver/index
         ../../src/languageserver/logger
