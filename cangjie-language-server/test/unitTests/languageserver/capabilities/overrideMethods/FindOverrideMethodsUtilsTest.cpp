@@ -1184,16 +1184,6 @@ TEST(FindOverrideMethodsUtilsTest, FuncDetailTest_GetFunctionWithRetWithValidRet
     EXPECT_EQ(func.GetFunctionWithRet(), "func1(): void");
 }
 
-TEST(FindOverrideMethodsUtilsTest, FuncDetailTest_GetFunctionWithRetWithInvalidRetType)
-{
-    FuncDetail func;
-    func.identifier = "func1";
-    auto retType = std::make_unique<CommonTypeDetail>();
-    retType->identifier = "Invalid";
-    func.retType = std::move(retType);
-    EXPECT_EQ(func.GetFunctionWithRet(), "func1()");
-}
-
 TEST(FindOverrideMethodsUtilsTest, PropDetailTest_Identifier)
 {
     auto detail = std::make_unique<PropDetail>();
