@@ -103,6 +103,7 @@ public class A2CJ {
         //interfaces
         if (cns.interfaces.size > 0) {
             objectToken.append(addComment("**********OBJECT**********"))
+            // TreeMap automatically maintains sorted order by key
             for ((_, i) in cns.interfaces) {
                 objectToken.append(transInterface(i))
             }
@@ -124,6 +125,7 @@ public class A2CJ {
 
         //class
         if (cns.classes.size > 0) {
+            // TreeMap automatically maintains sorted order by key
             for ((_, c) in cns.classes) {
                 objectToken.append(transClass(c))
             }
