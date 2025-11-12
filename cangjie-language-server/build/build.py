@@ -16,6 +16,7 @@ import platform
 import shutil
 import stat
 import subprocess
+import sys
 from subprocess import PIPE
 from pathlib import Path
 from enum import Enum
@@ -286,7 +287,7 @@ def get_run_test_command(cangjie_sdk_path):
     if not IS_WINDOWS:
         result.extend(["bash", "-c", "source " + env_path + " && " + test_path])
     else:
-        result.extend([env_path, "&&", test_path , "stdout=sys.out", "stderr=sys.stderr"])
+        result.extend([env_path, "&&", test_path])
     return result
 
 def test(args):
@@ -299,7 +300,7 @@ def test(args):
         print("no output/bin path")
         return
     commands = get_run_test_command(cangjie_sdk_path)
-    output = subprocess.run(commands, cwd=OUTPUT_DIR, check=True)
+    output = subprocess.run(commands, cwd=OUTPUT_DIR, check=True, stdout=sys.stdout, stderr=sys.stderr)
     if output.returncode != 0:
         print("test failed with return code:", output.returncode)
         exit(1)
