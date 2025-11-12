@@ -13,6 +13,7 @@ import std.collection.concurrent.*
 import std.env.*
 import std.time.*
 import std.sync.*
+import std.sort.*
 import stdx.serialization.serialization.*
 import stdx.encoding.json.*
 import std.process.*
@@ -166,27 +167,35 @@ func parseMultipleFiles(moduleNameTemp: String): Bool {
 
     // collect parent properties and methods in the whole module
     let gconfigArray = ArrayList<GlobalConfig>()
+    let moduleNames = ArrayList<String>()
+    let gconfigMap = HashMap<String, GlobalConfig>()
+    
     for (_ in 0..gconfigList.size) {
         let gconfig = gconfigList.remove().getOrThrow()
         gconfigArray.add(gconfig)
+        moduleNames.add(gconfig.module)
+        gconfigMap[gconfig.module] = gconfig
+    }
+    
+    // Sort module names to ensure deterministic processing order
+    sort<String>(moduleNames, stable: true)
+    
+    // Rebuild gconfigArray in sorted order
+    let sortedGconfigArray = ArrayList<GlobalConfig>()
+    for (moduleName in moduleNames) {
+        sortedGconfigArray.add(gconfigMap[moduleName])
     }
 
-    for (gconfig in gconfigArray) {
-        gconfig.gconfigArray = gconfigArray
+    for (gconfig in sortedGconfigArray) {
+        gconfig.gconfigArray = sortedGconfigArray
         gconfig.collectParentPropertiesAndMethods()
     }
 
-    // generate cj files
-    futureList.clear()
-    for (gconfig in gconfigArray) {
-        let future = spawn {
-            let a2cj = A2CJ(gconfig)
-            a2cj.transfer()
-        }
-        futureList.add(future)
-    }
-    for (f in futureList) {
-        f.get()
+    // generate cj files - use sorted order to ensure deterministic output
+    for (moduleName in moduleNames) {
+        let gconfig = gconfigMap[moduleName]
+        let a2cj = A2CJ(gconfig)
+        a2cj.transfer()
     }
 
     return true
