@@ -203,7 +203,10 @@ def generate_cmake_commands(args):
         ])
     if args.test:
         result.extend([
-            "-DENABLE_TEST=ON"
+            "-DENABLE_TEST=ON",
+            "-DENABLE_COVERAGE=ON",
+            "-DNO_EXCEPTIONS=ON",
+            "-DCMAKE_CXX_FLAGS='-fno-exceptions'"
         ])
     return result
 
