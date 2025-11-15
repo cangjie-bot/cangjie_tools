@@ -1,9 +1,3 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
-
 func documentHighlight_test003(): int64 {
     let tuplePIE: float32*String = (3.14, "PIE")
     let s2 : String = "Hello Char Lang"
@@ -18,3 +12,8 @@ func documentHighlight_test003(): int64 {
     }
     return 1
 }
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
