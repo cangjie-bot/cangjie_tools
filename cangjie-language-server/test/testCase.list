@@ -1131,3 +1131,16 @@
 {"applyEdit":{"testFile":"ExtractVariable_Apply_001.test","method":"workspace/applyEdit"}}
 {"applyEdit":{"testFile":"ExtractVariable_Apply_002.test","method":"workspace/applyEdit"}}
 {"applyEdit":{"testFile":"ExtractVariable_Apply_003.test","method":"workspace/applyEdit"}}
+
+{"exportsName":{"testFile":"LSP_ExportsName_001.test","id":"5"}}
+{"exportsName":{"testFile":"LSP_ExportsName_002.test","id":"5"}}
+{"exportsName":{"testFile":"LSP_ExportsName_003.test","id":"5"}}
+{"exportsName":{"testFile":"LSP_ExportsName_004.test","id":"5"}}
+{"exportsName":{"testFile":"LSP_ExportsName_005.test","id":"5"}}
+{"exportsName":{"testFile":"LSP_ExportsName_006.test","id":"5"}}
+
+{"crossLanguageRegister":{"testFile":"LSP_CrossLanguageRegister_001.test","id":"778"}}
+{"crossLanguageRegister":{"testFile":"LSP_CrossLanguageRegister_002.test","id":"778"}}
+{"crossLanguageRegister":{"testFile":"LSP_CrossLanguageRegister_003.test","id":"778"}}
+{"crossLanguageRegister":{"testFile":"LSP_CrossLanguageRegister_004.test","id":"778"}}
+{"crossLanguageRegister":{"testFile":"LSP_CrossLanguageRegister_005.test","id":"778"}}

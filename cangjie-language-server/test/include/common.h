@@ -184,4 +184,8 @@ namespace test::common {
     ark::FindOverrideMethodResult CreateOverrideMethodsResult(const nlohmann::json& exp);
 
     bool CheckOverrideMethodsResult(const nlohmann::json& expect, const nlohmann::json& actual, std::string& reason);
+
+    bool CheckExportsNameResult(const nlohmann::json& expect, const nlohmann::json& actual, std::string& reason);
+
+    bool CheckCrossLanguageRegisterResult(const nlohmann::json& expect, const nlohmann::json& actual, std::string& reason);
 }

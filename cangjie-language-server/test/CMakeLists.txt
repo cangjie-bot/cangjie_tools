@@ -55,6 +55,8 @@ add_subdirectory(featureTest/findFileReference)
 add_subdirectory(featureTest/applyEdit)
 add_subdirectory(featureTest/codeAction)
 add_subdirectory(unitTests)
+add_subdirectory(featureTest/exportsName)
+add_subdirectory(featureTest/crossLanguageRegister)
 
 # Add test main file
 add_executable(gtest_LSPServer_test main.cpp)
@@ -91,6 +93,8 @@ target_link_libraries(gtest_LSPServer_test
     CodeActionTest
     UnitTests
     Common
+    ExportsNameTest
+    CrossLanguageRegisterTest
     libflatbuffers.a
     sqlite3
     ffi
