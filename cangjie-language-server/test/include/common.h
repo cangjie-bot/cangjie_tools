@@ -4,8 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-#include <string>
-#include "TestUtils.h"
+#include<string>
+#include <sstream>
+#include "../../src/json-rpc/Protocol.h"
+#include "../../src/json-rpc/URI.h"
 
 enum TestType {
     DocumentHighlight,
@@ -20,11 +22,8 @@ enum TestType {
     DocumentSymbol,
     SignatureHelp,
     CallHierarchy,
-    CrossLanguageDefinition,
     OverrideMethods,
-    CodeAction,
-    ApplyEdit,
-    FileReference
+    CrossLanguageDefinition
 };
 
 struct TextDocumentEditInfo {
@@ -37,7 +36,6 @@ struct TestParam {
     std::string baseFile;
     std::string preId;
     std::string id;
-    std::string method;
 };
 
 struct TypeHierarchyInfo {
@@ -74,9 +72,6 @@ namespace test::common {
     void ChangeMessageUrlForBaseFile(const std::string &testFilePath, nlohmann::json &resultBase, std::string &rootUri,
                                      bool &isMultiModule);
 
-    void ChangeApplyEditUrlForBaseFile(const std::string &testFilePath, nlohmann::json &resultBase, std::string &rootUri,
-        bool &isMultiModule);
-
     void HandleCjdExpLines(nlohmann::json &expLines);
 
     std::string GetRealPath(const std::string &fileName);
@@ -85,15 +80,13 @@ namespace test::common {
 
     void SetUpConfig(const std::string &featureName);
 
-    void StartLspServer(bool useDb = false);
+    void StartLspServer();
 
     std::string GetRootPath(const std::string &work);
 
     bool CreateBuildScript(const std::string &execScriptPath, const std::string &testFile);
 
     void BuildDynamicBinary(const std::string &buildScriptpath);
-
-    bool CheckUseDB(const std::string &message);
 
     bool CreateMsg(const std::string &path, const std::string &testFile, std::string &rootUri, bool &isMultiModule,
                    const std::string &symbolId = "");
@@ -103,8 +96,6 @@ namespace test::common {
     void LowFileName(std::basic_string<char> &filePath);
 
     nlohmann::json ReadFileById(const std::string &file, const std::string &id);
-
-    nlohmann::json ReadFileByMethod(const std::string& file, const std::string& method);
 
     nlohmann::json ReadExpectedResult(std::string &baseFile);
 
@@ -159,6 +150,14 @@ namespace test::common {
 
     bool CheckSignatureHelpResult(const nlohmann::json &expect, const nlohmann::json &actual, std::string &reason);
 
+    template<typename T>
+    bool CheckResultCount(const std::vector<T> &exp, const std::vector<T> &act, bool needCheckEmpty = true) {
+        if (needCheckEmpty) {
+            return exp.size() == act.size() && !exp.empty();
+        }
+        return exp.size() == act.size();
+    }
+
     std::vector<ark::SymbolInformation> CreateWorkspaceSymbolStruct(const nlohmann::json &data);
 
     bool CheckWorkspaceSymbolResult(const nlohmann::json &expect, const nlohmann::json &actual, std::string &reason);
@@ -175,13 +174,7 @@ namespace test::common {
     std::vector<ark::CodeLens> ReadExpectedCodeLensItems(std::string &baseFile);
 
     bool CheckCodeLensResult(std::vector<ark::CodeLens> exp, std::vector<ark::CodeLens> act,
-                             std::string &reason);    
+                             std::string &reason);
 
     bool IsMacroExpandTest(const std::string &rootUri);
-    
-    bool IsMacroExpandTest(const std::string &rootUri);
-
-    ark::FindOverrideMethodResult CreateOverrideMethodsResult(const nlohmann::json& exp);
-
-    bool CheckOverrideMethodsResult(const nlohmann::json& expect, const nlohmann::json& actual, std::string& reason);
 }

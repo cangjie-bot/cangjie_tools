@@ -1,9 +1,3 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-// This source file is part of the Cangjie project, licensed under Apache-2.0
-// with Runtime Library Exception.
-//
-// See https://cangjie-lang.cn/pages/LICENSE for license information.
-
 
 
 struct Rectangle1 {
@@ -87,3 +81,8 @@ func generateRectangele() {
     var rectangle1 = Rectangle3(3, 4) // OK: 缺省时为public，无`public` 或 `private` 修饰的init构造函数可在struct外访问
     var rectangle3 = Rectangle3()     // ERROR: private修饰的init构造函数不可在struct外访问
 }
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
