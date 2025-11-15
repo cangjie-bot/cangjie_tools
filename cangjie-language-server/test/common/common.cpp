@@ -2121,4 +2121,105 @@ namespace test::common {
         }
         return true;
     }
+
+    bool CheckExportsNameResult(const nlohmann::json &expect, const nlohmann::json &actual, std::string &reason)
+    {
+        if (!expect.contains("result") || !actual.contains("result")) {
+            reason = "expect or actual nlohmann::json hasn't member 'result' ";
+            return false;
+        }
+        const auto &actualResult = actual["result"];
+        const auto &expectResult = expect["result"];
+        if (actualResult.contains("containerName") && actualResult.contains("exportName")) {
+            std::string actualContainerName = actualResult["containerName"];
+            std::string actualExportName = actualResult["exportName"];
+            std::string expectContainerName = expectResult["containerName"];
+            std::string expectExportName = expectResult["exportName"];
+            if (actualContainerName == expectContainerName && actualExportName == expectExportName) {
+                return true;
+            }
+            reason = "actual nlohmann::json member 'containerName' or 'exportName' is wrong:\nexpect json = " +
+                     to_string(expect) + "\n" + "actual json = " + to_string(actual);
+            return false;
+        }
+        reason = "actual nlohmann::json result field hasn't member 'containerName' or 'exportName' ";
+        return false;
+    }
+
+    std::string getFieldString(const nlohmann::json &data, std::string field)
+    {
+        const auto &result = data["result"];
+        if (!result.is_array()) {
+            std::cout << "result is not an array" << std::endl;
+            return "";
+        }
+        for (const auto &item : result) {
+            if (!item.is_object()) {
+                continue;
+            }
+            if (!item.contains(field)) {
+                continue;
+            }
+            const auto &content = item[field];
+            if (!content.is_object()) {
+                continue;
+            }
+            if (!content.contains("range")) {
+                continue;
+            }
+            const auto &range = content["range"];
+            if (!range.is_object()) {
+                continue;
+            }
+            return range.dump();
+        }
+        std::cout << "No range field." << std::endl;
+        return "";
+    }
+
+    std::string getRegisterType(const nlohmann::json &data)
+    {
+        if (!data["result"].is_array()) {
+            std::cout << "'result' is not an array." << std::endl;
+            return "";
+        }
+        if (data["result"].empty()) {
+            std::cout << "'result' array is empty." << std::endl;
+            return "";
+        }
+        const auto &resultItem = data["result"][0];
+        if (!resultItem.contains("registerType")) {
+            std::cout << "'registerType' field missing in result item." << std::endl;
+            return "";
+        }
+        if (!resultItem["registerType"].is_number_integer()) {
+            std::cout << "'registerType' is not an integer." << std::endl;
+            return "";
+        }
+        int value = resultItem["registerType"].get<int>();
+        return std::to_string(value);
+    }
+
+    bool CheckCrossLanguageRegisterResult(
+        const nlohmann::json &expect, const nlohmann::json &actual, std::string &reason)
+    {
+        if (!expect.contains("result") || !actual.contains("result")) {
+            reason = "expect or actual nlohmann::json hasn't member 'result' ";
+            return false;
+        }
+        std::string actualDeclaration = getFieldString(actual, "declaration");
+        std::string actualDefinition = getFieldString(actual, "definition");
+        std::string actualRegisterType = getRegisterType(actual);
+        std::string expectDeclaration = getFieldString(expect, "declaration");
+        std::string expectDefinition = getFieldString(expect, "definition");
+        std::string expectRegisterType = getRegisterType(expect);
+        if (actualDeclaration == expectDeclaration && actualDefinition == expectDefinition &&
+            actualRegisterType == expectRegisterType) {
+            return true;
+        }
+        reason =
+            "actual nlohmann::json member 'declaration', 'definition' or 'registerType' is wrong:\nexpect json = " +
+            to_string(expect) + "\n" + "actual json = " + to_string(actual);
+        return false;
+    }
 }
