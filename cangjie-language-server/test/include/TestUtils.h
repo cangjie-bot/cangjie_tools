@@ -7,7 +7,9 @@
 #ifndef LSPSERVER_TESTUTILS_H
 #define LSPSERVER_TESTUTILS_H
 
+#ifdef __linux__
 #include <linux/limits.h>
+#endif
 #include <sstream>
 #include "../../src/json-rpc/Protocol.h"
 #include "../../src/json-rpc/URI.h"
@@ -64,14 +66,6 @@ namespace TestUtils {
         return exp.size() == act.size();
     }
 
-    std::vector<ark::CodeAction> CreateCodeActionStruct(const nlohmann::json& exp);
-
-    bool CheckCodeActionResult(const nlohmann::json& expect, const nlohmann::json& actual, std::string &reason);
-
-    ark::ApplyWorkspaceEditParams CreateApplyEditStruct(const nlohmann::json& exp);
-
-    bool CheckApplyEditResult(const nlohmann::json& expect, const nlohmann::json& actual, std::string &reason);
-    
     ark::Command CreateCommandStruct(const nlohmann::json &exp);
     
     ark::Range CreateRangeStruct(const nlohmann::json &exp);
