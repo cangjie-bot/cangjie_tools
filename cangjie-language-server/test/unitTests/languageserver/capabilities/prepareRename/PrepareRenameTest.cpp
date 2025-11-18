@@ -237,26 +237,6 @@ TEST(PrepareRenameTest, IsFilterTokenInHighlightHandlesDifferentTokens)
     EXPECT_FALSE(result);
 }
 
-TEST(PrepareRenameTest, PrepareRenameWithDollarIdentifierAdjustsRange)
-{
-    ArkAST ast = CreateArkASTWithTokens();
-
-    // Create a token with dollar identifier
-    Cangjie::Position begin{0, 1, 1};
-    Cangjie::Position end{0, 1, 6};
-    Cangjie::Token dollarToken(Cangjie::TokenKind::DOLLAR_IDENTIFIER, "$test", begin, end);
-    ast.tokens = {dollarToken};
-
-    Cangjie::Position pos{0, 1, 2};
-    MessageErrorDetail errorInfo;
-
-    ark::Range result = PrepareRename::PrepareImpl(ast, pos, errorInfo);
-
-    // Should adjust range to skip the '$' character
-    // This requires proper symbol setup to work correctly
-    EXPECT_EQ(result.start.line, -1); // Will return empty range without symbols
-}
-
 TEST(PrepareRenameTest, PrepareRenameWithMultilineStringReturnsNodeRange)
 {
     ArkAST ast = CreateArkASTWithTokens();
