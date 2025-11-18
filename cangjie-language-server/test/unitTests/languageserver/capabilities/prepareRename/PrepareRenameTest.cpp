@@ -1,17 +1,14 @@
-#define private public
-#include "PrepareRename.h"
-#undef private
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
 
+#include "PrepareRename.h"
 #include <gtest/gtest.h>
-#include "cangjie/Utils/SafePointer.h"
-#include "cangjie/Basic/DiagnosticEngine.h"
-#include "cangjie/Modules/ImportManager.h"
-#include "cangjie/Basic/SourceManager.h"
 
 using namespace ark;
 using namespace Cangjie::AST;
-
-
 
 SrcIdentifier MakeIdentifier(const std::string &name, unsigned int fileId, int line = 1, int column = 1)
 {
