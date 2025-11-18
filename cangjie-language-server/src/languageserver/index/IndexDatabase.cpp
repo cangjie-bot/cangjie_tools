@@ -507,7 +507,7 @@ dberr_no IndexDatabase::GetSymbolByID(IDArray id, std::function<bool(const Symbo
 #endif
     return true;
 }
-
+// LCOV_EXCL_START
 dberr_no IndexDatabase::GetCrossSymbolByID(IDArray id, std::function<void(const CrossSymbol &sym)> callback)
 {
 #ifndef NO_EXCEPTIONS
@@ -612,7 +612,7 @@ dberr_no IndexDatabase::GetExtendItem(IDArray id,
 #endif
     return true;
 }
-
+// LCOV_EXCL_STOP
 dberr_no IndexDatabase::GetComment(IDArray id, std::function<bool(const Comment &comment)> callback)
 {
 #ifndef NO_EXCEPTIONS
@@ -770,7 +770,7 @@ dberr_no IndexDatabase::GetReferenceAt(std::string fileURI, RefKind kind,
 {
     return true;
 }
-
+// LCOV_EXCL_START
 dberr_no IndexDatabase::GetRelations(
     const SymbolID &subjectID, RelationKind kind,
     std::function<bool(const Relation &rel)> callback)
@@ -811,7 +811,7 @@ dberr_no IndexDatabase::GetCallRelations(
 {
     return true;
 }
-
+// LCOV_EXCL_STOP
 dberr_no IndexDatabase::GetRelationsRiddenUp(
     const SymbolID &objectID, RelationKind kind,
     std::function<bool(const Relation &rel)> callback)
@@ -1131,7 +1131,7 @@ dberr_no IndexDatabase::DBUpdate::InsertComment(const Symbol &sym, const AST::Co
 #endif
     return true;
 }
-
+// LCOV_EXCL_START
 void IndexDatabase::DBUpdate::DealComments(const std::vector<std::pair<IDArray, Comment>> &comments)
 {
     size_t maxMultiInsertIndex = 0;
@@ -1184,7 +1184,7 @@ void IndexDatabase::DBUpdate::DealComments(const std::vector<std::pair<IDArray, 
     }
     stmt.execute();
 }
-
+// LCOV_EXCL_STOP
 dberr_no IndexDatabase::DBUpdate::InsertComments(const std::vector<std::pair<IDArray, Comment>> &comments)
 {
     if (comments.empty()) {

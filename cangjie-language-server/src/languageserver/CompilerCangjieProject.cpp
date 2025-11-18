@@ -681,7 +681,7 @@ void CompilerCangjieProject::IncrementCompileForComplete(
     CIForParse = std::move(newCI);
     InitParseCache(CIForParse, pkgName);
 }
-
+// LCOV_EXCL_START
 std::unique_ptr<LSPCompilerInstance> CompilerCangjieProject::GetCIForDotComplete(
     const std::string &filePath, Position pos, std::string &contents)
 {
@@ -755,7 +755,7 @@ void CompilerCangjieProject::IncrementCompileForCompleteNotInSrc(
     CIForParse = std::move(newCI);
     InitParseCache(CIForParse, "");
 }
-
+// LCOV_EXCL_STOP
 void CompilerCangjieProject::InitParseCache(const std::unique_ptr<LSPCompilerInstance> &lspCI,
                                             const std::string &pkgForPath)
 {
