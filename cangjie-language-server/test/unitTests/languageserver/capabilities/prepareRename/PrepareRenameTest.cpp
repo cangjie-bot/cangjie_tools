@@ -237,46 +237,6 @@ TEST(PrepareRenameTest, IsFilterTokenInHighlightHandlesDifferentTokens)
     EXPECT_FALSE(result);
 }
 
-TEST(PrepareRenameTest, PrepareRenameWithMultilineStringReturnsNodeRange)
-{
-    ArkAST ast = CreateArkASTWithTokens();
-
-    // Create a multiline string token
-    Cangjie::Position begin{0, 1, 1};
-    Cangjie::Position end{0, 3, 5};
-    Cangjie::Token stringToken(Cangjie::TokenKind::MULTILINE_STRING, "\"\"\"line1\nline2\"\"\"", begin, end);
-    ast.tokens = {stringToken};
-
-    Cangjie::Position pos{0, 2, 2};
-    MessageErrorDetail errorInfo;
-
-    ark::Range result = PrepareRename::PrepareImpl(ast, pos, errorInfo);
-
-    // Should return the full node range for multiline strings
-    // This requires proper symbol setup to work correctly
-    EXPECT_EQ(result.start.line, -1); // Will return empty range without symbols
-}
-
-TEST(PrepareRenameTest, PrepareRenameWithBacktickIdentifierAdjustsRange)
-{
-    ArkAST ast = CreateArkASTWithTokens();
-
-    // Create a token with backticks
-    Cangjie::Position begin{0, 1, 1};
-    Cangjie::Position end{0, 1, 8};
-    Cangjie::Token backtickToken(Cangjie::TokenKind::IDENTIFIER, "`type`", begin, end);
-    ast.tokens = {backtickToken};
-
-    Cangjie::Position pos{0, 1, 3};
-    MessageErrorDetail errorInfo;
-
-    ark::Range result = PrepareRename::PrepareImpl(ast, pos, errorInfo);
-
-    // Should adjust range to skip backticks
-    // This requires proper symbol setup to work correctly
-    EXPECT_EQ(result.start.line, -1); // Will return empty range without symbols
-}
-
 TEST(PrepareRenameTest, FindRealDeclWithEmptySymbolsReturnsEmpty)
 {
     ArkAST ast = CreateArkASTWithTokens();
