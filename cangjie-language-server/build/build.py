@@ -20,6 +20,9 @@ import sys
 from subprocess import PIPE
 from pathlib import Path
 from enum import Enum
+import concurrent.futures
+import re
+import json
 
 HOME_DIR = os.path.dirname(Path(__file__).resolve().parent)
 BUILD_DIR = os.path.join(HOME_DIR, "build-lsp")
@@ -290,6 +293,65 @@ def get_run_test_command(cangjie_sdk_path):
         result.extend([env_path, "&&", test_path])
     return result
 
+def get_test_list(cangjie_sdk_path):
+    gtest_file = "gtest_LSPServer_test"
+    env_file = "envsetup.sh"
+    if IS_WINDOWS:
+        gtest_file = "gtest_LSPServer_test.exe"
+        env_file = "envsetup.bat"
+    env_path = os.path.join(resolve_path(cangjie_sdk_path), env_file)
+    test_path = os.path.join(OUTPUT_DIR, gtest_file)    
+    
+    if not IS_WINDOWS:
+        list_command = ["bash", "-c", f"source {env_path} && {test_path} --gtest_list_tests"]
+    else:
+        list_command = [env_path, "&&", f"{test_path} --gtest_list_tests"]
+    
+    try:
+        result = subprocess.run(list_command, cwd=OUTPUT_DIR, capture_output=True, text=True)
+        test_list_output = result.stdout
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to get test list: {e}")
+        exit(1)
+    
+    test_suites = []
+    for line in test_list_output.split('\n'):
+        # 测试套名称通常在行首，没有缩进
+        if line and not line.startswith(' ') and '.' in line:
+            test_suite = line.split('.')[0]
+            if test_suite not in test_suites:
+                test_suites.append(test_suite)
+    
+    print(f"Found {len(test_suites)} test suites: {test_suites}")
+    return test_suites
+
+def run_single_test_suite(cangjie_sdk_path, test_suite):
+    env_file = "envsetup.sh"
+    gtest_file = "gtest_LSPServer_test"
+    if IS_WINDOWS:
+        env_file = "envsetup.bat"
+        gtest_file = "gtest_LSPServer_test.exe"
+    
+    env_path = os.path.join(resolve_path(cangjie_sdk_path), env_file)
+    test_path = os.path.join(OUTPUT_DIR, gtest_file)
+    test_report_name = f"result_{test_suite}.json"
+    if '/' in test_report_name:
+        test_report_name = test_report_name.replace('/', '.')
+
+    if not IS_WINDOWS:
+        command = ["bash", "-c", f"source {env_path} && {test_path} --gtest_filter={test_suite}* --gtest_output=json:{test_report_name}"]
+    else:
+        command = [env_path, "&&", f"{test_path} --gtest_filter={test_suite}* --gtest_output=json:{test_report_name}"]
+    
+    try:
+        result = subprocess.run(command, cwd=OUTPUT_DIR, check=True)
+        if result.returncode == 0:
+            return True, test_suite, result.stdout, result.stderr
+        else:
+            return False, test_suite, result.stdout, result.stderr
+    except Exception as e:
+        return False, test_suite, None, str(e)
+
 def test(args):
     print("start run test")
     cangjie_sdk_path = resolve_path(os.getenv("CANGJIE_HOME"))
@@ -299,11 +361,55 @@ def test(args):
     if not os.path.exists(OUTPUT_DIR):
         print("no output/bin path")
         return
-    commands = get_run_test_command(cangjie_sdk_path)
-    output = subprocess.run(commands, cwd=OUTPUT_DIR, check=True)
-    if output.returncode != 0:
-        print("test failed with return code:", output.returncode)
+    
+    test_suites = get_test_list(cangjie_sdk_path)
+    
+    max_workers = args.jobs if hasattr(args, 'jobs') and args.jobs > 0 else min(32, len(test_suites))
+    
+    failed_suites = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # submit tasks
+        future_to_suite = {
+            executor.submit(run_single_test_suite, cangjie_sdk_path, suite): suite 
+            for suite in test_suites
+        }
+        
+        # collect results
+        for future in concurrent.futures.as_completed(future_to_suite):
+            success, suite, stdout, stderr = future.result()
+            if not success:
+                failed_suites.append(suite)
+    
+    if failed_suites:
+        print('\n=== Test Summary ===')
+        print(f'Total suites: {len(test_suites)}, Passed: {len(test_suites) - len(failed_suites)}, Failed: {len(failed_suites)}')
+        print('Failed test suites:')
+        failed_count = 0
+        for suite in failed_suites:
+            print(f'  - {suite}')
+            test_report_name = f"result_{suite}.json"
+            if '/' in test_report_name:
+                test_report_name = test_report_name.replace('/', '.')
+            result_path = os.path.join(OUTPUT_DIR, test_report_name)
+            if not os.path.exists(result_path):
+                print(f'result file {test_report_name} not found.')
+                continue
+            with open(result_path, 'r') as json_name:
+                json_to_dict = json.load(json_name)
+                if len(json_to_dict['testsuites']) == 0:
+                    continue
+                failed_count += json_to_dict['failures']
+                for testsuite in json_to_dict['testsuites'][0]['testsuite']:
+                    if 'failures' in testsuite.keys(): 
+                        fail_test = testsuite['classname'] + '.' + testsuite['name']
+                        if 'value_param' in testsuite:
+                            fail_test = fail_test + ', where GetParam() = ' + testsuite['value_param']
+                        print(f'[ FAILED ] {fail_test}')
+        print(f'\nTest failed: {failed_count}')
         exit(1)
+    else:
+        print("All test suites passed")
+    
     print("end run test")
 
 def main():
