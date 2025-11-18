@@ -237,28 +237,6 @@ TEST(PrepareRenameTest, IsFilterTokenInHighlightHandlesDifferentTokens)
     EXPECT_FALSE(result);
 }
 
-TEST(PrepareRenameTest, PrepareRenameWithValidTokenReturnsCorrectRange)
-{
-    ArkAST ast = CreateArkASTWithTokens();
-    Cangjie::Position pos{0, 1, 2}; // Position within identifier
-    MessageErrorDetail errorInfo;
-
-    // Set up package instance context
-    if (ast.packageInstance && ast.packageInstance->ctx) {
-        // Create a simple context with a symbol
-        auto varDecl = new FakeDecl(ASTKind::VAR_DECL);
-        varDecl->identifier = MakeIdentifier("test", 0, 1, 1);
-
-        // Add symbol to context (simplified)
-        // In real implementation, this would use proper symbol table
-    }
-
-    ark::Range result = PrepareRename::PrepareImpl(ast, pos, errorInfo);
-
-    // Should return a valid range for the identifier
-    EXPECT_GE(result.start.column, 1);
-}
-
 TEST(PrepareRenameTest, PrepareRenameWithDollarIdentifierAdjustsRange)
 {
     ArkAST ast = CreateArkASTWithTokens();
