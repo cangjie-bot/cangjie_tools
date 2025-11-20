@@ -20,12 +20,83 @@ import cjpm.util.*
 
 type TaskMap = HashMap<TaskIdentifier, ResolveConfig>
 
+private enum MessageKind {
+    | Release
+    | Print(String, String)
+}
+
+// A very simple logger which can write at most `messageBound` messages read from files
+public class BoundedFileLogger {
+    private let messageQueue = LinkedBlockingQueue<MessageKind>()
+    private var logFuture: ?Future<Bool> = None
+
+    public BoundedFileLogger(
+        private let messageBound: Int64
+    ) { }
+
+    public func release() {
+        this.messageQueue.add(Release)
+    }
+
+    public func log(outLogFile: String, errLogFile: String) {
+        this.messageQueue.add(Print(outLogFile, errLogFile))
+    }
+
+    public func start() {
+        if (logFuture.isNone()) {
+            this.logFuture = spawn { =>
+                var count = this.messageBound
+                var success: Bool = true
+                while (count > 0) {
+                    match (this.messageQueue.remove()) {
+                        case Release => count--
+                        case Print(outLogFile, errLogFile) => 
+                            count--
+                            success = printLogs(outLogFile, errLogFile) && success
+                    }
+                }
+                return success
+            }
+        }
+    }
+
+    // If number of `log` and `release` calls is below the `messageBound`, deadlock occurs
+    func wait(): Bool {
+        if (let Some(logFuture) <- this.logFuture) {
+            logFuture.get()
+        } else { true }
+    }
+
+
+    private static func printLogs(outLogFile: String, errLogFile: String): Bool {
+        var logFlag: Bool = true
+        func printLogFile(logFile: String, toStrerr: Bool): Bool {
+            if (!fileExists(outLogFile)) {
+                return true
+            }
+            try {
+                let logStr: String = unsafe { String.fromUtf8Unchecked(File.readFrom(logFile)) }
+                if (toStrerr) {
+                    eprint(logStr)
+                } else {
+                    print(logStr)
+                }
+            } catch (_: Exception){ 
+                return false
+            }
+            return true
+        }
+        logFlag = printLogFile(outLogFile, false) && logFlag
+        logFlag = printLogFile(errLogFile, true) && logFlag
+        return logFlag
+    }
+}
+
 class ParallelBuilder {
     var buildConfig = BuildConfig()
     var taskMap = TaskMap()
     let buildMutex = Mutex()
     let successPkgs = HashMap<String, Bool>()
-    let queue = LinkedBlockingQueue<(Option<String>, Option<String>, Bool)>()
 
     init(buildConfig: BuildConfig) {
         this.buildConfig = buildConfig
@@ -57,28 +128,11 @@ class ParallelBuilder {
     }
 
     func build(): Bool {
-        let sem = Semaphore(maxParallelSize)
+        let logger = BoundedFileLogger(this.taskMap.size)
+        logger.start()
 
         let sem = Semaphore(maxParallelSize)
         let futTasks = HashMap<TaskIdentifier, Future<Bool>>()
-
-        let logFuture = spawn {
-            =>
-            var count: Int64 = this.taskMap.size
-            var logFlag: Bool = true
-            while (count > 0) {
-                let (outLogFile, errLogFile, isNewLog) = this.queue.remove()
-                count--
-                if (!isNewLog) {
-                    continue
-                }
-                if (!printAllLogs(outLogFile, errLogFile)) {
-                    logFlag = false
-                }
-            }
-            return logFlag
-        }
-
         // Guaranteed valid order follows 'buildConfig.packageList.all'
         for (taskId in this.buildConfig.packageList.allIds) {
             if (!this.taskMap.contains(taskId)) {
@@ -92,7 +146,7 @@ class ParallelBuilder {
                     for ((k,_) in this.taskMap where k != taskId) {
                         if (!this.checkDepFuture(k, task, futTasks, sem)) {
                             sem.release()
-                            this.queue.add((task.outLogFile, task.errLogFile, false))
+                            logger.release()
                             return false
                         }
                     }
@@ -101,7 +155,7 @@ class ParallelBuilder {
                         let depId = TaskIdentifier(dep, task.target)
                         if (!this.checkDepFuture(depId, task, futTasks, sem)) {
                             sem.release()
-                            this.queue.add((task.outLogFile, task.errLogFile, false))
+                            logger.release()
                             return false
                         }
                     }
@@ -111,7 +165,7 @@ class ParallelBuilder {
                             let depId = TaskIdentifier(dep, task.target)
                             if (!this.checkDepFuture(depId, task, futTasks, sem)) {
                                 sem.release()
-                                this.queue.add((task.outLogFile, task.errLogFile, false))
+                                logger.release()
                                 return false
                             }
                         }
@@ -135,14 +189,14 @@ class ParallelBuilder {
                     }
                     if (nochange) {
                         sem.release()
-                        this.queue.add((None, None, false))
+                        logger.release()
                         return true
                     }
                 }
 
                 if (!deleteLog(task)) {
                     sem.release()
-                    this.queue.add((task.outLogFile, task.errLogFile, false))
+                    logger.release()
                     return false
                 }
 
@@ -151,7 +205,7 @@ class ParallelBuilder {
                     flag = false
                 }
                 sem.release()
-                this.queue.add((task.outLogFile, task.errLogFile, true))
+                logger.log(task.outLogFile, task.errLogFile)
                 return flag
             }
 
@@ -170,7 +224,7 @@ class ParallelBuilder {
             }
         }
 
-        if (!logFuture.get()) {
+        if (!logger.wait()) {
             isBuilt = false
         }
 
@@ -421,34 +475,6 @@ func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
     }
 
     return parallelResult
-}
-
-func printAllLogs(outLogFile: Option<String>, errLogFile: Option<String>): Bool {
-    var logFlag: Bool = true
-    func printLog(logFile: ?String, isStderr: Bool): Unit {
-        if (let Some(logFile) <- logFile) {
-            if (fileExists(logFile) && !loadLogAndPrint(logFile, isStderr)) {
-                logFlag = false
-            }
-        }
-    }
-    printLog(outLogFile, false)
-    printLog(errLogFile, true)
-    return logFlag
-}
-
-func loadLogAndPrint(file: String, isStderr: Bool): Bool {
-    var logStr: String = ""
-    unsafe {
-        logStr = String.fromUtf8Unchecked(File.readFrom(file))
-    }
-
-    if (isStderr) {
-        eprint(logStr)
-    } else {
-        print(logStr)
-    }
-    return true
 }
 
 func calculateParallel(currentParalla: Int64, args: ArrayList<String>): Unit {
