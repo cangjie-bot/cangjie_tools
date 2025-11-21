@@ -1198,20 +1198,43 @@ public class SourceLocations {
 
     public func selectSourceSets(modulePath: String, localFeatures: HashSet<Feature>, globalFeatures: HashSet<Feature>): Result<CJMPSource, String> {
         assertion { globalFeatures.contains(all: localFeatures) }
-        let globalSourceSet = toposort |> filter { it => globalFeatures.contains(all: it.features)} |> collectArray
-        let sourceSets = toposort |> filter { it => localFeatures.contains(all: it.features)} |> collectArray
+        assertion { toposort.size > 0 }
+
+        func findMostSpecificSourceSet() {
+            var i = toposort.size
+            while (i > 0) {
+                i--
+                let curr = toposort[i]
+                if (globalFeatures.contains(all: curr.features) && curr.product) {
+                    return (curr.srcDir, curr.features)
+                }
+            }
+            return (toposort[0].srcDir, toposort[0].features)
+        }
+        let (mspSrcDir, mspFeatures) = findMostSpecificSourceSet()
+
+        let globalSourceSet = toposort |> filterMap { it: SourceSetEntry => 
+            if (globalFeatures.contains(all: it.features)) {
+                // Less specific product source sets will be interpreted as non-product
+                if (it.product && it.srcDir != mspSrcDir && mspFeatures.contains(all: it.features)) {
+                    Some(it.setProduct(false))
+                } else { Some(it) }
+            } else { None<SourceSetEntry> }
+        } |> collectArray
         let result = CJMPSource(modulePath, globalSourceSet)
 
-        let products = globalSourceSet |> filter { it => it.product } |> collectArray
+        let products = globalSourceSet |> filter { it: SourceSetEntry => it.product } |> collectArray
         if (products.size > 1) {
             return Err("Cannot compile multiple product source sets\n${SourceLocationsPrinter(result, globalFeatures)}")
         }
-        if (globalSourceSet.size > 2) {
-            return Err("Multiple stage multiplatform build is not yet supported\n${SourceLocationsPrinter(result, globalFeatures)}")
-        }
+
+        // This bit is necessary, because other dependencies also provide features
+        // But current module might not provide the necessary features
+        let sourceSets = toposort |> filter { it => localFeatures.contains(all: it.features)} |> collectArray
         if (sourceSets.size == 0) {
             return Err("No source set was selected\n${SourceLocationsPrinter(result, globalFeatures)}")
         }
+
         if (products.size == 0) {
             return Err("Provided feature set doesn't specify product to compile\n${SourceLocationsPrinter(result, globalFeatures)}")
         } 
@@ -1227,6 +1250,10 @@ public struct SourceSetEntry {
         public let features: HashSet<Feature>,
         public let product: Bool
     ) { }
+
+   func setProduct(product: Bool): SourceSetEntry {
+        SourceSetEntry(name, srcDir, features, product)
+   }
 }
 
 public func verifyMultiplatformPost(modulePath: String, name: String, resolveMap: ResolveMap): Result<VerifiedModuleInfo, Array<CJMPError>> { 
@@ -1347,8 +1374,8 @@ private func constructSourceLocations(sourceSets: Array<Node<SourceSetTuple>>): 
             // from less specific to more specific
             if (toFeatures.contains(all: fromFeatures)) {
                 graph[from].add(to)
-                indegree[to] = indegree[to] + 1
-                outdegree[from] = outdegree[from] + 1
+                indegree[to]++
+                outdegree[from]++
             }
         }
     }
@@ -1360,6 +1387,8 @@ private func constructSourceLocations(sourceSets: Array<Node<SourceSetTuple>>): 
                 for (k in graph.keys() where k != i && k != j) {
                     if (graph[i].contains(k) && graph[k].contains(j)) {
                         graph[i].remove(j)
+                        indegree[j]--
+                        outdegree[i]--
                     }
                 }
             }

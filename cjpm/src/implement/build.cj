@@ -717,17 +717,19 @@ func getMultiplatformPipeline(resolveConfig: ResolveConfig, buildConfig: BuildCo
 
         let buildType = if (source.product) { Product } else { Chir }
         let features = resolveConfig.featureDeducer.addFeature(source.features).collect()
-        options.add(all: getCommandArgs(resolveConfig, buildConfig, isNativeForCross, buildType, features))
 
+        options.add(all: getCommandArgs(resolveConfig, buildConfig, isNativeForCross, buildType, features))
         options.add(all: ["-p", source.srcDir.toString()])
+
+        if (let Some(chirpath) <- prevStageChir) {
+            options.add(chirpath)
+        }
+        if (let Some(commoncjo) <- prevStageCjo) {
+            options.add("--common-part-cjo=${commoncjo}")
+        }
+
         if (source.product) {
             options.add(all: ["--output-dir", outputPath])
-            if (let Some(chirpath) <- prevStageChir) {
-                options.add(chirpath)
-            }
-            if (let Some(commoncjo) <- prevStageCjo) {
-                options.add("--common-part-cjo=${commoncjo}")
-            }
             options.add("--output-type=${resolveConfig.outputType.asCompilerArg}")
         } else {
             options.add("--output-type=chir")
