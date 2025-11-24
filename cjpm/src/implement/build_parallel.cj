@@ -61,7 +61,7 @@ public class BoundedFileLogger {
     }
 
     // If number of `log` and `release` calls is below the `messageBound`, deadlock occurs
-    func wait(): Bool {
+    func unsafeWait(): Bool {
         if (let Some(logFuture) <- this.logFuture) {
             logFuture.get()
         } else { true }
@@ -230,7 +230,7 @@ class ParallelBuilder {
             }
         }
 
-        if (!logger.wait()) {
+        if (!logger.unsafeWait()) {
             isBuilt = false
         }
 

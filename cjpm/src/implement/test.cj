@@ -1050,7 +1050,7 @@ func parallelCompileTests(
         }
     }
 
-    if (!logger.wait()) {
+    if (!logger.unsafeWait()) {
         testFlag = false
     }
     return testFlag
