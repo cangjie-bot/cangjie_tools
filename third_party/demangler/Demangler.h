@@ -15,7 +15,7 @@
 #endif
 #include <functional>
 #include <cassert>
-
+#include <stdint.h>
 
 namespace Cangjie {
 
@@ -38,6 +38,7 @@ enum class TypeKind {
     LAMBDA_FUNCTION,
     GENERIC_TYPES,
     GENERIC_CONSTRAINTS,
+    WRAPPED_FUNCTION
 };
 
 template<typename T>
