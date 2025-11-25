@@ -42,3 +42,9 @@ You can use the following command to generate C to Cangjie binding code:
 ```sh
 ./target/bin/main -c --module-name="my_module" -d ./tests/c_cases -o ./tests/expected/c_module/ --clang-args="-I/usr/lib/llvm-20/lib/clang/20/include/"
 ```
+
+The `-b` parameter is used to specify the path of the cjbind binary, with the default value being "./src/dtsparser/node_modules/.bin/cjbind". During [Build Preparation](./developer_guide.md#build-preparation), the cjbind binary will be downloaded to the "./src/dtsparser/node_modules/.bin/" directory. You can specify a different cjbind path by using the `-b` parameter. Here is an example command:
+
+```sh
+./target/bin/main -b ./src/dtsparser/node_modules/.bin/cjbind -c --module-name="my_module" -d ./tests/c_cases -o ./tests/expected/c_module/ --clang-args="-I/usr/lib/llvm-20/lib/clang/20/include/"
+```
