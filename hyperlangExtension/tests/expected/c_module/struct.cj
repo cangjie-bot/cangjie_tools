@@ -54,3 +54,53 @@ public struct Point3D {
         this.z = z
     }
 }
+
+@C
+public struct people {
+    public let a: person
+    public let b: person
+    public let height: VArray<Int32, $2>
+    public let total: Int32
+
+    public init(a: person, b: person, height: VArray<Int32, $2>, total: Int32) {
+        this.a = a
+        this.b = b
+        this.height = height
+        this.total = total
+    }
+}
+
+@C
+public struct S {
+    public let a: VArray<Int32, $2>
+    public let b: VArray<Int32, $0>
+
+    public init(a: VArray<Int32, $2>, b: VArray<Int32, $0>) {
+        this.a = a
+        this.b = b
+    }
+}
+
+@C
+public struct Data {
+    public let a: Int32
+    public let b: Int32
+
+    public init(a: Int32, b: Int32) {
+        this.a = a
+        this.b = b
+    }
+}
+
+foreign func getData(a: Int32, b: Int32): Data
+
+@C
+public struct teststruct {
+    public let i8: Int32
+    public let ui8: UInt32
+
+    public init(i8: Int32, ui8: UInt32) {
+        this.i8 = i8
+        this.ui8 = ui8
+    }
+}
