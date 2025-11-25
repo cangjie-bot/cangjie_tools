@@ -28,6 +28,9 @@ const OS = OS_WINDOWS
 @When[os != "Windows"]
 const OS = OS_OTHERS
 public const analysisFilePath: String = "./src/dtsparser/analysis.js"
+@When[os == "Windows"]
+public const cBindingsPath: String = "./src/dtsparser/node_modules/.bin/cjbind.exe"
+@When[os != "Windows"]
 public const cBindingsPath: String = "./src/dtsparser/node_modules/.bin/cjbind"
 let mtx = Mutex()
 let cla = CommandLineArg()
