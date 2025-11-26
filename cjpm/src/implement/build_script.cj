@@ -39,7 +39,7 @@ public func makeScriptConfigByToml(rootPath: String, modulePath: String, tomlInf
 
     if (tomlInfo.isPkgConfig) {
         if (tomlInfo.pkg.name.contains("::")) {
-            if (!organizationNameCheck(tomlInfo.pkg.name, Path(modulePath).join(CONFIG_FILE_NAME).toString())) {
+            if (!organizationAndNameCheck(tomlInfo.pkg.name, Path(modulePath).join(CONFIG_FILE_NAME).toString())) {
                 return Option.None
             }
             moduleName = tomlInfo.pkg.name.split("::")[1]
