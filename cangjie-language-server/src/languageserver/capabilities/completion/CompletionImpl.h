@@ -78,6 +78,9 @@ public:
     static std::unordered_set<std::string> externalImportSym;
 
 private:
+    static void NamedParameterComplete(const ark::ArkAST &input, const Cangjie::Position &pos,
+                            ark::CompletionResult &result, int index, const std::string &prefix);
+
     static void FasterComplete(const ArkAST &input, Cangjie::Position pos,
                               CompletionResult &result, int index, std::string &prefix);
 
