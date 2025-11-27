@@ -1291,7 +1291,7 @@ func backupGcnoData(isCov: Bool, outputDir: String): Bool {
 
 public func getUnittestOutput(output: String, isCross: Bool): String {
     if (isCross) {
-        return makeTargetExeName(output)
+        return makeTargetExeName(output, crossCompileTarget)
     }
     return makeExeName(output)
 }
