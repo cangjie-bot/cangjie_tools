@@ -18,7 +18,7 @@ import std.deriving.*
 import cjpm.config.*
 import cjpm.util.*
 
-type TaskMap = HashMap<TaskIdentifier, ResolveConfig>
+type TaskMap = HashMap<TaskIdentifier, CompileTask>
 
 private enum MessageKind {
     | Release
@@ -102,7 +102,7 @@ class ParallelBuilder {
         this.buildConfig = buildConfig
     }
 
-    func checkDepFuture(dep: TaskIdentifier, task: ResolveConfig, futTasks: HashMap<TaskIdentifier, Future<Bool>>,
+    func checkDepFuture(dep: TaskIdentifier, task: CompileTask, futTasks: HashMap<TaskIdentifier, Future<Bool>>,
         sem: Semaphore): Bool {
         var fut: Future<Bool>
         synchronized(this.buildMutex) {
@@ -151,48 +151,49 @@ class ParallelBuilder {
                         }
                     }
                 } else {
-                    for (dep in task.requirePkgs) {
-                        let depId = TaskIdentifier(dep, task.target)
-                        if (!this.checkDepFuture(depId, task, futTasks, sem)) {
+                    for (dep in task.requireTasks) {
+                        if (!this.checkDepFuture(dep, task, futTasks, sem)) {
                             sem.release()
                             logger.release()
                             return false
                         }
                     }
 
-                    if (let Some(superPkgCfg) <- task.superPkgCfg) {
-                        for (dep in superPkgCfg.subPkgSet) {
-                            let depId = TaskIdentifier(dep, task.target)
-                            if (!this.checkDepFuture(depId, task, futTasks, sem)) {
-                                sem.release()
-                                logger.release()
-                                return false
-                            }
-                        }
-                    }
+                    // TODO: later
+                    // if (let Some(superPkgCfg) <- task.superPkgCfg) {
+                    //     for (dep in superPkgCfg.subPkgSet) {
+                    //         let depId = TaskIdentifier(dep, task.target, "")
+                    //         if (!this.checkDepFuture(depId, task, futTasks, sem)) {
+                    //             sem.release()
+                    //             logger.release()
+                    //             return false
+                    //         }
+                    //     }
+                    // }
                 }
 
-                if (task.checkDepCjo) {
-                    var nochange: Bool = true
-                    for (depPkg in task.requirePkgs) {
-                        if (!checkNoChange(depPkg)) {
-                            nochange = false
-                            break
-                        }
-                    }
-                    let subPkgSet = task.superPkgCfg?.subPkgSet ?? HashSet<String>()
-                    for (subPkg in subPkgSet) {
-                        if (!checkNoChange(subPkg)) {
-                            nochange = false
-                            break
-                        }
-                    }
-                    if (nochange) {
-                        sem.release()
-                        logger.release()
-                        return true
-                    }
-                }
+                // TODO: engine replacement
+                // if (task.checkDepCjo) {
+                //     var nochange: Bool = true
+                //     for (depPkg in task.requireTasks) {
+                //         if (!checkNoChange(depPkg)) {
+                //             nochange = false
+                //             break
+                //         }
+                //     }
+                //     let subPkgSet = task.superPkgCfg?.subPkgSet ?? HashSet<String>()
+                //     for (subPkg in subPkgSet) {
+                //         if (!checkNoChange(subPkg)) {
+                //             nochange = false
+                //             break
+                //         }
+                //     }
+                //     if (nochange) {
+                //         sem.release()
+                //         logger.release()
+                //         return true
+                //     }
+                // }
 
                 if (!deleteLog(task)) {
                     sem.release()
@@ -202,14 +203,11 @@ class ParallelBuilder {
 
 
 
-                let cjcCalls = constructCjcInvocations(task)
+                let cjcCall = constructCjcInvocation(task)
                 let envBuilder = EnvironmentBuilder()
                 envBuilder.prepend(LD_PATH, this.buildConfig.globalConfig.ldPath)
+                let flag = runTask(task, cjcCall, envBuilder) 
 
-                var flag: Bool = true
-                for (callArgs in cjcCalls where flag) {
-                    flag = runTask(task, callArgs, envBuilder) 
-                }
                 sem.release()
                 logger.log(task.outLogFile, task.errLogFile)
                 return flag
@@ -237,7 +235,7 @@ class ParallelBuilder {
         return isBuilt
     }
 
-    func deleteLog(task: ResolveConfig): Bool {
+    func deleteLog(task: CompileTask): Bool {
         var delLog: Bool = true
         if (!deleteFile(task.outLogFile)) {
             delLog = false
@@ -248,19 +246,18 @@ class ParallelBuilder {
         return delLog
     }
 
-    private func constructCjcInvocations(resolveConfig: ResolveConfig): ArrayList<ArrayList<String>> {
-        let cjcCalls = ArrayList<ArrayList<String>>()
-        if (resolveConfig.isMultiplatform) {
-            cjcCalls.add(all: getMultiplatformPipeline(resolveConfig, this.buildConfig))
-        } else {
-            let args = getCommandArgs(resolveConfig, this.buildConfig, Default, resolveConfig.features)
-            args.add(all: getTypeCommand(resolveConfig, this.buildConfig))
-            cjcCalls.add(args)
-        }
-        return cjcCalls
+    private func constructCjcInvocation(compileTask: CompileTask): ArrayList<String> {
+        let cjcArgs = ArrayList<String>()
+        let features = if (compileTask.isMultiplatform) {
+            compileTask.featureMapping.addFeature(compileTask.sourceSetFeatures).collect()
+        } else { compileTask.allEnabledFeatures }
+
+        cjcArgs.add(all: getCommandArgs(compileTask, this.buildConfig, features))
+        cjcArgs.add(all: getTypeCommand(compileTask))
+        return cjcArgs
     }
 
-    func runTask(resolveConfig: ResolveConfig, args: ArrayList<String>, envBuilder: EnvironmentBuilder): Bool {
+    func runTask(compileTask: CompileTask, args: ArrayList<String>, envBuilder: EnvironmentBuilder): Bool {
         var execCmdFlag: Bool = true
         CUR_PARALLEL_SIZE.fetchAdd(1)
         if (!futJudge(args)) {
@@ -271,18 +268,18 @@ class ParallelBuilder {
         let env = getVariables()
         let commandStr = getCmdStr(envBuilder.asCliStrings(env), COMPILE_TOOL, args)
         if (this.buildConfig.isVerbose) {
-            let verbose: String = "Compiling package `${resolveConfig.fullName}`: ${commandStr}\n"
-            if (!createAndWriteFile(resolveConfig.outLogFile, verbose, mode: Append)) {
+            let verbose: String = "Compiling package `${compileTask.fullName}`: ${commandStr}\n"
+            if (!createAndWriteFile(compileTask.outLogFile, verbose, mode: Append)) {
                 return false
             }
         }
 
-        if (buildConfig.globalConfig.isAnalysisCompilePerformance) {
-            addStartTime(resolveConfig.fullName, commandStr)
+        if (compileTask.isAnalysisCompilePerformance) {
+            addStartTime(compileTask.fullName, commandStr)
         }
 
-        let outFilePath = resolveConfig.outLogFile
-        let errFilePath = resolveConfig.errLogFile
+        let outFilePath = compileTask.outLogFile
+        let errFilePath = compileTask.errLogFile
         let (outFile, errFile) = try {
             (File(outFilePath, OpenMode.Append), File(errFilePath, OpenMode.Append))
         } catch (e: Exception) {
@@ -296,16 +293,17 @@ class ParallelBuilder {
                 execCmdFlag = (returnCode == 0)
                 if (execCmdFlag) {
                     if (buildConfig.globalConfig.isAnalysisCompilePerformance) {
-                        moveCjcProfToCjpmDir(resolveConfig, buildConfig.globalConfig.compilePerformanceTargetDir)
+                        moveCjcProfToCjpmDir(compileTask, buildConfig.globalConfig.compilePerformanceTargetDir)
                     }
                 } else {
-                    errFile.write("Error: failed to compile package `${resolveConfig.fullName}`, return code is ${returnCode}\n".toArray())
-                    if (resolveConfig.isMultiplatform) {
-                        errFile.write("${SourceLocationsPrinter(resolveConfig.packagePath, resolveConfig.features, project: resolveConfig.fullName)}".toArray())
-                    }
+                    errFile.write("Error: failed to compile package `${compileTask.fullName}`, return code is ${returnCode}\n".toArray())
+                    // TODO: improve error message
+                    // if (compileTask.isMultiplatform) {
+                    //     errFile.write("${SourceLocationsPrinter(compileTask.packagePath, compileTask.allEnabledFeatures, project: compileTask.fullName)}".toArray())
+                    // }
                 }
             } else {
-                errFile.write("Error: failed to compile package `${resolveConfig.fullName}` with exception occurred\n".toArray())
+                errFile.write("Error: failed to compile package `${compileTask.fullName}` with exception occurred\n".toArray())
             }
         } catch (e: Exception) {
             eprintln("Error: failed to write error log into ${errFilePath}: ${e.message}")
@@ -316,18 +314,18 @@ class ParallelBuilder {
         errFile.close()
 
         if (buildConfig.globalConfig.isAnalysisCompilePerformance) {
-            addEndTime(resolveConfig.fullName)
+            addEndTime(compileTask.fullName)
         }
         return execCmdFlag
     }
 }
 
-func moveCjcProfToCjpmDir(resolveConfig: ResolveConfig, profcompilePerformancePath: String): Unit {
+func moveCjcProfToCjpmDir(compileTask: CompileTask, profcompilePerformancePath: String): Unit {
     let profSuffixArray: Array<String> = [".mem.prof", ".time.prof", ".info.prof"]
     for (profSuffix in profSuffixArray) {
-        let pkgNameProfPath = Path(resolveConfig.targetPath).join(resolveConfig.fullName + profSuffix)
+        let pkgNameProfPath = Path(compileTask.targetPath).join(compileTask.fullName + profSuffix)
         if (exists(pkgNameProfPath)) {
-            let profPath = Path(profcompilePerformancePath).join(resolveConfig.fullName + profSuffix)
+            let profPath = Path(profcompilePerformancePath).join(compileTask.fullName + profSuffix)
             copy(pkgNameProfPath, to: profPath, overwrite: true)
             remove(pkgNameProfPath)
         } else {
@@ -352,34 +350,48 @@ func addEndTime(fullName: String): Unit {
     return
 }
 
-func fromResolveItem(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<ResolveConfig> {
-    func createResolveConfig(isNativeForCross!: Bool = false): ?ResolveConfig {
-        let targetDir = if (isNativeForCross) { 
-            buildConfig.globalConfig.nativeDir 
-        } else { buildConfig.globalConfig.targetDir }
-        let logPath = Path(targetDir).join(".build-logs").join(swapOrgName(r.rootPkgName)).toString()
-        let outLogFile = Path(logPath).join("${swapOrgName(r.fullName)}.outlog").toString()
-        let errLogFile = Path(logPath).join("${swapOrgName(r.fullName)}.errlog").toString()
-        let targetPath = if (r.outputType == Exe && !buildConfig.requiredForTests) {
-                Path(targetDir).join(BIN).toString()
-            } else {
-                Path(targetDir).join(swapOrgName(r.rootPkgName)).toString()
-            }
-        if (!createDirectory(targetPath) || !createDirectory(logPath)) {
-            return None
-        }
+// Returns topologically ordered set of compiler invocations // TODO: Make better comment
+func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<CompileTask> {
 
-        if (r.isMultiplatform) {
-            for (source in r.packagePath._sources) {
-                let targetSpecificPath = Path(targetPath).join(source.outputSuffix).toString()
-                if (!createDirectory(targetSpecificPath)) {
-                    return None
-                }
+    let fullName = r.fullName
+    let rootPkgName = r.rootPkgName
+
+    // TODO: handle is native for cross target properly
+    let allEnabledFeatures = r.featureDeducer
+        .addFeature(r.features)
+        .collect()
+    let featureMapping = r.featureDeducer.cleanFeatures() // leaving only mapping to apply them to source set features
+
+    let customizedOption = ArrayList<String>()
+    if (buildConfig.customizedOption.size != 0) {
+        for (k in buildConfig.customizedOption) {
+            if (let Some(option) <- r.customizedOption.get(k)) {
+                customizedOption.add(option)
             }
         }
+    }
+
+    let requiredForTests = buildConfig.requiredForTests // TODO: consider removing this field
+    let exportForTests = requiredForTests && r.hasTestFiles // TODO: check if needed for non-product
+
+    let isAnalysisCompilePerformance = buildConfig.globalConfig.isAnalysisCompilePerformance
+    let hasSubPkgs = buildConfig.hasSubPkgs.contains(fullName)
+    let isMacro = buildConfig.packageList.macros.contains(fullName)
+    // TODO: consider replacint with ?String
+    let isLto = buildConfig.isLto
+    let ltoValue = buildConfig.ltoValue
+    let superPkgCfg = r.superPkgCfg
+    let isMultiplatform = r.packagePath.isMultiplatform
+
+    let isDebug = buildConfig.isDebug
+    let isCov = buildConfig.isCov
+    let mockSupported = buildConfig.mockSupported
+
+    func createForTarget(isNativeForCross!: Bool = false): ?ArrayList<CompileTask> {
+        let targetDir = if (isNativeForCross) { buildConfig.globalConfig.nativeDir } else { buildConfig.globalConfig.targetDir }
+        // TODO: consider different log files for CJMP
 
         let isCrossCompile = buildConfig.isCrossCompile && !isNativeForCross
-
         let target = if (isCrossCompile) {
             crossCompileTarget
         } else { targetConfigName }
@@ -396,46 +408,119 @@ func fromResolveItem(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Resol
             r.nativeLinkOption
         } else { r.linkOption }
 
-        let checkDepCjo = buildConfig.isIncremental && 
-            r.outputType == Static &&
-            buildConfig.indirectRebuilds.contains(r.fullName)
+        // TODO: make sure it's correct
+        func createForSingleSourceSet(sourceSetEntry: CJMPPackageInfo, prevStageChir: ?String, prevStageCjo: ?String, prevStageSourceSetDir: ?String): (?CompileTask, ?String, ?String, ?String) {
+            let packagePath = sourceSetEntry.srcDir.toString() // TODO: make sure it's correct
+            let product = sourceSetEntry.product
+            let sourceSetDir = sourceSetEntry.outputSuffix.toString() // TODO: make sure this is correct & consider changing productness
+            let sourceSetFeatures = sourceSetEntry.features
 
-        var result = ResolveConfig()
-        result.targetDir = targetDir
-        result.targetPath = targetPath
-        result.packagePath = r.packagePath
-        result.rootPkgName = r.rootPkgName
-        result.fullName = r.fullName
-        result.outputType = r.outputType
-        result.isCrossCompile = isCrossCompile
-        result.target = target
-        result.compileOption = compileOption
-        result.overrideOption = overrideOption
-        result.linkOption = linkOption
-        result.customizedOption = r.customizedOption
-        result.requirePkgs = r.requires
-        result.outLogFile = outLogFile
-        result.errLogFile = errLogFile
-        result.checkDepCjo = checkDepCjo
-        result.superPkgCfg = r.superPkgCfg
-        result.hasTestFiles = r.hasTestFiles
-        result.features = r.featureDeducer
-            .addFeature(r.features)
-            .collect()
-        result.featureDeducer = r.featureDeducer
-            .cleanFeatures() // leaving only mapping to apply them to source set features
+            let logPath = Path(targetDir).join(".build-logs").join(swapOrgName(rootPkgName)).join(sourceSetDir).toString()
+            let outLogFile = Path(logPath).join("${swapOrgName(fullName)}.outlog").toString()
+            let errLogFile = Path(logPath).join("${swapOrgName(fullName)}.errlog").toString()
 
-        return result
+            let outputType = if (!product) { // TODO: make sure it's correct
+                OutputType.Unknown("chir") // TODO: consider adding as separate output-type 
+            } else if (r.outputType == Exe && requiredForTests) {
+                OutputType.Static
+            } else { r.outputType }
+
+            // TODO: consider something similar for CJMP
+            // TODO: apply this filename in as many places as possible
+            let filename = if (outputType == Exe && buildConfig.packageList.exe.size <= 1 && !COMMON_INFO.inWorkspace) {
+                buildConfig.exeName
+            } else { fullName }
+
+            let targetPath = if (outputType == Exe) { // TODO: make sure requiredForTests is covered
+                Path(targetDir).join(BIN).join(sourceSetDir).toString() // TODO: add assert that `sourceSetDir` is `.` for non-multiplatform
+            } else {
+                Path(targetDir).join(swapOrgName(rootPkgName)).join(sourceSetDir).toString() // TODO: make sure that `.` get normalized
+            }
+            // TODO: consider moving the creation of directories elsewhere
+            if (!createDirectory(targetPath) || !createDirectory(logPath)) {
+                return (None, None, None, None)
+            }
+
+             // TODO: consider removing this field
+            let requireTasks = r.requires.iterator().map { it => TaskIdentifier(it, target, None) } |> collectHashSet
+            if (let Some(psssd) <- prevStageSourceSetDir) {
+                requireTasks.add(TaskIdentifier(fullName, target, psssd))
+            }
+
+            let thisStageChir: ?String = if (product) { None } else {
+                Path(targetPath).join("${fullName}.chir").toString()
+            }
+            let thisStageCjo: ?String = if (product) { None } else {
+                Path(targetPath).join("${fullName}.cjo").toString()
+            }
+            let thisStageSourceSetDir: ?String = if (product) {
+                None
+            } else { sourceSetDir }
+
+
+            let task = CompileTask(
+                targetDir: targetDir,
+                targetPath: targetPath,
+                packagePath: packagePath,
+                product: product,
+                sourceSetDir: sourceSetDir,
+                sourceSetFeatures: sourceSetFeatures,
+                rootPkgName: rootPkgName,
+                fullName: fullName,
+                filename: filename,
+                outputType: outputType,
+                target: target,
+                isCrossCompile: isCrossCompile,
+                compileOption: compileOption,
+                overrideOption: overrideOption,
+                linkOption: linkOption,
+                customizedOption: customizedOption,
+                superPkgCfg: superPkgCfg,
+                requiredForTests: requiredForTests,
+                exportForTests: exportForTests,
+                requireTasks: requireTasks,
+                allEnabledFeatures: allEnabledFeatures,
+                featureMapping: featureMapping,
+                isAnalysisCompilePerformance: isAnalysisCompilePerformance,
+                hasSubPkgs: hasSubPkgs,
+                isDebug: isDebug,
+                isCov: isCov,
+                mockSupported: mockSupported,
+                isMacro: isMacro,
+                isLto: isLto,
+                ltoValue: ltoValue,
+                prevStageChir: prevStageChir,
+                prevStageCjo: prevStageCjo,
+                isMultiplatform: isMultiplatform,
+                outLogFile: outLogFile,
+                errLogFile: errLogFile
+            )
+
+            return (task, thisStageChir, thisStageCjo, thisStageSourceSetDir)
+        }
+
+        let sourceSetUnwrap = ArrayList<CompileTask>()
+        var prevStageChir: ?String = None
+        var prevStageCjo: ?String = None
+        var prevStageSourceSetDir: ?String = None
+        for (sourceSetEntry in r.packagePath._sources) {
+            let (task, thisStageChir, thisStageCjo, thisStageSourceSetDir) = createForSingleSourceSet(sourceSetEntry, prevStageChir, prevStageCjo, prevStageSourceSetDir)
+            sourceSetUnwrap.add(task ?? return None)
+            prevStageChir = thisStageChir
+            prevStageCjo = thisStageCjo
+            prevStageSourceSetDir = thisStageSourceSetDir
+        }
+        return sourceSetUnwrap
     }
 
-    let result = ArrayList<ResolveConfig>()
+    let result = ArrayList<CompileTask>()
 
     assertion { r.targetPlatform || r.nativePlatform }
     if (r.targetPlatform) {
-        result.add(createResolveConfig(isNativeForCross: false) ?? return None)
+        result.add(all: createForTarget(isNativeForCross: false) ?? return None)
     }
     if (r.nativePlatform) {
-        result.add(createResolveConfig(isNativeForCross: true) ?? return None)
+        result.add(all: createForTarget(isNativeForCross: true) ?? return None)
     }
 
     return result
@@ -452,9 +537,9 @@ func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
             buildConfig.rebuildList.remove(r.fullName)
             return true
         }
-        let resolveConfigs = fromResolveItem(r, buildConfig) ?? return false
-        for (config in resolveConfigs) {
-            parallel.taskMap.add(TaskIdentifier.fromResolveConfig(config), config)
+        let compileTasks = createCompileTasks(r, buildConfig) ?? return false
+        for (config in compileTasks) {
+            parallel.taskMap.add(TaskIdentifier.fromTaskData(config), config)
         }
         return true
     }
