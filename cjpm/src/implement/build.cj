@@ -934,7 +934,7 @@ func appendOptionForBindep(binDepMap: HashMap<String, BinDeps>, linkPkgs: HashSe
     return libPathOptions
 }
 
-func getcLibLinkStr(cLibLinkMap: HashMap<String, ArrayList<String>>, cLibNameList: ArrayList<String>): ArrayList<String> {
+func getCLibLinkStr(cLibLinkMap: HashMap<String, ArrayList<String>>, cLibNameList: ArrayList<String>): ArrayList<String> {
     var res = ArrayList<String>()
     let cLibNameSet = HashSet<String>(cLibNameList)
     for (cLibName in cLibNameSet) {
@@ -956,12 +956,10 @@ func makeDylibCommand(fullName: String, resolveConfig: ResolveConfig, buildConfi
     return res
 }
 
-func appendCLibLinkStr(buildConfig: BuildConfig, cLibNameList: ArrayList<String>, res: ArrayList<String>, isCross: Bool): Unit {
-    let cLibLinkStr = if (isCross) {
-        getcLibLinkStr(buildConfig.globalConfig.crossCLibLinkMap, cLibNameList)
-    } else {
-        getcLibLinkStr(buildConfig.globalConfig.cLibLinkMap, cLibNameList)
-    }
+func getMinimizedCLibLinkStr(cLibLinkMap: HashMap<String, ArrayList<String>>, cLibNameList: ArrayList<String>): ArrayList<String> {
+    let cLibLinkStr = getCLibLinkStr(cLibLinkMap, cLibNameList)
+
+    let res = ArrayList<String>()
 
     var index: Int64 = 0
     let cLibPathSet: HashSet<String> = HashSet<String>()
@@ -985,6 +983,8 @@ func appendCLibLinkStr(buildConfig: BuildConfig, cLibNameList: ArrayList<String>
             index += 1
         }
     }
+
+    return res
 }
 
 func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig):
@@ -1056,7 +1056,12 @@ func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConf
             "from $CANGJIE_HOME/runtime/lib while compiling combine package ${resolveConfig.fullName}, " +
             "output may be invalid if sub packages import std libraries")
     }
-    appendCLibLinkStr(buildConfig, cLibNameList, res, resolveConfig.isCrossCompile)
+
+
+    let cLibLinkMap = if (resolveConfig.isCrossCompile) {
+        buildConfig.globalConfig.crossCLibLinkMap
+    } else { buildConfig.globalConfig.cLibLinkMap }
+    res.add(all: getMinimizedCLibLinkStr(cLibLinkMap, cLibNameList))
     res.add("--lto=${buildConfig.ltoValue}")
 
     return res
@@ -1064,13 +1069,16 @@ func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConf
 
 func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, features: HashSet<Feature>): ArrayList<String> {
     let res = ArrayList<String>()
+    let cLibLinkMap = if (resolveConfig.isCrossCompile) {
+        buildConfig.globalConfig.crossCLibLinkMap
+    } else { buildConfig.globalConfig.cLibLinkMap }
     var cLibNameList = ArrayList<String>([resolveConfig.rootPkgName]) // Record dependent root packages
     var linkSort: HashSet<String> = getDepSet(resolveConfig.fullName, buildConfig.requiresMap,
         buildConfig.superPkgSubMap,
         isForMacroRequire: buildConfig.packageList.macros.contains(resolveConfig.fullName)) // Record dependent package names
 
     if (linkSort.size == 0) {
-        appendCLibLinkStr(buildConfig, cLibNameList, res, resolveConfig.isCrossCompile)
+        res.add(all: getMinimizedCLibLinkStr(cLibLinkMap, cLibNameList))
         return res
     }
 
@@ -1114,7 +1122,7 @@ func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig, featur
     binOptions.add(all: appendOptionForBindep(buildConfig.binDepMap, linkSort, buildConfig.isLto), at: 0)
     binOptions.add(all: appendOptionForBindep(buildConfig.crossBinDepMap, linkSort, buildConfig.isLto), at: 0)
     res.add(all: binOptions)
-    appendCLibLinkStr(buildConfig, cLibNameList, res, resolveConfig.isCrossCompile)
+    res.add(all: getMinimizedCLibLinkStr(cLibLinkMap, cLibNameList))
 
     return res
 }
@@ -1190,25 +1198,29 @@ func getForcedBinDep(resolveConfig: ResolveConfig, buildConfig: BuildConfig, bin
     var binOptions = ArrayList<String>()
     binOptions.add(all: appendOptionForBindep(buildConfig.binDepMap, binDepSet, buildConfig.isLto), at: 0)
     binOptions.add(all: appendOptionForBindep(buildConfig.crossBinDepMap, binDepSet, buildConfig.isLto), at: 0)
-    appendCLibLinkStr(buildConfig, cLibNameList, binOptions, resolveConfig.isCrossCompile)
+    let cLibLinkMap = if (resolveConfig.isCrossCompile) {
+        buildConfig.globalConfig.crossCLibLinkMap
+    } else { buildConfig.globalConfig.cLibLinkMap }
+    binOptions.add(all: getMinimizedCLibLinkStr(cLibLinkMap, cLibNameList))
     return binOptions
 }
 
 @When[os == "macOS"]
 func getForcedBinDep(resolveConfig: ResolveConfig, buildConfig: BuildConfig, binDepSet: HashSet<String>, cLibNameList: ArrayList<String>): ArrayList<String> {
     var binOptions = ArrayList<String>()
+
+    let cLibLinkMap = if (resolveConfig.isCrossCompile) {
+        buildConfig.globalConfig.crossCLibLinkMap
+    } else { buildConfig.globalConfig.cLibLinkMap }
+
     if (crossCompileTarget.contains("linux") && !crossCompileTarget.contains("android")) {
         binOptions.add(all: appendOptionForBindep(buildConfig.binDepMap, binDepSet, buildConfig.isLto), at: 0)
         binOptions.add(all: appendOptionForBindep(buildConfig.crossBinDepMap, binDepSet, buildConfig.isLto), at: 0)
-        appendCLibLinkStr(buildConfig, cLibNameList, binOptions, resolveConfig.isCrossCompile)
+        binOptions.add(all: getMinimizedCLibLinkStr(cLibLinkMap, cLibNameList))
     } else {
         binOptions.add(all: getForcedBinDepPath(buildConfig.binDepMap, binDepSet, buildConfig.isLto), at: 0)
         binOptions.add(all: getForcedBinDepPath(buildConfig.crossBinDepMap, binDepSet, buildConfig.isLto), at: 0)
-        let cLibLinkStr = if (resolveConfig.isCrossCompile) {
-            getcLibLinkStr(buildConfig.globalConfig.crossCLibLinkMap, cLibNameList)
-        } else {
-            getcLibLinkStr(buildConfig.globalConfig.cLibLinkMap, cLibNameList)
-        }
+        let cLibLinkStr = getCLibLinkStr(cLibLinkMap, cLibNameList)
 
         var libName = ""
         var libPath = ""
