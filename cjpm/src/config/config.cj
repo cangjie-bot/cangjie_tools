@@ -483,14 +483,25 @@ public open class CommandConfig {
 public struct TaskIdentifier {
     public TaskIdentifier(
         public let fullName: String,
-        public let target: String
+        public let target: String,
+        public let sourceSetDir: ?String
     ) { }
 
-    public static func fromResolveConfig(resolveConfig: ResolveConfig): TaskIdentifier {
-        TaskIdentifier(
-            resolveConfig.fullName,
-            resolveConfig.target
-        )
+    public static func fromTaskData(compileTask: CompileTask): TaskIdentifier {
+        // TODO: remove this unnecessary `product` bit
+        if (!compileTask.product) {
+            TaskIdentifier(
+                compileTask.fullName,
+                compileTask.target,
+                compileTask.sourceSetDir
+            )
+        } else {
+            TaskIdentifier(
+                compileTask.fullName,
+                compileTask.target,
+                None
+            )
+        }
     }
 }
 
@@ -517,8 +528,15 @@ public struct PackageList {
         get() {
             packages |> flatMap { it: ResolveItem =>
                 let result = ArrayList<TaskIdentifier>()
-                result.add(TaskIdentifier(it.fullName, targetConfigName))
-                result.add(TaskIdentifier(it.fullName, crossCompileTarget))
+                for (source in it.packagePath._sources) {
+                    if (source.product) {
+                        result.add(TaskIdentifier(it.fullName, targetConfigName, None))
+                        result.add(TaskIdentifier(it.fullName, crossCompileTarget, None))
+                    } else { 
+                        result.add(TaskIdentifier(it.fullName, targetConfigName, source.outputSuffix.toString()))
+                        result.add(TaskIdentifier(it.fullName, crossCompileTarget, source.outputSuffix.toString()))
+                    }
+                }
                 result.iterator()
             } |> collectArray
         }
@@ -540,6 +558,15 @@ public struct PackageList {
                 return None<(String, String)>
             }
         } |> collectHashMap
+    }
+
+    public prop productSuffixes: HashMap<String, String> {
+        get() {
+            packages |> filterMap { it: ResolveItem =>
+                let productEntry = it.packagePath._sources.last ?? return None<(String, String)>
+                return Some((it.fullName, getPath(productEntry.outputSuffix.toString())))
+            } |> collectHashMap
+        }
     }
 
     public prop macros: Array<String> {
@@ -934,34 +961,87 @@ public class GlobalConfig {
     }
 }
 
-public struct ResolveConfig {
-    public var targetDir: String = ""
-    public var targetPath: String = ""
-    public var packagePath: CJMPSource = CJMPSource.empty
-    public var rootPkgName: String = ""
-    public var fullName: String = ""
-    public var outputType: OutputType = Unknown("")
-    public var target: String = ""
-    public var isCrossCompile: Bool = false
-    public var compileOption: String = ""
-    public var overrideOption: String = ""
-    public var linkOption: String = ""
-    public var customizedOption: HashMap<String, String> = HashMap<String, String>()
-    public var requirePkgs: HashSet<String> = HashSet<String>()
-    public var stdRequirePkgs: HashSet<String> = HashSet<String>()
-    public var outLogFile: String = ""
-    public var errLogFile: String = ""
-    public var checkDepCjo: Bool = false
-    public var superPkgCfg: ?SuperPackageConfig = None
-    public var hasTestFiles: Bool = false
-    public var features: HashSet<Feature> = HashSet()
-    public var featureDeducer: FeatureDeducer = FeatureDeducer.empty
+// Self-sufficient compilation unit. 
+// Stores all of the information for constructing a single `cjc` call
+public struct CompileTask {
+    public CompileTask(
+        // The directory, of current `target`
+        public let targetDir!: String = "",
+        // The value of `--target-dir`: where to dump the compilation result (depends on many factors)
+        public let targetPath!: String = "", 
+        // The value of `-p`: The location of package files of current source set
+        public let packagePath!: String = "", 
+        // Is this a product source set (`--output-type` can be of binary)
+        public let product!: Bool = false, 
+        // Source set directory without the module path prefix. Uniquely identifies source set
+        public let sourceSetDir!: String = "", 
+        // The feature set header of the package
+        public let sourceSetFeatures!: HashSet<Feature> = HashSet(), 
+        // e.g. `cjpm`
+        public let rootPkgName!: String = "", 
+        // Full package name, e.g. `cjpm.config`
+        public let fullName!: String = "", 
+        // The expected name of output file without extension
+        public let filename!: String = "", 
 
-    public prop isMultiplatform: Bool {
-        get() {
-            this.packagePath.isMultiplatform
-        }
-    }
+        // TODO!: Check where else the name of output file is different and consider creating field
+        // if (buildConfig.packageList.exe.size > 1 || COMMON_INFO.inWorkspace) { 
+        // name = fullName
+        // }
+
+        // The value of `--output-type`
+        public let outputType!: OutputType = Unknown(""), 
+        // The target triple passed to `--target` for compilation/cross-compilation
+        public let target!: String = "", 
+        // `true` if value stored in `target` field is different from host
+        public let isCrossCompile!: Bool = false, 
+        // TODO
+        public let compileOption!: String = "", 
+        // TODO
+        public let overrideOption!: String = "", 
+        // TODO
+        public let linkOption!: String = "", 
+        // TODO
+        public let customizedOption!: ArrayList<String> = ArrayList(), 
+        // TODO
+        public let superPkgCfg!: ?SuperPackageConfig = None, 
+        // TODO: This option is only used for compiling `exe` as staticlib. need to consider getting rid of it
+        public let requiredForTests!: Bool = false, 
+        // buildConfig.requiredForTests && compileTask.hasTestFiles (TODO: words)
+        public let exportForTests!: Bool = false, 
+        // Incoming edges of dependency graph (TODO: make better wording)
+        public let requireTasks!: HashSet<TaskIdentifier> = HashSet(), 
+        // All features, asked by different modules of this package. Required for creation of correct general compilation unit
+        public let allEnabledFeatures!: HashSet<Feature> = HashSet(), 
+        // TODO
+        public let featureMapping!: FeatureDeducer = FeatureDeducer.empty, 
+        // TODO
+        public let isAnalysisCompilePerformance!: Bool = false, 
+        // TODO !compileTask.hasSubPkgs.contains(compileTask.fullName)
+        public let hasSubPkgs!: Bool = false, 
+        // TODO
+        public let isDebug!: Bool = false,
+        // TODO
+        public let isCov!: Bool = false,
+        // TODO
+        public let mockSupported!: Bool = false,
+        // TODO
+        public let isMacro!: Bool = false, 
+        // TODO
+        public let isLto!: Bool = false, 
+        // TODO
+        public let ltoValue!: String = "", 
+        // TODO: Try to remove
+        public let prevStageChir!: ?String = None, 
+        // TODO: Try to remove
+        public let prevStageCjo!: ?String = None, 
+        // TODO: Try to get rid of it later
+        public let isMultiplatform!: Bool = false, 
+        // TODO
+        public let outLogFile!: String = "", 
+        // TODO
+        public let errLogFile!: String = "" 
+    ) { }
 }
 
 public func linkPackage(libName: String, libPath: String, isLto: Bool): ArrayList<String> {
