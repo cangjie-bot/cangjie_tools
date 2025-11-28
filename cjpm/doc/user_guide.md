@@ -6,10 +6,10 @@
 
 ## Usage Instructions
 
-Execute the `cjpm -h` command to view the package manager's usage instructions as shown below.
+Execute the `cjpm -h` command to view the project manager's usage instructions as shown below.
 
 ```text
-Cangjie Package Manager
+Cangjie Project Manager
 
 Usage:
   cjpm [subcommand] [option]
@@ -1366,9 +1366,9 @@ The list of fields that support environment variable configuration is as follows
 
 The storage path for files downloaded by `cjpm` via `git` can be specified using the `CJPM_CONFIG` environment variable. If not specified, the default location is `$HOME/.cjpm` on `Linux/macOS` and `%USERPROFILE%/.cjpm` on `Windows`.
 
-## Cangjie Package Management Specification
+## Cangjie Project Management Specification
 
-In the Cangjie package management specification, for a file directory to be recognized as a valid source code package, the following requirements must be met:
+In the Cangjie project management specification, for a file directory to be recognized as a valid source code package, the following requirements must be met:
 
 1. It must directly contain at least one Cangjie code file.
 2. Its parent package (including the parent's parent package, up to the `root` package) must also be a valid source code package. The module `root` package has no parent package, so it only needs to meet condition 1.
@@ -1410,7 +1410,7 @@ demo
 └── cjpm.toml
 ```
 
-The `demo/src/pkg0/pkg0.cj` file must be a Cangjie code file that complies with the package management specification. It does not need to contain functional code, as shown below:
+The `demo/src/pkg0/pkg0.cj` file must be a Cangjie code file that complies with the project management specification. It does not need to contain functional code, as shown below:
 
 ```cangjie
 package demo.pkg0
