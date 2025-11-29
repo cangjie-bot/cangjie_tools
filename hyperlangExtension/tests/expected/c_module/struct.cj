@@ -18,18 +18,13 @@ public struct Point {
     public let a: Int32
     public let b: Int32
     public let __cjbind_anon_1: _cjbind_ty_1
-    public let __cjbind_anon_2: _cjbind_ty_1
     public let z: Int32
-    public let __cjbind_anon_3: _cjbind_ty_1
 
-    public init(a: Int32, b: Int32, __cjbind_anon_1: _cjbind_ty_1, __cjbind_anon_2: _cjbind_ty_1, z: Int32,
-        __cjbind_anon_3: _cjbind_ty_1) {
+    public init(a: Int32, b: Int32, __cjbind_anon_1: _cjbind_ty_1, z: Int32) {
         this.a = a
         this.b = b
         this.__cjbind_anon_1 = __cjbind_anon_1
-        this.__cjbind_anon_2 = __cjbind_anon_2
         this.z = z
-        this.__cjbind_anon_3 = __cjbind_anon_3
     }
 }
 
