@@ -135,6 +135,7 @@ def generate_cmake_defs(args):
 
     return [
         "-DCMAKE_BUILD_TYPE=" + args.build_type.value,
+        "-DCJLINT_VERSION_STR=" + args.version,
         "-DCOVERAGE_FLAG=" + bool_to_opt(args.code_coverage),
     ] + [arg for arg in args.cmake_args if arg != "--"]
 
@@ -145,6 +146,9 @@ def build(args):
             "please specify the build type. Supported options are: release and debug."
         )
         return
+
+    if args.version is None:
+        args.version = "1.1.0-beta.2"
 
     prepare_build()
     """cjlint build"""
@@ -265,6 +269,11 @@ def main():
         choices=list(BuildType),
         help="select target build type",
     )
+    parser_build.add_argument(
+        '-v',
+        '--version',
+        default="1.1.0-beta.2",
+        help='Version string, e.g., 1.1.0-beta.2')
     parser_build.add_argument(
         "--code-coverage", action="store_true", help="do code coverage"
     )
