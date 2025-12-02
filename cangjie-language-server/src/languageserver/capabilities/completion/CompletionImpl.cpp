@@ -369,8 +369,64 @@ void CompletionImpl::AutoImportPackageComplete(const ArkAST &input, CompletionRe
         });
 }
 
+void CompletionImpl::GenerateNamedArgumentCompletion(ark::CompletionResult &result, const std::string &prefix, std::unordered_set<std::string> usedNamedParams, int positionalsUsed, std::unordered_set<std::string> suggestedParamNames, const std::vector<OwnedPtr<FuncParamList>> &paramLists, int paramIndex)
+{
+    for (const auto &paramList : paramLists) {
+        if (!paramList) {
+            continue;
+        }
+
+        for (const auto &param : paramList->params) {
+            if (!param) {
+                paramIndex++;
+                continue;
+            }
+
+            std::string paramName = param->identifier;
+
+            // 1. Check '!' (named parameter definition flag)
+            bool isNamedParamDef = (param->notMarkPos.line != 0 || param->notMarkPos.column != 0);
+
+            // 2. Check if already satisfied by positional parameters (only for non-named parameters)
+            if (!isNamedParamDef && paramIndex < positionalsUsed) {
+                // If it's a non-named parameter (no !) and has been consumed by previous positional parameters, skip
+                paramIndex++;
+                continue;
+            }
+
+            // 3. Filter out already used as named parameters or already suggested by other overloads
+            if (usedNamedParams.count(paramName) || suggestedParamNames.count(paramName)) {
+                paramIndex++;
+                continue;
+            }
+
+            // 4. Filter by prefix
+            if (paramName.size() < prefix.size() || paramName.find(prefix) != 0) {
+                paramIndex++;
+                continue;
+            }
+
+            // 5. Construct completion item (and record suggested names to prevent duplicate additions from other overloads)
+            suggestedParamNames.insert(paramName);
+
+            ark::CodeCompletion completion;
+            completion.name = paramName;
+            completion.label = paramName;
+            completion.kind = ark::CompletionItemKind::CIK_VARIABLE;
+            completion.detail = "Named Argument";
+            completion.insertText = paramName + ": ";
+            completion.sortType=SortType::KEYWORD;
+
+            if (isNamedParamDef) {
+                result.completions.push_back(completion);
+            }
+            paramIndex++;
+        }
+    }
+}
+
 void CompletionImpl::NamedParameterComplete(const ark::ArkAST &input, const Cangjie::Position &pos,
-                            ark::CompletionResult &result, int index, const std::string &prefix)
+                                            ark::CompletionResult &result, int index, const std::string &prefix)
 {
     // 1. Must have semantic cache
     if (!input.semaCache) {
@@ -418,7 +474,7 @@ void CompletionImpl::NamedParameterComplete(const ark::ArkAST &input, const Cang
 
     std::vector<Cangjie::AST::FuncDecl*> funcDeclsWithOverride;
 
-    auto decls = input.semaCache->GetOverrideDecls(funcToken);
+    auto decls = input.semaCache->GetOverloadDecls(funcToken);
     for (auto &decl : decls) {
         auto *funcDecl = dynamic_cast<Cangjie::AST::FuncDecl*>(decl.get());
         if (funcDecl) {
@@ -481,58 +537,7 @@ void CompletionImpl::NamedParameterComplete(const ark::ArkAST &input, const Cang
 
         int paramIndex = 0;
 
-        for (const auto &paramList : paramLists) {
-            if (!paramList) {
-                continue;
-            }
-
-            for (const auto &param : paramList->params) {
-                if (!param) {
-                    paramIndex++;
-                    continue;
-                }
-
-                std::string paramName = param->identifier;
-
-                // 1. Check '!' (named parameter definition flag)
-                bool isNamedParamDef = (param->notMarkPos.line != 0 || param->notMarkPos.column != 0);
-
-                // 2. Check if already satisfied by positional parameters (only for non-named parameters)
-                if (!isNamedParamDef && paramIndex < positionalsUsed) {
-                    // If it's a non-named parameter (no !) and has been consumed by previous positional parameters, skip
-                    paramIndex++;
-                    continue;
-                }
-
-                // 3. Filter out already used as named parameters or already suggested by other overloads
-                if (usedNamedParams.count(paramName) || suggestedParamNames.count(paramName)) {
-                    paramIndex++;
-                    continue;
-                }
-
-                // 4. Filter by prefix
-                if (paramName.size() < prefix.size() || paramName.find(prefix) != 0) {
-                    paramIndex++;
-                    continue;
-                }
-
-                // 5. Construct completion item (and record suggested names to prevent duplicate additions from other overloads)
-                suggestedParamNames.insert(paramName);
-
-                ark::CodeCompletion completion;
-                completion.name = paramName;
-                completion.label = paramName;
-                completion.kind = ark::CompletionItemKind::CIK_VARIABLE;
-                completion.detail = "Named Argument";
-                completion.insertText = paramName + ": ";
-                completion.sortType=SortType::KEYWORD;
-
-                if (isNamedParamDef) {
-                    result.completions.push_back(completion);
-                }
-                paramIndex++;
-            }
-        }
+        GenerateNamedArgumentCompletion(result, prefix, usedNamedParams, positionalsUsed, suggestedParamNames, paramLists, paramIndex);
     }
 }
 

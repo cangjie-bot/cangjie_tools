@@ -118,7 +118,7 @@ struct ArkAST {
 
     Ptr<Cangjie::AST::Decl> GetDeclByPosition(const Cangjie::Position &originPos) const;
 
-    std::vector<Ptr<Decl>>  GetOverrideDecls(const ark::Token token) const;
+    std::vector<Ptr<Decl>> GetOverloadDecls(const ark::Token token) const;
 
     Ptr<Cangjie::AST::Decl> FindDeclByNode(Ptr<Cangjie::AST::Node> node) const;
 
