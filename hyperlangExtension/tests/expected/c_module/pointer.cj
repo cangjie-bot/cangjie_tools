@@ -4,4 +4,4 @@ package my_module
 
 public const num: Int32 = 42i64
 
-foreign func malloc(a: Int32): CPointer<Unit>
+foreign func testPointer(a: Int32): CPointer<Unit>

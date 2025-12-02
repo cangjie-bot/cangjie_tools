@@ -9,4 +9,4 @@ int* ptr = &num;
 
 // float* floatPtr = nullptr;
 
-void* malloc(int a);
+void* testPointer(int a);

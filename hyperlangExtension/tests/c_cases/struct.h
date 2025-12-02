@@ -25,3 +25,14 @@ typedef struct {
     long long y;
     long long z;
 } Point3D;
+
+struct Point1 {
+    struct {
+        int x;
+        int y;
+    } test1;
+    struct {
+        int m;
+        int n;
+    } test2;
+};
