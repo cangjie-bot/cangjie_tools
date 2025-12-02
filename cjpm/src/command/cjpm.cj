@@ -8,6 +8,7 @@ package cjpm.command
 
 import std.collection.*
 import cjpm.implement.*
+import cjpm.config
 
 public let CJPM_USAGE: String = """
 Cangjie Package Manager
@@ -64,7 +65,8 @@ public open class Handle {
 
 // CpmCommand represents the base command when called without any subcommands
 class CpmCommand <: Handle {
-    private let CJPM_VERSION: String = "Cangjie Package Manager: 1.1.0-beta.5"
+    let cjpm_version_str = config.getCjpmVersionStr();
+    private let CJPM_VERSION: String = "Cangjie Package Manager: ${cjpm_version_str}"
 
     init(args: Array<String>) {
         this.arguments = args
