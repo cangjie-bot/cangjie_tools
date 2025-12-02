@@ -91,8 +91,13 @@ private:
 
     static void AutoImportPackageComplete(const ArkAST &input, CompletionResult &result, const std::string &prefix);
 
+    static void GenerateNamedArgumentCompletion(ark::CompletionResult &result, const std::string &prefix,
+                        std::unordered_set<std::string> usedNamedParams, int positionalsUsed,
+                        std::unordered_set<std::string> suggestedParamNames, const std::vector<OwnedPtr<FuncParamList>> &paramLists,
+                        int paramIndex);
+
     static void HandleExternalSymAutoImport(CompletionResult &result, const std::string &pkg, const lsp::Symbol &sym,
-        const lsp::CompletionItem &completionItem, Range textEditRange);
+                                            const lsp::CompletionItem &completionItem, Range textEditRange);
 };
 } // namespace ark
 

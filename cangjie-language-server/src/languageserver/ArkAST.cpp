@@ -337,7 +337,7 @@ Ptr<Decl> ArkAST::GetDeclByPosition(const Cangjie::Position &pos) const
     return GetDeclByPosition(pos, syms, decls);
 }
 
-std::vector<Ptr<Decl>> ArkAST::GetOverrideDecls(const ark::Token token) const
+std::vector<Ptr<Decl>> ArkAST::GetOverloadDecls(const ark::Token token) const
 {
     std::vector<Ptr<Decl>> myVector;
     std::string funcName = token.Value();
