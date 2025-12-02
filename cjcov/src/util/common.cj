@@ -14,9 +14,32 @@ import std.process.*
 import std.fs.exists as fs_exists
 
 public func getCjVersion() {
-    return "Cangjie Coverage: 1.1.0-beta.5"
+    let cjversion=getCjVersionStr();
+    return "Cangjie Coverage: ${cjversion}"
 }
 
+public func getCjVersionStr(): String {
+    try {
+        let (exitCode, stdout, _) = executeWithOutput("cjc", ["-v"])
+        if (exitCode == 0) {
+            let output = String.fromUtf8(stdout)
+            let firstLine = output.split('\n')[0]
+            let prefix = "Cangjie Compiler: "
+			if (firstLine.startsWith(prefix)) {
+                let withoutPrefix = firstLine.removePrefix(prefix)
+                let parts = withoutPrefix.split(' ', removeEmpty: true)
+                if (parts.size > 0) {
+                    let version = parts[0]
+                    return version
+                }
+            }
+            return "1.1.0-beta.2"
+        }
+        return "1.1.0-beta.2"
+    } catch (e: Exception) {
+        return "1.1.0-beta.2"
+    }
+}
 public func getCjcovHelp(): String {
     let helpStr = """
 Usage: cjcov [options]
