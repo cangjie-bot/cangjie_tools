@@ -51,6 +51,7 @@ def run_cmd(cmd, cwd=BASE_DIR):
 def generate_cmake_param(args):
     param = [
         f"-DCMAKE_BUILD_TYPE={args.build_type.value}"
+        f"-DCJTRACE_VERSION_STR={args.version}"
     ]
 
     if args.target:
@@ -91,6 +92,9 @@ def build(args):
         except:
             pass            
 
+    if args.version is None:
+        args.version = "1.1.0-alpha.41"
+    
     # configure cmake
     run_cmd(['cmake', str(BASE_DIR), '-G', generator, '-B', BUILD_DIR_NAME] + generate_cmake_param(args))
 
@@ -171,6 +175,12 @@ def main():
         default="debug",
         choices=list(BuildType),
         help="select target build type",
+    )
+    build_parser.add_argument(
+        '-v',
+        '--version',
+        default="1.1.0-alpha.41",
+        help='Version string, e.g., 1.1.0-alpha.41',
     )
     build_parser.add_argument('--target', type=str, dest='target', help='Specify build target platform')
     build_parser.add_argument('--set-rpath', type=str, help='Set rpath value')

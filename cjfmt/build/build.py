@@ -118,12 +118,16 @@ def generate_cmake_defs(args):
     return [
                '-DCMAKE_BUILD_TYPE=' + args.build_type.value,
                "-DCJFMT_CODE_COVERAGE=" + bool_to_opt(args.code_coverage),
+               "-DCJFMT_VERSION_STR=" + args.version,
            ] + [arg for arg in args.cmake_args if arg != '--']
 
 def build(args):
     if args.build_type is None:
         LOG.error('please specify the build type. Supported options are: release and debug.')
         return
+
+    if args.version is None:
+        args.version = "1.1.0-alpha.41"
 
     """cjfmt build"""
     LOG.info('begin build...\n')
@@ -237,6 +241,10 @@ def main():
                               default=None,
                               choices=list(BuildType),
                               help='select target build type')
+    parser_build.add_argument('-v',
+                              '--version',
+                              default="1.1.0-alpha.41",
+                              help='Version string, e.g., 1.1.0-alpha.41')
     parser_build.add_argument('--code-coverage',
                               action='store_true',
                               help='do code coverage')

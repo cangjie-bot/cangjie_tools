@@ -24,11 +24,13 @@ def check_call(command):
         return e.returncode
 
 # Build cjcov
-def build(build_type, target, rpath=None):
+def build(build_type, target, build_version, rpath=None):
     if not build_type:
         build_type = ""
     if not target:
         target = "native"
+    if not build_version:
+        build_version = ""
 
     # Check CANGJIE_HOME
     if not os.environ.get("CANGJIE_HOME"):
@@ -68,6 +70,11 @@ def build(build_type, target, rpath=None):
     elif build_type != "release":
         print("error: cjcov only support 'release' and 'debug' mode of compiling.")
         return 1
+    # Set cjc version
+    if build_version:
+        os.environ[' '] = build_version
+        BUILD_VERSION=build_version
+        print(f"Set build version: {build_version}")
     # Get cjc executable file
     if IS_WINDOWS:
         CJC = "cjc.exe"
@@ -80,9 +87,9 @@ def build(build_type, target, rpath=None):
 
     # Compile static libs of sub-packages
     if IS_WINDOWS:
-        COMMON_OPTION = f"-j1 --trimpath={CURRENT_DIR} {DEBUG_MODE} --import-path {os.path.join(CURRENT_DIR,'bin')} --output-dir {os.path.join(CURRENT_DIR, 'bin', 'cjcov')} --output-type=staticlib"
+        COMMON_OPTION = f"-j1 --trimpath={CURRENT_DIR} {DEBUG_MODE} {BUILD_VERSION} --import-path {os.path.join(CURRENT_DIR,'bin')} --output-dir {os.path.join(CURRENT_DIR, 'bin', 'cjcov')} --output-type=staticlib"
     else:
-        COMMON_OPTION = f"-j1 --trimpath={CURRENT_DIR} {DEBUG_MODE} --import-path {os.path.join(CURRENT_DIR,'bin')} --output-dir {os.path.join(CURRENT_DIR, 'bin', 'cjcov')} --output-type=staticlib"
+        COMMON_OPTION = f"-j1 --trimpath={CURRENT_DIR} {DEBUG_MODE} {BUILD_VERSION} --import-path {os.path.join(CURRENT_DIR,'bin')} --output-dir {os.path.join(CURRENT_DIR, 'bin', 'cjcov')} --output-type=staticlib"
 
     if IS_LINUX or IS_MACOS:
         print(f"{CJC} {COMMON_OPTION} -p {os.path.join(CURRENT_DIR, '..', 'src/util')} -o libcjcov.util.a")
@@ -100,7 +107,7 @@ def build(build_type, target, rpath=None):
         return returncode2
 
     # Compile cjcov executable file
-    COMMON_OPTION2 = f"-j1 --trimpath={CURRENT_DIR} {DEBUG_MODE} --import-path {os.path.join(CURRENT_DIR,'bin')} --import-path {os.environ['CANGJIE_STDX_PATH']} --output-dir {os.path.join(CURRENT_DIR, 'bin', 'cjcov')}"
+    COMMON_OPTION2 = f"-j1 --trimpath={CURRENT_DIR} {DEBUG_MODE} {BUILD_VERSION} --import-path {os.path.join(CURRENT_DIR,'bin')} --import-path {os.environ['CANGJIE_STDX_PATH']} --output-dir {os.path.join(CURRENT_DIR, 'bin', 'cjcov')}"
     if IS_WINDOWS:
         STDX_LINKS=f"-L %CANGJIE_STDX_PATH% -l:libstdx.logger.a -l:libstdx.log.a -l:libstdx.encoding.json.stream.a -l:libstdx.serialization.serialization.a -l:libstdx.encoding.json.a"
     if IS_MACOS:
@@ -164,6 +171,7 @@ def main():
     build_parser = subparsers.add_parser('build', help='Build cjcov')
     build_parser.add_argument('-t', '--build-type', type=str, dest='build_type', help='Specify build type', required=True)
     build_parser.add_argument('--target', type=str, dest='target', help='Specify build target')
+    build_parser.add_argument('--build-version', type=str, dest='version_var', help='Version number (e.g., 1.0.0)')
     build_parser.add_argument('--set-rpath', type=str, dest='rpath', help='Set rpath value')
 
     # Install command
@@ -176,7 +184,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == 'build':
-        return build(build_type=args.build_type, target=args.target, rpath=args.rpath)
+        return build(build_type=args.build_type, target=args.target, build_version=args.version_var, rpath=args.rpath)
     elif args.command == 'install':
         return install(prefix=args.prefix)
     elif args.command == 'clean':

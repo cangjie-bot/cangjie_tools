@@ -26,11 +26,13 @@ def check_call(command):
         return e.returncode
 
 # Build cjpm
-def build(build_type, target, rpath=None):
+def build(build_type, target, version, rpath=None):
     if not build_type:
         build_type = ""
     if not target:
         target = "native"
+    if not version:
+        version = "1.0.0"
 
     # Check CANGJIE_HOME
     if not os.environ.get("CANGJIE_HOME"):
@@ -83,6 +85,9 @@ def build(build_type, target, rpath=None):
     elif build_type != "release":
         print("error: cjpm only support 'release' and 'debug' mode of compiling.")
         return 1
+    # Set cjc version
+    if version:
+        os.environ['BUILD_VERSION'] = version 
 
     if is_windows:
         common_option = f"--trimpath={CURRENT_DIR} {debug_mode} --import-path {os.path.join(CURRENT_DIR,'bin')}"
@@ -174,6 +179,7 @@ def main():
     build_parser = subparsers.add_parser('build', help='Build cjpm')
     build_parser.add_argument('-t', '--build-type', type=str, dest='build_type', help='Specify build type', required=True)
     build_parser.add_argument('--target', type=str, dest='target', help='Specify build target')
+    build_parser.add_argument('-v', '--version', type=str, dest='version_var', help='Version (e.g., 1.0.0)')
     build_parser.add_argument('--set-rpath', type=str, dest='rpath', help='Set rpath value')
 
     # Install command
@@ -186,7 +192,7 @@ def main():
     args = parser.parse_args()
 
     if args.command == 'build':
-        return build(build_type=args.build_type, target=args.target, rpath=args.rpath)
+        return build(build_type=args.build_type, target=args.target, version=args.version_var, rpath=args.rpath)
     elif args.command == 'install':
         return install(prefix=args.prefix)
     elif args.command == 'clean':

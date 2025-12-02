@@ -8,6 +8,7 @@ package cjpm.command
 
 import std.collection.*
 import cjpm.implement.*
+import std.env.*
 
 public let CJPM_USAGE: String = """
 Cangjie Package Manager
