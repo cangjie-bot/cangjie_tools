@@ -4,7 +4,7 @@ package my_module
 
 public type Byte_ = UInt8
 
-public const byte1: Byte = 97
-public const byte2: Byte = 98
+public const byte1: Byte = 97u64
+public const byte2: Byte = 98u64
 
 public type byte = UInt8
