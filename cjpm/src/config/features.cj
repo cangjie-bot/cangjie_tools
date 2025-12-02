@@ -11,9 +11,31 @@ import std.deriving.*
 import stdx.log.getGlobalLogger
 import stdx.serialization.serialization.*
 import cjpm.util.{CliFailError, Result}
+import std.regex.*
 
 private let logger = getGlobalLogger()
 
+public func getCjpmVersionStr(): String {
+    try {
+        let version = CjcInfo.findCjc().version
+        let firstLine = version.split('\n')[0]
+
+        let regex = Regex("^(.+?)\\s+\\(cjnative\\)$")
+        let matcher = regex.matcher(firstLine)
+        
+        match (matcher.find()) {
+            case Some(matchData) => 
+                if (matchData.groupNumber() >= 1) {
+                    firstLine.split(' ', removeEmpty: true)[0]
+                } else {
+                    "1.1.0-beta.5"
+                }
+            case None => "1.1.0-beta.5"
+        }
+    } catch (e: Exception) {
+        "1.1.0-beta.5"
+    }
+}
 // Struct which stores information about used 'cjc' binary
 // 
 // Use this structure instead of @When to implement platform depentent functionality
