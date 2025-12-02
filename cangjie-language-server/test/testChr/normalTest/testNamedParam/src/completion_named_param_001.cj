@@ -8,4 +8,4 @@ func add(abcdefg!: Int64, uuu!: Int64): Int64 {
     return abcdefg + uuu
 }
 
-let a = add()
+let a = add(a)
