@@ -2,4 +2,4 @@
 
 package my_module
 
-public const counter: Int32 = 0
+public const counter: Int32 = 0i64
