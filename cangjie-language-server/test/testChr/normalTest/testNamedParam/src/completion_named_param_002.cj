@@ -4,6 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
+package namedParam
+
 func add2(abc: Int64, uuu!: Int64): Int64 {
     return abc + uuu
 }
