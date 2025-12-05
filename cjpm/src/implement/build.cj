@@ -1090,7 +1090,7 @@ func getForcedLibArgs(compileTask: CompileTask, superPkgCfg: SuperPackageConfig,
         if (buildConfig.packageList.macros.contains(depName) || buildConfig.packageList.test.contains(depName)) {
             continue
         }
-        let libPath = Path(compileTask.targetDir).join(depRootName).toString()
+        let libPath = Path(compileTask.targetDir).join(swapOrgName(depRootName)).toString()
         let linkArray: ArrayList<String> = forcedLinkPackage(depName, libPath, compileTask.isLto)
         if (linkArray.size <= 1) {
             allOptions.add(all: linkArray)
