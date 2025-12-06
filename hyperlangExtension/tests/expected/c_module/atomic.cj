@@ -6,4 +6,5 @@
 
 package my_module
 
-public const counter: Int32 = 0
+/*FIXME: Non-constant global variable details need to be verified and rewritten by user.*/
+/* _Atomic ( int ) counter = 0 */
