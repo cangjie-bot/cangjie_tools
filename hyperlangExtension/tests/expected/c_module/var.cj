@@ -6,13 +6,31 @@
 
 package my_module
 
-public const ch: UInt8 = 97
-public const a: Int32 = 0
-public const b: UInt32 = 0
-public const c: Int16 = 0
-public const d: UInt16 = 0
-public const f: Int64 = 0
-public const g: UInt64 = 0
-public const x: Float32 = 1.0
-public const e: Float64 = 1.0
+/*FIXME: Non-constant global variable details need to be verified and rewritten by user.*/
+/* char ch = 'a' */
+
+/*FIXME: Non-constant global variable details need to be verified and rewritten by user.*/
+/* int a = 0 */
+
+/*FIXME: Non-constant global variable details need to be verified and rewritten by user.*/
+/* unsigned int b = 0 */
+
+/*FIXME: Non-constant global variable details need to be verified and rewritten by user.*/
+/* short c = 0 */
+
+/*FIXME: Non-constant global variable details need to be verified and rewritten by user.*/
+/* unsigned short d = 0 */
+
+/*FIXME: Non-constant global variable details need to be verified and rewritten by user.*/
+/* long f = 0 */
+
+/*FIXME: Non-constant global variable details need to be verified and rewritten by user.*/
+/* unsigned long g = 0 */
+
+/*FIXME: Non-constant global variable details need to be verified and rewritten by user.*/
+/* float x = 1.0 */
+
+/*FIXME: Non-constant global variable details need to be verified and rewritten by user.*/
+/* double e = 1.0 */
+
 public const MAX: Int32 = 10
