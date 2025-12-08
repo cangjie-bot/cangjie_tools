@@ -364,12 +364,13 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
     let requiredForTests = buildConfig.requiredForTests // TODO: consider removing this field
     let exportForTests = requiredForTests && r.hasTestFiles // TODO: check if needed for non-product
 
-    let isAnalysisCompilePerformance = buildConfig.globalConfig.isAnalysisCompilePerformance
     let hasSubPkgs = buildConfig.hasSubPkgs.contains(fullName)
     let isMacro = buildConfig.packageList.macros.contains(fullName)
-    // TODO: consider replacint with ?String
     let superPkgCfg = r.superPkgCfg
     let isMultiplatform = r.packagePath.isMultiplatform
+
+    // TODO: support analysis compile performance for CJMP
+    let isAnalysisCompilePerformance = !isMultiplatform && buildConfig.globalConfig.isAnalysisCompilePerformance
 
     let isDebug = buildConfig.isDebug
     let isCov = buildConfig.isCov
@@ -395,32 +396,29 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
             r.nativeLinkOption
         } else { r.linkOption }
 
-        // TODO: make sure it's correct
         func createForSingleSourceSet(sourceSetEntry: CJMPPackageInfo, prevStageChir: ?String, prevStageCjo: ?String, prevStageSourceSetDir: ?String): (?CompileTask, ?String, ?String, ?String) {
-            let packagePath = sourceSetEntry.srcDir.toString() // TODO: make sure it's correct
+            let packagePath = sourceSetEntry.srcDir.toString()
             let product = sourceSetEntry.product
-            let sourceSetDir = sourceSetEntry.outputSuffix.toString() // TODO: make sure this is correct & consider changing productness
+            let sourceSetDir = sourceSetEntry.outputSuffix.toString() // TODO: consider changing productness
             let sourceSetFeatures = sourceSetEntry.features
 
             let logPath = Path(targetDir).join(".build-logs").join(swapOrgName(rootPkgName)).join(sourceSetDir).toString()
             let outLogFile = Path(logPath).join("${swapOrgName(fullName)}.outlog").toString()
             let errLogFile = Path(logPath).join("${swapOrgName(fullName)}.errlog").toString()
 
-            // TODO: consider better name
-            let other = ArrayList<String>()
+            let supressed = ArrayList<String>()
 
             let outputType = if (!product) {
                 OutputType.Chir
             } else if (r.outputType == Exe && requiredForTests) {
                 // to be included in tests as a dependency, the package should be compiled as a library anyway
                 // unused main function related warnings should also be suppressed in this scenario
-                other.add("-Woff=unused-main")
+                supressed.add("-Woff=unused-main")
                 OutputType.Static
             } else { r.outputType }
 
-            // TODO: reduce to single variable
             let isLto = buildConfig.isLto && (outputType == Static || outputType == Exe)
-            let ltoValue = if (isLto) { buildConfig.ltoValue } else { buildConfig.ltoValue }
+            let ltoValue: ?String = if (isLto && !buildConfig.ltoValue.isEmpty()) { buildConfig.ltoValue } else { None }
 
             // TODO: consider something similar for CJMP
             // TODO: apply this filename in as many places as possible
@@ -429,16 +427,15 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
             } else { fullName }
 
             let targetPath = if (outputType == Exe) { // TODO: make sure requiredForTests is covered
-                Path(targetDir).join(BIN).join(sourceSetDir).toString() // TODO: add assert that `sourceSetDir` is `.` for non-multiplatform
+                Path(targetDir).join(BIN).join(sourceSetDir).toString()
             } else {
-                Path(targetDir).join(swapOrgName(rootPkgName)).join(sourceSetDir).toString() // TODO: make sure that `.` get normalized
+                Path(targetDir).join(swapOrgName(rootPkgName)).join(sourceSetDir).toString()
             }
             // TODO: consider moving the creation of directories elsewhere
             if (!createDirectory(targetPath) || !createDirectory(logPath)) {
                 return (None, None, None, None)
             }
 
-             // TODO: consider removing this field
             let requireTasks = r.requires.iterator().map { it => TaskIdentifier(it, target, None) } |> collectHashSet
             if (let Some(psssd) <- prevStageSourceSetDir) {
                 requireTasks.add(TaskIdentifier(fullName, target, psssd))
@@ -484,12 +481,11 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
                 isCov: isCov,
                 mockSupported: mockSupported,
                 isMacro: isMacro,
-                isLto: isLto,
                 ltoValue: ltoValue,
                 prevStageChir: prevStageChir,
                 prevStageCjo: prevStageCjo,
                 isMultiplatform: isMultiplatform,
-                other: other,
+                supressed: supressed,
                 outLogFile: outLogFile,
                 errLogFile: errLogFile
             )

@@ -990,12 +990,6 @@ public struct CompileTask {
         public let fullName!: String = "", 
         // The expected name of output file without extension
         public let filename!: String = "", 
-
-        // TODO!: Check where else the name of output file is different and consider creating field
-        // if (buildConfig.packageList.exe.size > 1 || COMMON_INFO.inWorkspace) { 
-        // name = fullName
-        // }
-
         // The value of `--output-type`
         public let outputType!: OutputType = Unknown(""), 
         // The target triple passed to `--target` for compilation/cross-compilation
@@ -1010,17 +1004,17 @@ public struct CompileTask {
         public let linkOption!: String = "", 
         // TODO
         public let customizedOption!: ArrayList<String> = ArrayList(), 
-        // TODO
+        // Stores names of all subpackages of a module to combine them into a single compilation unit
         public let superPkgCfg!: ?SuperPackageConfig = None, 
-        // TODO: This option is only used for compiling `exe` as staticlib. need to consider getting rid of it
+        // Package is being compiled by `cjpm test`
         public let requiredForTests!: Bool = false, 
-        // buildConfig.requiredForTests && compileTask.hasTestFiles (TODO: words)
+        // Include some declarations from testfiles `*_test.cj` of a package.
         public let exportForTests!: Bool = false, 
-        // Incoming edges of dependency graph (TODO: make better wording)
+        // Incoming edges of dependency graph
         public let requireTasks!: HashSet<TaskIdentifier> = HashSet(), 
-        // All features, asked by different modules of this package. Required for creation of correct general compilation unit
+        // All features, asked by different modules of this package. Required for proper selection of product source set
         public let allEnabledFeatures!: HashSet<Feature> = HashSet(), 
-        // TODO
+        // Mappings from `[[feature]]` array of tables from `cjpm.toml`. Used to provide correct `*.cjo` files in `--import-path`
         public let featureMapping!: FeatureDeducer = FeatureDeducer.empty, 
         // TODO
         public let isAnalysisCompilePerformance!: Bool = false, 
@@ -1032,23 +1026,21 @@ public struct CompileTask {
         public let isCov!: Bool = false,
         // TODO
         public let mockSupported!: Bool = false,
-        // TODO
+        // Is package a macro package
         public let isMacro!: Bool = false, 
         // TODO
-        public let isLto!: Bool = false, 
-        // TODO
-        public let ltoValue!: String = "", 
+        public let ltoValue!: ?String = None,
         // TODO: Try to remove
         public let prevStageChir!: ?String = None, 
         // TODO: Try to remove
         public let prevStageCjo!: ?String = None, 
         // TODO: Try to get rid of it later
         public let isMultiplatform!: Bool = false, 
-        // TODO: Consider better name like `warningSupress`
-        public let other!: ArrayList<String> = ArrayList<String>(),
-        // TODO
+        // A list of `-Woff` compiler options
+        public let supressed!: ArrayList<String> = ArrayList<String>(),
+        // `stdout` of a compiler process stored in file
         public let outLogFile!: String = "", 
-        // TODO
+        // `stderr` of a compiler process stored in file
         public let errLogFile!: String = "" 
     ) { }
 }
