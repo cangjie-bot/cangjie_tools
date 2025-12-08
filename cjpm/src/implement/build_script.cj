@@ -321,8 +321,10 @@ func getScriptDepLink(modulePath: String, buildConfig: BuildConfig): Option<Arra
     }
 
     let target = if (buildConfig.isCrossCompile) { targetConfigName } else { crossCompileTarget }
-    let requireTasks = requires.iterator().map { it => TaskIdentifier(it, target, None) } |> collectHashSet
+    let requireTasks = requires.iterator().map { it => TaskIdentifier(it, target, "") } |> collectHashSet
+    let taskId = TaskIdentifier("build-script", target, "")
     let compileTask: CompileTask = CompileTask(
+        id: taskId,
         fullName: "build-script",
         targetDir: buildConfig.globalConfig.targetDir,
         isCrossCompile: buildConfig.isCrossCompile,

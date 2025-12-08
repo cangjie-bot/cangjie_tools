@@ -491,25 +491,8 @@ public struct TaskIdentifier {
     public TaskIdentifier(
         public let fullName: String,
         public let target: String,
-        public let sourceSetDir: ?String
+        public let sourceSetDir: String
     ) { }
-
-    public static func fromTaskData(compileTask: CompileTask): TaskIdentifier {
-        // TODO: remove this unnecessary `product` bit
-        if (!compileTask.product) {
-            TaskIdentifier(
-                compileTask.fullName,
-                compileTask.target,
-                compileTask.sourceSetDir
-            )
-        } else {
-            TaskIdentifier(
-                compileTask.fullName,
-                compileTask.target,
-                None
-            )
-        }
-    }
 }
 
 public struct PackageList {
@@ -536,13 +519,9 @@ public struct PackageList {
             packages |> flatMap { it: ResolveItem =>
                 let result = ArrayList<TaskIdentifier>()
                 for (source in it.packagePath._sources) {
-                    if (source.product) {
-                        result.add(TaskIdentifier(it.fullName, targetConfigName, None))
-                        result.add(TaskIdentifier(it.fullName, crossCompileTarget, None))
-                    } else { 
-                        result.add(TaskIdentifier(it.fullName, targetConfigName, source.outputSuffix.toString()))
-                        result.add(TaskIdentifier(it.fullName, crossCompileTarget, source.outputSuffix.toString()))
-                    }
+                    let sourceSetDir = if (!source.product) { source.outputSuffix.toString() } else { "" }
+                    result.add(TaskIdentifier(it.fullName, targetConfigName, sourceSetDir))
+                    result.add(TaskIdentifier(it.fullName, crossCompileTarget, sourceSetDir))
                 }
                 result.iterator()
             } |> collectArray
@@ -972,6 +951,7 @@ public class GlobalConfig {
 // Stores all of the information for constructing a single `cjc` call
 public struct CompileTask {
     public CompileTask(
+        public let id!: TaskIdentifier,
         // The directory, of current `target`
         public let targetDir!: String = "",
         // The value of `--target-dir`: where to dump the compilation result (depends on many factors)
@@ -990,65 +970,57 @@ public struct CompileTask {
         public let fullName!: String = "", 
         // The expected name of output file without extension
         public let filename!: String = "", 
-
-        // TODO!: Check where else the name of output file is different and consider creating field
-        // if (buildConfig.packageList.exe.size > 1 || COMMON_INFO.inWorkspace) { 
-        // name = fullName
-        // }
-
         // The value of `--output-type`
         public let outputType!: OutputType = Unknown(""), 
         // The target triple passed to `--target` for compilation/cross-compilation
         public let target!: String = "", 
         // `true` if value stored in `target` field is different from host
         public let isCrossCompile!: Bool = false, 
-        // TODO
+        // A set of option fields from `cjpm.toml` of a module, specialized for this particular package
         public let compileOption!: String = "", 
-        // TODO
         public let overrideOption!: String = "", 
-        // TODO
         public let linkOption!: String = "", 
-        // TODO
         public let customizedOption!: ArrayList<String> = ArrayList(), 
-        // TODO
+        // Stores names of all subpackages of a module to combine them into a single compilation unit
         public let superPkgCfg!: ?SuperPackageConfig = None, 
-        // TODO: This option is only used for compiling `exe` as staticlib. need to consider getting rid of it
+        // Package is being compiled by `cjpm test`
         public let requiredForTests!: Bool = false, 
-        // buildConfig.requiredForTests && compileTask.hasTestFiles (TODO: words)
+        // Include some declarations from testfiles `*_test.cj` of a package.
         public let exportForTests!: Bool = false, 
-        // Incoming edges of dependency graph (TODO: make better wording)
+        // Incoming edges of dependency graph
         public let requireTasks!: HashSet<TaskIdentifier> = HashSet(), 
-        // All features, asked by different modules of this package. Required for creation of correct general compilation unit
+        // All features, asked by different modules of this package. Required for proper selection of product source set
         public let allEnabledFeatures!: HashSet<Feature> = HashSet(), 
-        // TODO
+        // Mappings from `[[feature]]` array of tables from `cjpm.toml`. Used to provide correct `*.cjo` files in `--import-path`
         public let featureMapping!: FeatureDeducer = FeatureDeducer.empty, 
-        // TODO
+        // Does this compiler call support AnalysisCompilePerformance
         public let isAnalysisCompilePerformance!: Bool = false, 
-        // TODO !compileTask.hasSubPkgs.contains(compileTask.fullName)
+        // `true` if:
+        //  - this is a parent package of some subpackage
+        //  - requiredForTests
         public let hasSubPkgs!: Bool = false, 
-        // TODO
+        // Is this compilation task for debug build
         public let isDebug!: Bool = false,
-        // TODO
+        // Compile package with support of `coverage`
         public let isCov!: Bool = false,
-        // TODO
+        // Compile package with support of `mock`
         public let mockSupported!: Bool = false,
-        // TODO
+        // Is package a macro package
         public let isMacro!: Bool = false, 
-        // TODO
-        public let isLto!: Bool = false, 
-        // TODO
-        public let ltoValue!: String = "", 
-        // TODO: Try to remove
+        // A value of `--lto` flag to be passed to a compiler
+        public let isLto!: Bool = false,
+        public let ltoValue!: String = "",
+        // CHIR file to be merged from for multiplatform build
         public let prevStageChir!: ?String = None, 
-        // TODO: Try to remove
+        // The value of `--common-part-cjo` for multiplatform build
         public let prevStageCjo!: ?String = None, 
-        // TODO: Try to get rid of it later
+        // Whether the source code location is spread between multiple [[source-set]] src-dir
         public let isMultiplatform!: Bool = false, 
-        // TODO: Consider better name like `warningSupress`
-        public let other!: ArrayList<String> = ArrayList<String>(),
-        // TODO
+        // A list of `-Woff` compiler options
+        public let supressed!: ArrayList<String> = ArrayList<String>(),
+        // A file for verbose output of `cjpm` when compiling task
         public let outLogFile!: String = "", 
-        // TODO
+        // A joined file of `stderr` of a compiler and `cjpm` errors
         public let errLogFile!: String = "" 
     ) { }
 }
