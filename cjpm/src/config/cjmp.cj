@@ -524,7 +524,6 @@ public struct CJMPPackageInfo <: Serializable<CJMPPackageInfo> {
 
     // The suffix should be of a product source set
     func changeProduct(newval: Bool, isMultiplatform: Bool): CJMPPackageInfo {
-        // TODO: consider simplifying
         let outputSuffix = if (isMultiplatform) {
             makeOutputSuffix(sourceSetDir, product: newval)
         } else { Path("") }
@@ -597,7 +596,6 @@ public struct CJMPSource <: Serializable<CJMPSource> {
                     if (!dirMap.contains(dirname)) {
                         dirMap[dirname] = ArrayList()
                     }
-                    // TODO fixup
                     let packageInfo = if (this._isMultiplatform) {
                         CJMPPackageInfo(source.sourceSetDir, it.path, source.features, source.product)
                     } else {
