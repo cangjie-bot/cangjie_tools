@@ -201,6 +201,20 @@ SyscapCheck::SyscapCheck(const std::string& moduleName)
 {
     if (module2SyscapsMap.find(moduleName) != module2SyscapsMap.end()) {
         intersectionSet = module2SyscapsMap[moduleName];
+        return;
+    }
+    if (moduleName.find("_local_test") != std::string::npos) {
+        std::string localTest = moduleName.substr(0, moduleName.find("_local_test"));
+        if (module2SyscapsMap.find(localTest) != module2SyscapsMap.end()) {
+            intersectionSet = module2SyscapsMap[localTest];
+        }
+        return;
+    }
+    if (moduleName.find("_test") != std::string::npos) {
+        std::string test = moduleName.substr(0, moduleName.find("_test"));
+        if (module2SyscapsMap.find(test) != module2SyscapsMap.end()) {
+            intersectionSet = module2SyscapsMap[test];
+        }
     }
 }
 
@@ -208,6 +222,20 @@ void SyscapCheck::SetIntersectionSet(const std::string& moduleName)
 {
     if (module2SyscapsMap.find(moduleName) != module2SyscapsMap.end()) {
         intersectionSet = module2SyscapsMap[moduleName];
+        return;
+    }
+    if (moduleName.find("_local_test") != std::string::npos) {
+        std::string localTest = moduleName.substr(0, moduleName.find("_local_test"));
+        if (module2SyscapsMap.find(localTest) != module2SyscapsMap.end()) {
+            intersectionSet = module2SyscapsMap[localTest];
+        }
+        return;
+    }
+    if (moduleName.find("_test") != std::string::npos) {
+        std::string test = moduleName.substr(0, moduleName.find("_test"));
+        if (module2SyscapsMap.find(test) != module2SyscapsMap.end()) {
+            intersectionSet = module2SyscapsMap[test];
+        }
     }
 }
 
