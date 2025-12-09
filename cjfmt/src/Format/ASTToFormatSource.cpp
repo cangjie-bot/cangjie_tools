@@ -347,65 +347,69 @@ void ASTToFormatSource::AddModifier(Doc& doc, Cangjie::AST::Modifier& modifier, 
     doc.members.emplace_back(DocType::STRING, level, " ");
 }
 
-void ASTToFormatSource::EditMacroStr(const Cangjie::Token& attr, std::string& macroStr, TokenKind& preTokenKind)
+void ASTToFormatSource::EditMacroStr(std::vector<Token>::iterator attr, std::string& macroStr, TokenKind& preTokenKind)
 {
-    const std::vector<TokenKind> TOKEN_KIND_WITHOUT_SPACE{TokenKind::LPAREN, TokenKind::RPAREN, TokenKind::COMMA,
+    const std::vector<TokenKind> TOKEN_KIND_WITHOUT_SPACE{ TokenKind::LPAREN,
+        TokenKind::RSQUARE, TokenKind::RPAREN, TokenKind::COMMA,
         TokenKind::COLON, TokenKind::NOT, TokenKind::LT, TokenKind::GT, TokenKind::DOT};
 
-    std::string quote = attr.isSingleQuote ? "'" : "\"";
-    if (attr.kind == TokenKind::STRING_LITERAL) {
-        auto iter = std::find(TOKEN_KIND_WITHOUT_SPACE.begin(), TOKEN_KIND_WITHOUT_SPACE.end(), attr.kind);
+    std::string quote = attr->isSingleQuote ? "'" : "\"";
+    if (attr->kind == TokenKind::STRING_LITERAL) {
+        auto iter = std::find(TOKEN_KIND_WITHOUT_SPACE.begin(), TOKEN_KIND_WITHOUT_SPACE.end(), attr->kind);
         if (iter == TOKEN_KIND_WITHOUT_SPACE.end() && WithoutSpace(preTokenKind)) {
             macroStr += " ";
         }
-        preTokenKind = attr.kind;
-        macroStr += quote + attr.Value() + quote;
-    } else if (attr.kind == TokenKind::JSTRING_LITERAL) {
-        auto iter = std::find(TOKEN_KIND_WITHOUT_SPACE.begin(), TOKEN_KIND_WITHOUT_SPACE.end(), attr.kind);
+        preTokenKind = attr->kind;
+        macroStr += quote + attr->Value() + quote;
+    } else if (attr->kind == TokenKind::JSTRING_LITERAL) {
+        auto iter = std::find(TOKEN_KIND_WITHOUT_SPACE.begin(), TOKEN_KIND_WITHOUT_SPACE.end(), attr->kind);
         if (iter == TOKEN_KIND_WITHOUT_SPACE.end() && WithoutSpace(preTokenKind)) {
             macroStr += " ";
         }
-        preTokenKind = attr.kind;
-        macroStr += "J" + quote + attr.Value() + quote;
-    } else if (attr.kind == TokenKind::MULTILINE_RAW_STRING) {
-        for (unsigned i = 0; i < attr.delimiterNum; ++i) {
+        preTokenKind = attr->kind;
+        macroStr += "J" + quote + attr->Value() + quote;
+    } else if (attr->kind == TokenKind::MULTILINE_RAW_STRING) {
+        for (unsigned i = 0; i < attr->delimiterNum; ++i) {
             macroStr += "#";
         }
-        preTokenKind = attr.kind;
+        preTokenKind = attr->kind;
         macroStr += "\"";
-        macroStr += attr.Value();
+        macroStr += attr->Value();
         macroStr += "\"";
-        for (unsigned i = 0; i < attr.delimiterNum; ++i) {
+        for (unsigned i = 0; i < attr->delimiterNum; ++i) {
             macroStr += "#";
         }
-    } else if (attr.kind == TokenKind::MULTILINE_STRING) {
-        preTokenKind = attr.kind;
+    } else if (attr->kind == TokenKind::MULTILINE_STRING) {
+        preTokenKind = attr->kind;
         macroStr += "\"\"\"\n";
-        macroStr += attr.Value();
+        macroStr += attr->Value();
         macroStr += R"(""")";
-    } else if (attr.kind == TokenKind::RUNE_LITERAL) {
-        auto iter = std::find(TOKEN_KIND_WITHOUT_SPACE.begin(), TOKEN_KIND_WITHOUT_SPACE.end(), attr.kind);
+    } else if (attr->kind == TokenKind::RUNE_LITERAL) {
+        auto iter = std::find(TOKEN_KIND_WITHOUT_SPACE.begin(), TOKEN_KIND_WITHOUT_SPACE.end(), attr->kind);
         if (iter == TOKEN_KIND_WITHOUT_SPACE.end() && WithoutSpace(preTokenKind)) {
             macroStr += " ";
         }
-        preTokenKind = attr.kind;
+        preTokenKind = attr->kind;
         std::string runeSymbol = "r";
-        macroStr += runeSymbol + "\'" + attr.Value() + "\'";
+        macroStr += runeSymbol + "\'" + attr->Value() + "\'";
     } else {
-        auto iter = std::find(TOKEN_KIND_WITHOUT_SPACE.begin(), TOKEN_KIND_WITHOUT_SPACE.end(), attr.kind);
-        if (preTokenKind == TokenKind::COMMA ||
-            (iter == TOKEN_KIND_WITHOUT_SPACE.end() && WithoutSpace(preTokenKind))) {
+        auto iter = std::find(TOKEN_KIND_WITHOUT_SPACE.begin(), TOKEN_KIND_WITHOUT_SPACE.end(), attr->kind);
+        if (preTokenKind == TokenKind::COMMA || (iter == TOKEN_KIND_WITHOUT_SPACE.end() &&
+            WithoutSpace(preTokenKind))) {
             macroStr += " ";
         }
-        preTokenKind = attr.kind;
-        macroStr += attr.Value();
+        preTokenKind = attr->kind;
+        macroStr += attr->Value();
+        if (attr->Value() == "in") {
+            macroStr += " ";
+        }
     }
 }
 
 bool ASTToFormatSource::WithoutSpace(TokenKind preTokenKind) const
 {
-    return preTokenKind != TokenKind::ILLEGAL && preTokenKind != TokenKind::LPAREN && preTokenKind != TokenKind::LT &&
-        preTokenKind != TokenKind::DOT;
+    return preTokenKind != TokenKind::LSQUARE && preTokenKind != TokenKind::ILLEGAL &&
+        preTokenKind != TokenKind::LPAREN && preTokenKind != TokenKind::LT && preTokenKind != TokenKind::DOT;
 }
 
 bool ASTToFormatSource::IsMultipleLineArg(const std::vector<OwnedPtr<Cangjie::AST::FuncArg>>& args)

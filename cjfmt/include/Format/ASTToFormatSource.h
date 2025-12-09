@@ -83,7 +83,7 @@ public:
     void AddBreakLineParam(
         Doc& doc, const Cangjie::AST::FuncParamList& funcParamList, int level, FuncOptions funcOptions);
     void AddMatchSelector(Doc& doc, const Cangjie::AST::MatchExpr& matchExpr, int level);
-    void EditMacroStr(const Token& attr, std::string& macroStr, TokenKind& preTokenKind);
+    void EditMacroStr(std::vector<Token>::iterator attr, std::string& macroStr, TokenKind& preTokenKind);
     bool WithoutSpace(TokenKind preTokenKind) const;
     bool IsMultipleLineArg(const std::vector<OwnedPtr<Cangjie::AST::FuncArg>>& args);
     bool IsMultipleLineCallExpr(const Cangjie::AST::CallExpr& callExpr) const;
@@ -99,8 +99,9 @@ public:
 
         TokenKind preTokenKind = TokenKind::ILLEGAL;
 
-        for (auto& attr : macro->invocation.attrs) {
-            EditMacroStr(attr, macroStr, preTokenKind);
+        for (std::vector<Token>::iterator it = macro->invocation.attrs.begin();
+            it != macro->invocation.attrs.end(); ++it) {
+            EditMacroStr(it, macroStr, preTokenKind);
         }
 
         doc.members.emplace_back(DocType::STRING, level, macroStr);
