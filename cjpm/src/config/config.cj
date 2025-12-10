@@ -1018,6 +1018,8 @@ public struct CompileTask {
         public let isMultiplatform!: Bool = false, 
         // A list of `-Woff` compiler options
         public let supressed!: ArrayList<String> = ArrayList<String>(),
+        // The directory, where `outLogFile` and `errLogFile` are stored
+        public let logPath!: String = "",
         // A file for verbose output of `cjpm` when compiling task
         public let outLogFile!: String = "", 
         // A joined file containing `stderr` of a compiler together with `cjpm` errors
