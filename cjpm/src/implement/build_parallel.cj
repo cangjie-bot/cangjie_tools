@@ -142,6 +142,12 @@ class ParallelBuilder {
             sem.acquire()
             let task = this.taskMap[taskId]
             let future = spawn { =>
+                if (!createDirectory(task.targetPath) || !createDirectory(task.logPath)) {
+                    sem.release()
+                    logger.release()
+                    return false
+                }
+
                 if (this.buildConfig.globalConfig.isProjectCombine && taskId.fullName == buildConfig.globalConfig.rootName) {
                     for ((k,_) in this.taskMap where k != taskId) {
                         if (!this.checkDepFuture(k, task, futTasks, sem)) {
@@ -327,7 +333,7 @@ private struct PrevStage {
 }
 
 // Returns an array of compiler calls, which are required to compile a package
-func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<CompileTask> {
+func createPackageCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ArrayList<CompileTask> {
     // Common to all tasks, but needs to be embedded in CompileTask struct
     let isDebug = buildConfig.isDebug
     let isCov = buildConfig.isCov
@@ -352,7 +358,7 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
 
     // Specific to the `--target` platform
     // `isNativeForCross == true` - package needs to be compiled with `host` target to be used by or is a `macro package` 
-    func createForTarget(isNativeForCross!: Bool = false): ?ArrayList<CompileTask> {
+    func createForTarget(isNativeForCross!: Bool = false): ArrayList<CompileTask> {
         let targetDir = if (isNativeForCross) { buildConfig.globalConfig.nativeDir } else { buildConfig.globalConfig.targetDir }
 
         let isCrossCompile = buildConfig.isCrossCompile && !isNativeForCross
@@ -375,7 +381,7 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
 
         // Multiplatform packages need an arbitrary number of `cjc` calls
         // Non-multiplatform packages consist of single `sourceSetEntry`
-        func createForSingleSourceSet(sourceSetEntry: CJMPPackageInfo, prevStage: ?PrevStage): (?CompileTask, ?PrevStage) {
+        func createForSingleSourceSet(sourceSetEntry: CJMPPackageInfo, prevStage: ?PrevStage): (CompileTask, ?PrevStage) {
             let packagePath = sourceSetEntry.srcDir.toString()
             let product = sourceSetEntry.product
             let sourceSetDir = sourceSetEntry.outputSuffix.toString()
@@ -413,10 +419,6 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
                 Path(targetDir).join(BIN).join(sourceSetDir).toString()
             } else {
                 Path(targetDir).join(swapOrgName(rootPkgName)).join(sourceSetDir).toString()
-            }
-
-            if (!createDirectory(targetPath) || !createDirectory(logPath)) {
-                return (None, None)
             }
 
             let requireTasks = r.requires.iterator().map { it => TaskIdentifier(it, target, "") } |> collectHashSet
@@ -470,6 +472,7 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
                 prevStageCjo: prevStageCjo,
                 isMultiplatform: isMultiplatform,
                 supressed: supressed,
+                logPath: logPath,
                 outLogFile: outLogFile,
                 errLogFile: errLogFile
             )
@@ -481,7 +484,7 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
         var prevStage: ?PrevStage = None
         for (sourceSetEntry in r.packagePath._sources) {
             let (task, thisStage) = createForSingleSourceSet(sourceSetEntry, prevStage)
-            sourceSetUnwrap.add(task ?? return None)
+            sourceSetUnwrap.add(task)
             prevStage = thisStage
         }
         return sourceSetUnwrap
@@ -491,10 +494,10 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
 
     assertion { r.targetPlatform || r.nativePlatform }
     if (r.targetPlatform) {
-        result.add(all: createForTarget(isNativeForCross: false) ?? return None)
+        result.add(all: createForTarget(isNativeForCross: false))
     }
     if (r.nativePlatform) {
-        result.add(all: createForTarget(isNativeForCross: true) ?? return None)
+        result.add(all: createForTarget(isNativeForCross: true))
     }
 
     return result
@@ -517,17 +520,16 @@ func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
 
     res.forEachPkg { r: ResolveItem =>
         if (buildConfig.isIncremental && !buildConfig.rebuildList.contains(r.fullName)) {
-            return true
+            return
         }
         if (!r.hasProdFiles) {
             buildConfig.rebuildList.remove(r.fullName)
-            return true
+            return
         }
-        let compileTasks = createCompileTasks(r, buildConfig) ?? return false
+        let compileTasks = createPackageCompileTasks(r, buildConfig)
         for (config in compileTasks) {
             parallel.taskMap.add(config.id, config)
         }
-        return true
     }
 
     if (!parallel.taskMap.isEmpty()) {

@@ -46,13 +46,8 @@ public class ModuleResolve <: Serializable<ModuleResolve> {
         )
     }
 
-    public func forEachPkg(fn: (ResolveItem) -> Bool): Bool {
-        for (v in this.resolves) {
-            if (!fn(v)) {
-                return false
-            }
-        }
-        return true
+    public func forEachPkg(fn: (ResolveItem) -> Unit): Unit {
+        this.resolves.forEach(fn)
     }
 }
 
