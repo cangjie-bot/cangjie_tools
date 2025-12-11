@@ -320,7 +320,8 @@ func execPreTestArgs(testConfig: TestConfig): Bool {
         eprintln("Error: please execute '${generateBuildCmd(testConfig)}' successfully first")
         return false
     }
-    testConfig.rebuildList = buildConfig.rebuildList
+    // TODO: make new incrementality based rebuild
+    testConfig.rebuildList = buildConfig.packageList.all |> collectHashSet
     testConfig.testPkgs = HashSet<String>(buildConfig.packageList.test)
     testConfig.globalConfig.targetDir = targetDirectoryCache
     testConfig.globalConfig.nativeDir = buildConfig.globalConfig.nativeDir
@@ -1026,7 +1027,7 @@ func parallelCompileTests(
             )
             let flag = packageTestIfNeeded(pkgInfo, testConfig, pkgDesc)
             sem.release()
-            logger.log(pkgInfo.outLogFile, pkgInfo.errLogFile)
+            logger.log((pkgInfo.outLogFile, pkgInfo.errLogFile))
             return flag
         })
     }
