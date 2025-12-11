@@ -52,7 +52,7 @@ public func deleteDirectory(dirPath: String): Bool {
 }
 
 public func createDirectory(dirPath: String): Bool {
-    synchronized (createDirectoryMtx) {
+    synchronized(createDirectoryMtx) {
         if (!directoryExists(dirPath)) {
             try {
                 Directory.create(dirPath, recursive: true)

@@ -10,21 +10,3 @@ import std.fs.*
 import stdx.encoding.json.*
 import stdx.serialization.serialization.*
 import cjpm.config.*
-
-func loadCacheFile(file: String): Option<IncrementalCache> {
-    var buf: String = ""
-    try {
-        buf = String.fromUtf8(File.readFrom(file))
-    } catch (e: Exception) {
-        return Option<IncrementalCache>.None
-    }
-
-    var cache: IncrementalCache = IncrementalCache()
-    try {
-        cache = IncrementalCache.deserialize(DataModel.fromJson(JsonValue.fromStr(buf)))
-    } catch (e: Exception) {
-        return Option<IncrementalCache>.None
-    }
-
-    return cache
-}
