@@ -486,46 +486,108 @@ public open class CommandConfig {
     public var memberModule: String = ""
 }
 
+// TODO: move it in better place
+// TODO: ToString by hand
+// TODO: Consider parseable
+// TODO: remove this weird, unnecessary, implicit and outright wrong agreement over `sourceSetDir == ""` for product source sets
+// TODO: After introduction of different kinds of tasks there's danger of deadlock with this logger. Don't forget it
+// TODO: Serializable through parseable
+// TODO: normalize identifier as directory so it will be fine when removed dot
 @Derive[Hashable, Equatable]
-public struct TaskIdentifier {
-    public TaskIdentifier(
-        public let fullName: String,
-        public let target: String,
-        public let sourceSetDir: String
-    ) { }
+public enum TaskId <: Serializable<TaskId> & ToString {
+    // fullname, sourceSetDir
+    | ReadPackageSource(String, String)
+    // fullName, target, sourceSetDir
+    | Compile(String, String, String)
+    | BuildScriptCompile
+
+    public func toString(): String {
+        match (this) {
+            case ReadPackageSource(fullName, sourceSetDir) => "read>${fullName}:${sourceSetDir}"
+            case Compile(fullName, target, sourceSetDir) => "compile>${fullName}:${target}:${sourceSetDir}"
+            case BuildScriptCompile => "build_script>"
+        }
+    }
+
+    // TODO: cleanup
+    public func serialize(): DataModel {
+        DataModelString(this.toString())
+    }
+
+    public static func fromString(value: String): TaskId {
+        let splitted = value.split(">", 2)
+        let values = splitted[1].split(":")
+        if (splitted[0] == "read") {
+            ReadPackageSource(values[0], values.get(1) ?? "")
+        } else if (splitted[0] == "compile") {
+            Compile(values[0], values[1], values.get(2) ?? "")
+        } else if (splitted[0] == "build_script") {
+            BuildScriptCompile
+        } else {
+            throw Exception("TODO")
+        }
+    }
+
+    // TODO: escaping of string identifier to avoid bugs with caching
+    // TODO: better message
+    // TODO: make safer
+    // TODO: ridiculous
+    public static func deserialize(dm: DataModel): TaskId {
+        let dmstr = match (dm) {
+            case dmstr: DataModelString => dmstr
+            case _ => throw DataModelException("this is not DataModelString")
+        }
+        fromString(dmstr.getValue())
+    }
 }
 
 public struct PackageList {
     private let packages: Array<ResolveItem>
 
+    public let all: Array<String>
+    public let macros: Array<String>
+    public let dylib: Array<String>
+    public let exe: Array<String>
+    public let test: Array<String>
+    public let productSuffixes: ReadOnlyMap<String, String>
+
     public init(packages: Iterable<ResolveItem>) {
         this.packages = packages |> collectArray
+
+        let capacity = this.packages.size
+        let all = ArrayList<String>(capacity)
+        let dylib = ArrayList<String>(capacity)
+        let macros = ArrayList<String>(capacity)
+        let exe = ArrayList<String>(capacity)
+        let test = ArrayList<String>(capacity)
+
+        for (pkg in this.packages) {
+            let name = pkg.fullName
+            all.add(name)
+
+            if (pkg.isMacroPackage) {
+                macros.add(name)
+            }
+            if (pkg.isPureTestPkg()) {
+                test.add(name)
+            }
+            match (pkg.outputType) {
+                case Exe => exe.add(name)
+                case Dynamic => dylib.add(name)
+                case Static | Chir | Unknown(_) => ()
+            }
+        }
+
+        this.all = all.toArray()
+        this.macros = macros.toArray()
+        this.dylib = dylib.toArray()
+        this.exe = exe.toArray()
+        this.test = test.toArray()
+        this.productSuffixes = makeProductSuffixes(packages)
     }
 
     init() {
         this([])
-    }
-
-    public prop all: Array<String> {
-        get() {
-            packages |> map {
-                it: ResolveItem => it.fullName
-            } |> collectArray
-        }
-    }
-
-    public prop allIds: Array<TaskIdentifier> {
-        get() {
-            packages |> flatMap { it: ResolveItem =>
-                let result = ArrayList<TaskIdentifier>()
-                for (source in it.packagePath._sources) {
-                    let sourceSetDir = if (!source.product) { source.outputSuffix.toString() } else { "" }
-                    result.add(TaskIdentifier(it.fullName, targetConfigName, sourceSetDir))
-                    result.add(TaskIdentifier(it.fullName, crossCompileTarget, sourceSetDir))
-                }
-                result.iterator()
-            } |> collectArray
-        }
     }
 
     public func bestFitFeatures(features: HashSet<Feature>): HashMap<String, String> {
@@ -546,61 +608,13 @@ public struct PackageList {
         } |> collectHashMap
     }
 
-    public prop productSuffixes: HashMap<String, String> {
-        get() {
-            packages |> filterMap { it: ResolveItem =>
-                let productEntry = it.packagePath._sources.last ?? return None<(String, String)>
-                return Some((it.fullName, getPath(productEntry.outputSuffix.toString())))
-            } |> collectHashMap
-        }
+    private static func makeProductSuffixes(packages: Iterable<ResolveItem>): HashMap<String, String> {
+        packages |> filterMap { it: ResolveItem =>
+            let productEntry = it.packagePath._sources.last ?? return None<(String, String)>
+            return Some((it.fullName, productEntry.outputSuffix.toString()))
+        } |> collectHashMap
     }
 
-    public prop macros: Array<String> {
-        get() {
-            packages |> filterMap {
-                it: ResolveItem => if (it.isMacroPackage) {
-                    it.fullName
-                } else {
-                    None
-                }
-            } |> collectArray
-        }
-    }
-
-    public prop dylib: Array<String> {
-        get() {
-            packages |> filterMap {
-                it: ResolveItem => if (let Dynamic <- it.outputType) {
-                    it.fullName
-                } else {
-                    None
-                }
-            } |> collectArray
-        }
-    }
-    public prop exe: Array<String> {
-        get() {
-            packages |> filterMap {
-                it: ResolveItem => if (let Exe <- it.outputType) {
-                    it.fullName
-                } else {
-                    None
-                }
-            } |> collectArray
-        }
-    }
-    // Record the packages for pure unittest
-    public prop test: Array<String> {
-        get() {
-            packages |> filterMap {
-                it: ResolveItem => if (it.isPureTestPkg()) {
-                    it.fullName
-                } else {
-                    None
-                }
-            } |> collectArray
-        }
-    }
 }
 
 public class BuildConfig <: CommandConfig {
@@ -616,17 +630,10 @@ public class BuildConfig <: CommandConfig {
     public var pkgRequireByMacro = HashSet<String>()
     public var requiredForTests: Bool = false
     public var requiresMap: HashMap<String, HashSet<String>> = HashMap<String, HashSet<String>>()
-    public var rebuildList: HashSet<String> = HashSet<String>()
-    public var rebuildMacros: HashSet<String> = HashSet<String>()
-    public var indirectRebuilds: HashSet<String> = HashSet<String>()
     // Record json cache for each module
     public var jsonInformation: HashMap<String, ArrayList<String>> = HashMap<String, ArrayList<String>>()
-    // Record package cache for each module
-    public var pkgCacheMap: HashMap<String, CacheItem> = HashMap<String, CacheItem>()
     // Record the module name that has changed json data
     public var changedModuleList: ArrayList<String> = ArrayList<String>()
-    // Record the cjo timetamp
-    public var cjoTimeMap: HashMap<String, Int64> = HashMap<String, Int64>()
     public var mockSupported: Bool = false
     public var originTargetPath: String = TARGET
     public var exeName: String = "main"
@@ -951,7 +958,7 @@ public class GlobalConfig {
 // Stores all of the information for constructing a single `cjc` call
 public struct CompileTask {
     public CompileTask(
-        public let id!: TaskIdentifier,
+        public let id!: TaskId,
         // The directory, of current `target`
         public let targetDir!: String = "",
         // The value of `--target-dir`: where to dump the compilation result (depends on many factors)
@@ -988,7 +995,7 @@ public struct CompileTask {
         // Include some declarations from testfiles `*_test.cj` of a package.
         public let exportForTests!: Bool = false, 
         // Incoming edges of dependency graph
-        public let requireTasks!: HashSet<TaskIdentifier> = HashSet(), 
+        public let requireTasks!: HashSet<TaskId> = HashSet(), 
         // All features, asked by different modules of this package. Required for proper selection of product source set
         public let allEnabledFeatures!: HashSet<Feature> = HashSet(), 
         // Mappings from `[[feature]]` array of tables from `cjpm.toml`. Used to provide correct `*.cjo` files in `--import-path`

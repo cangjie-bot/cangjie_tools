@@ -320,11 +320,18 @@ func getScriptDepLink(modulePath: String, buildConfig: BuildConfig): Option<Arra
         }
     }
 
+    // TODO: make sure it's correct
+    let productSuffixes = buildConfig.packageList.productSuffixes
+
+    // TODO: requires is not only the compilation tasks. It's the names of all dependencies
+    // Required by the package. So task checking in it's current state is absurd.
+    // It just relies that compiler will find `*.cjo` and `*.so` to link everything
+
     let target = if (buildConfig.isCrossCompile) { targetConfigName } else { crossCompileTarget }
-    let requireTasks = requires.iterator().map { it => TaskIdentifier(it, target, "") } |> collectHashSet
-    let taskId = TaskIdentifier("build-script", target, "")
+    let requireTasks = requires.iterator().map { it => TaskId.Compile(it, target, productSuffixes.get(it) ?? "") } |> collectHashSet
+
     let compileTask: CompileTask = CompileTask(
-        id: taskId,
+        id: TaskId.BuildScriptCompile,
         fullName: "build-script",
         targetDir: buildConfig.globalConfig.targetDir,
         isCrossCompile: buildConfig.isCrossCompile,
