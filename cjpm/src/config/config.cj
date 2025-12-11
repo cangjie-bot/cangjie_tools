@@ -486,13 +486,54 @@ public open class CommandConfig {
     public var memberModule: String = ""
 }
 
+// TODO: move it in better place
+// TODO: ToString by hand
+// TODO: Consider parseable
+// TODO: remove this weird, unnecessary, implicit and outright wrong agreement over `sourceSetDir == ""` for product source sets
+// TODO: After introduction of different kinds of tasks there's danger of deadlock with this logger. Don't forget it
+// TODO: Serializable through parseable
+// TODO: normalize identifier as directory so it will be fine when removed dot
 @Derive[Hashable, Equatable]
-public struct TaskIdentifier {
-    public TaskIdentifier(
-        public let fullName: String,
-        public let target: String,
-        public let sourceSetDir: String
-    ) { }
+public enum TaskId <: Serializable<TaskId> & ToString {
+    // fullname, sourceSetDir
+    | ReadPackageSource(String, String)
+    // fullName, target, sourceSetDir
+    | Compile(String, String, String)
+    | BuildScriptCompile
+
+    public func toString(): String {
+        match (this) {
+            case ReadPackageSource(fullName, sourceSetDir) => "read>${fullName}:${sourceSetDir}"
+            case Compile(fullName, target, sourceSetDir) => "compile>${fullName}:${target}:${sourceSetDir}"
+            case BuildScriptCompile => "build_script>"
+        }
+    }
+
+    // TODO: cleanup
+    public func serialize(): DataModel {
+        DataModelString(this.toString())
+    }
+
+    // TODO: escaping of string identifier to avoid bugs with caching
+    // TODO: better message
+    // TODO: make safer
+    public static func deserialize(dm: DataModel): TaskId {
+        let dmstr = match (dm) {
+            case dmstr: DataModelString => dmstr
+            case _ => throw DataModelException("this is not DataModelString")
+        }
+        let splitted = dmstr.getValue().split(">", 2)
+        let values = splitted[1].split(":")
+        if (splitted[0] == "read") {
+            ReadPackageSource(values[0], values[1])
+        } else if (splitted[0] == "compile") {
+            Compile(values[0], values[1], values[2])
+        } else if (splitted[0] == "build_script") {
+            BuildScriptCompile
+        } else {
+            throw Exception("TODO")
+        }
+    }
 }
 
 public struct PackageList {
@@ -514,14 +555,14 @@ public struct PackageList {
         }
     }
 
-    public prop allIds: Array<TaskIdentifier> {
+    // TODO: remove it
+    public prop allIds: Array<TaskId> {
         get() {
             packages |> flatMap { it: ResolveItem =>
-                let result = ArrayList<TaskIdentifier>()
+                let result = ArrayList<TaskId>()
                 for (source in it.packagePath._sources) {
-                    let sourceSetDir = if (!source.product) { source.outputSuffix.toString() } else { "" }
-                    result.add(TaskIdentifier(it.fullName, targetConfigName, sourceSetDir))
-                    result.add(TaskIdentifier(it.fullName, crossCompileTarget, sourceSetDir))
+                    result.add(TaskId.Compile(it.fullName, targetConfigName, source.outputSuffix.toString()))
+                    result.add(TaskId.Compile(it.fullName, crossCompileTarget, source.outputSuffix.toString()))
                 }
                 result.iterator()
             } |> collectArray
@@ -550,7 +591,7 @@ public struct PackageList {
         get() {
             packages |> filterMap { it: ResolveItem =>
                 let productEntry = it.packagePath._sources.last ?? return None<(String, String)>
-                return Some((it.fullName, getPath(productEntry.outputSuffix.toString())))
+                return Some((it.fullName, productEntry.outputSuffix.toString()))
             } |> collectHashMap
         }
     }
@@ -622,7 +663,7 @@ public class BuildConfig <: CommandConfig {
     // Record json cache for each module
     public var jsonInformation: HashMap<String, ArrayList<String>> = HashMap<String, ArrayList<String>>()
     // Record package cache for each module
-    public var pkgCacheMap: HashMap<String, CacheItem> = HashMap<String, CacheItem>()
+    // public var pkgCacheMap: HashMap<String, CacheItem> = HashMap<String, CacheItem>()
     // Record the module name that has changed json data
     public var changedModuleList: ArrayList<String> = ArrayList<String>()
     // Record the cjo timetamp
@@ -951,7 +992,7 @@ public class GlobalConfig {
 // Stores all of the information for constructing a single `cjc` call
 public struct CompileTask {
     public CompileTask(
-        public let id!: TaskIdentifier,
+        public let id!: TaskId,
         // The directory, of current `target`
         public let targetDir!: String = "",
         // The value of `--target-dir`: where to dump the compilation result (depends on many factors)
@@ -988,7 +1029,7 @@ public struct CompileTask {
         // Include some declarations from testfiles `*_test.cj` of a package.
         public let exportForTests!: Bool = false, 
         // Incoming edges of dependency graph
-        public let requireTasks!: HashSet<TaskIdentifier> = HashSet(), 
+        public let requireTasks!: HashSet<TaskId> = HashSet(), 
         // All features, asked by different modules of this package. Required for proper selection of product source set
         public let allEnabledFeatures!: HashSet<Feature> = HashSet(), 
         // Mappings from `[[feature]]` array of tables from `cjpm.toml`. Used to provide correct `*.cjo` files in `--import-path`
