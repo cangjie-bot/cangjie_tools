@@ -10,6 +10,7 @@ import std.collection.*
 import std.fs.*
 import std.sync.*
 import std.env.*
+import std.convert.*
 import std.deriving.Derive
 import stdx.encoding.json.*
 import stdx.serialization.serialization.*
@@ -49,7 +50,7 @@ private let outputTypeToEnum: HashMap<String, OutputType> = HashMap(
     ]
 )
 
-@Derive[Equatable]
+@Derive[Equatable, Hashable]
 public enum OutputType <: Serializable<OutputType> & ToString {
     | Static
     | Dynamic
@@ -486,46 +487,53 @@ public open class CommandConfig {
     public var memberModule: String = ""
 }
 
-@Derive[Hashable, Equatable]
-public struct TaskIdentifier {
-    public TaskIdentifier(
-        public let fullName: String,
-        public let target: String,
-        public let sourceSetDir: String
-    ) { }
-}
-
 public struct PackageList {
     private let packages: Array<ResolveItem>
 
+    public let all: Array<String>
+    public let macros: Array<String>
+    public let dylib: Array<String>
+    public let exe: Array<String>
+    public let test: Array<String>
+    public let productSuffixes: ReadOnlyMap<String, String>
+
     public init(packages: Iterable<ResolveItem>) {
         this.packages = packages |> collectArray
+
+        let capacity = this.packages.size
+        let all = ArrayList<String>(capacity)
+        let dylib = ArrayList<String>(capacity)
+        let macros = ArrayList<String>(capacity)
+        let exe = ArrayList<String>(capacity)
+        let test = ArrayList<String>(capacity)
+
+        for (pkg in this.packages) {
+            let name = pkg.fullName
+            all.add(name)
+
+            if (pkg.isMacroPackage) {
+                macros.add(name)
+            }
+            if (pkg.isPureTestPkg()) {
+                test.add(name)
+            }
+            match (pkg.outputType) {
+                case Exe => exe.add(name)
+                case Dynamic => dylib.add(name)
+                case Static | Chir | Unknown(_) => ()
+            }
+        }
+
+        this.all = all.toArray()
+        this.macros = macros.toArray()
+        this.dylib = dylib.toArray()
+        this.exe = exe.toArray()
+        this.test = test.toArray()
+        this.productSuffixes = makeProductSuffixes(packages)
     }
 
     init() {
         this([])
-    }
-
-    public prop all: Array<String> {
-        get() {
-            packages |> map {
-                it: ResolveItem => it.fullName
-            } |> collectArray
-        }
-    }
-
-    public prop allIds: Array<TaskIdentifier> {
-        get() {
-            packages |> flatMap { it: ResolveItem =>
-                let result = ArrayList<TaskIdentifier>()
-                for (source in it.packagePath._sources) {
-                    let sourceSetDir = if (!source.product) { source.outputSuffix.toString() } else { "" }
-                    result.add(TaskIdentifier(it.fullName, targetConfigName, sourceSetDir))
-                    result.add(TaskIdentifier(it.fullName, crossCompileTarget, sourceSetDir))
-                }
-                result.iterator()
-            } |> collectArray
-        }
     }
 
     public func bestFitFeatures(features: HashSet<Feature>): HashMap<String, String> {
@@ -546,61 +554,13 @@ public struct PackageList {
         } |> collectHashMap
     }
 
-    public prop productSuffixes: HashMap<String, String> {
-        get() {
-            packages |> filterMap { it: ResolveItem =>
-                let productEntry = it.packagePath._sources.last ?? return None<(String, String)>
-                return Some((it.fullName, getPath(productEntry.outputSuffix.toString())))
-            } |> collectHashMap
-        }
+    private static func makeProductSuffixes(packages: Iterable<ResolveItem>): HashMap<String, String> {
+        packages |> filterMap { it: ResolveItem =>
+            let productEntry = it.packagePath._sources.last ?? return None<(String, String)>
+            return Some((it.fullName, productEntry.outputSuffix.toString()))
+        } |> collectHashMap
     }
 
-    public prop macros: Array<String> {
-        get() {
-            packages |> filterMap {
-                it: ResolveItem => if (it.isMacroPackage) {
-                    it.fullName
-                } else {
-                    None
-                }
-            } |> collectArray
-        }
-    }
-
-    public prop dylib: Array<String> {
-        get() {
-            packages |> filterMap {
-                it: ResolveItem => if (let Dynamic <- it.outputType) {
-                    it.fullName
-                } else {
-                    None
-                }
-            } |> collectArray
-        }
-    }
-    public prop exe: Array<String> {
-        get() {
-            packages |> filterMap {
-                it: ResolveItem => if (let Exe <- it.outputType) {
-                    it.fullName
-                } else {
-                    None
-                }
-            } |> collectArray
-        }
-    }
-    // Record the packages for pure unittest
-    public prop test: Array<String> {
-        get() {
-            packages |> filterMap {
-                it: ResolveItem => if (it.isPureTestPkg()) {
-                    it.fullName
-                } else {
-                    None
-                }
-            } |> collectArray
-        }
-    }
 }
 
 public class BuildConfig <: CommandConfig {
@@ -617,16 +577,10 @@ public class BuildConfig <: CommandConfig {
     public var requiredForTests: Bool = false
     public var requiresMap: HashMap<String, HashSet<String>> = HashMap<String, HashSet<String>>()
     public var rebuildList: HashSet<String> = HashSet<String>()
-    public var rebuildMacros: HashSet<String> = HashSet<String>()
-    public var indirectRebuilds: HashSet<String> = HashSet<String>()
     // Record json cache for each module
     public var jsonInformation: HashMap<String, ArrayList<String>> = HashMap<String, ArrayList<String>>()
-    // Record package cache for each module
-    public var pkgCacheMap: HashMap<String, CacheItem> = HashMap<String, CacheItem>()
     // Record the module name that has changed json data
     public var changedModuleList: ArrayList<String> = ArrayList<String>()
-    // Record the cjo timetamp
-    public var cjoTimeMap: HashMap<String, Int64> = HashMap<String, Int64>()
     public var mockSupported: Bool = false
     public var originTargetPath: String = TARGET
     public var exeName: String = "main"
@@ -744,8 +698,6 @@ public class TreeConfig {
 public struct PackageInfo {
     public PackageInfo(
         public let sources: CJMPSource,
-        public let hashCode: String,
-        public let timeStamp: Int64,
         public let hasTestFiles: Bool,
         public let hasProdFiles: Bool
     ) {}
@@ -945,86 +897,6 @@ public class GlobalConfig {
         this.enabledFeatures = globalConfig.enabledFeatures
         this.verifiedEnabledFeatures = globalConfig.verifiedEnabledFeatures
     }
-}
-
-// Self-sufficient compilation unit. 
-// Stores all of the information for constructing a single `cjc` call
-public struct CompileTask {
-    public CompileTask(
-        public let id!: TaskIdentifier,
-        // The directory, of current `target`
-        public let targetDir!: String = "",
-        // The value of `--target-dir`: where to dump the compilation result (depends on many factors)
-        public let targetPath!: String = "", 
-        // The value of `-p`: The location of package files of current source set
-        public let packagePath!: String = "", 
-        // Is this a product source set (`--output-type` can be of binary)
-        public let product!: Bool = false, 
-        // Source set directory without the module path prefix. Uniquely identifies source set
-        public let sourceSetDir!: String = "", 
-        // The feature set header of the package
-        public let sourceSetFeatures!: HashSet<Feature> = HashSet(), 
-        // e.g. for `cjpm.config` the value would be `cjpm`
-        public let rootPkgName!: String = "", 
-        // Full package name, e.g. `cjpm.config`
-        public let fullName!: String = "", 
-        // The expected name of output file without extension
-        public let filename!: String = "", 
-        // The value of `--output-type`
-        public let outputType!: OutputType = Unknown(""), 
-        // The target triple passed to `--target` for compilation/cross-compilation
-        public let target!: String = "", 
-        // `true` if value stored in `target` field is different from host
-        public let isCrossCompile!: Bool = false, 
-        // A set of option fields from `cjpm.toml` of a module, specialized for this particular package
-        public let compileOption!: String = "", 
-        public let overrideOption!: String = "", 
-        public let linkOption!: String = "", 
-        public let customizedOption!: ArrayList<String> = ArrayList(), 
-        // Stores names of all subpackages of a module to combine them into a single compilation unit
-        public let superPkgCfg!: ?SuperPackageConfig = None, 
-        // Package is being compiled by `cjpm test`
-        public let requiredForTests!: Bool = false, 
-        // Include some declarations from testfiles `*_test.cj` of a package.
-        public let exportForTests!: Bool = false, 
-        // Incoming edges of dependency graph
-        public let requireTasks!: HashSet<TaskIdentifier> = HashSet(), 
-        // All features, asked by different modules of this package. Required for proper selection of product source set
-        public let allEnabledFeatures!: HashSet<Feature> = HashSet(), 
-        // Mappings from `[[feature]]` array of tables from `cjpm.toml`. Used to provide correct `*.cjo` files in `--import-path`
-        public let featureMapping!: FeatureDeducer = FeatureDeducer.empty, 
-        // Does this compiler call support AnalysisCompilePerformance
-        public let isAnalysisCompilePerformance!: Bool = false, 
-        // `true` if:
-        //  - this is a parent package of some subpackage
-        //  - requiredForTests
-        public let hasSubPkgs!: Bool = false, 
-        // Is this compilation task for debug build
-        public let isDebug!: Bool = false,
-        // Compile package with support of `coverage`
-        public let isCov!: Bool = false,
-        // Compile package with support of `mock`
-        public let mockSupported!: Bool = false,
-        // Is package a macro package
-        public let isMacro!: Bool = false, 
-        // A value of `--lto` flag to be passed to a compiler
-        public let isLto!: Bool = false,
-        public let ltoValue!: String = "",
-        // CHIR file to be merged from for multiplatform build
-        public let prevStageChir!: ?String = None, 
-        // The value of `--common-part-cjo` for multiplatform build
-        public let prevStageCjo!: ?String = None, 
-        // Whether the source code location is spread between multiple [[source-set]] src-dir
-        public let isMultiplatform!: Bool = false, 
-        // A list of `-Woff` compiler options
-        public let supressed!: ArrayList<String> = ArrayList<String>(),
-        // The directory, where `outLogFile` and `errLogFile` are stored
-        public let logPath!: String = "",
-        // A file for verbose output of `cjpm` when compiling task
-        public let outLogFile!: String = "", 
-        // A joined file containing `stderr` of a compiler together with `cjpm` errors
-        public let errLogFile!: String = "" 
-    ) { }
 }
 
 public func linkPackage(libName: String, libPath: String, isLto: Bool): ArrayList<String> {
