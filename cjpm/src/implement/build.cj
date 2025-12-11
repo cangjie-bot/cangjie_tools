@@ -60,11 +60,6 @@ public func doBuild(tomlInfo: TomlInfo, buildConfig: BuildConfig, isScriptDep!: 
         return false
     }
 
-    if (buildConfig.isIncremental) {
-        analyseIncrementalCache(buildConfig, curResolveData)
-        collectRebuildMacros(buildConfig)
-    }
-
     if (!startBuild(buildConfig, curResolveData)) {
         return false
     }
@@ -222,7 +217,7 @@ func getResolveData(buildConfig: BuildConfig, tomlInfo: TomlInfo, isScriptDep: B
         return Option<ModuleResolve>.None
     }
     buildConfig.jsonInformation = dm.jsonMap
-    buildConfig.pkgCacheMap = dm.pkgCacheMap
+    // buildConfig.pkgCacheMap = dm.pkgCacheMap
     buildConfig.globalConfig.scriptList = dm.globalConfig.scriptList
     buildConfig.globalConfig.overrideCompileOption = dm.globalConfig.overrideCompileOption
     buildConfig.globalConfig.nativeOverrideOption = dm.globalConfig.nativeOverrideOption
@@ -324,70 +319,70 @@ func setFinalTargetDirectory(globalConfig: GlobalConfig, isCrossCompile: Bool, i
 }
 
 // Determine whether to recompile.
-func analyseIncrementalCache(buildConfig: BuildConfig, curResolveData: ModuleResolve): Unit {
-    let lastFileNameHashMap = HashMap<String, String>()
-    let lastTimeStampMap = HashMap<String, Int64>()
-    let lastBuildFlagMap = HashMap<String, Bool>()
-    let lastHasSubpkgsMap = HashMap<String, Bool>()
-    for ((rootPkgName, jsonData) in buildConfig.jsonInformation) {
-        let cacheFile = Path(buildConfig.globalConfig.targetDir).join(rootPkgName).join(INCREMENTAL_CACHE).toString()
-        if (!fileExists(cacheFile)) {
-            buildConfig.changedModuleList.add(rootPkgName)
-            continue
-        }
-        let lastCache = loadCacheFile(cacheFile) ?? IncrementalCache()
-        if (lastCache.jsonHash != bufferHashCode(jsonData)) {
-            buildConfig.changedModuleList.add(rootPkgName)
-            continue
-        }
-        for ((pkgName, v) in lastCache.packageInformation) {
-            lastBuildFlagMap[pkgName] = v.isBuilt
-            lastFileNameHashMap[pkgName] = v.fileNameHash
-            lastTimeStampMap[pkgName] = v.timeStamp
-            lastHasSubpkgsMap[pkgName] = v.hasSubPkgs
-            if (!COMMON_INFO.inWorkspace && buildConfig.packageList.exe.size == 1 &&
-                buildConfig.packageList.exe[0] == pkgName && v.exeName != buildConfig.exeName) {
-                buildConfig.rebuildList.add(pkgName)
-            }
-        }
-    }
-
-    for (r in curResolveData.resolves) {
-        if (buildConfig.changedModuleList.contains(r.rootPkgName) || !buildConfig.pkgCacheMap.contains(r.fullName)) {
-            buildConfig.rebuildList.add(r.fullName)
-            continue
-        }
-        if (!lastFileNameHashMap.contains(r.fullName) ||
-            lastFileNameHashMap[r.fullName] != buildConfig.pkgCacheMap[r.fullName].fileNameHash) {
-            buildConfig.rebuildList.add(r.fullName)
-            continue
-        }
-        if (!lastBuildFlagMap.contains(r.fullName) || !lastBuildFlagMap[r.fullName]) {
-            buildConfig.rebuildList.add(r.fullName)
-            continue
-        }
-
-        let hasSubPkgs = buildConfig.hasSubPkgs.contains(r.fullName) || buildConfig.requiredForTests // in the current compilation
-        if (!lastHasSubpkgsMap.contains(r.fullName) || (lastHasSubpkgsMap[r.fullName] != hasSubPkgs)) {
-            buildConfig.rebuildList.add(r.fullName)
-            continue
-        }
-
-        if (!lastTimeStampMap.contains(r.fullName) ||
-            buildConfig.pkgCacheMap[r.fullName].timeStamp > lastTimeStampMap[r.fullName]) {
-            buildConfig.rebuildList.add(r.fullName)
-            continue
-        }
-        if (r.outputType == Exe && !buildConfig.requiredForTests) {
-            if (!hasExeFile(buildConfig, r.fullName)) {
-                buildConfig.rebuildList.add(r.fullName)
-                continue
-            }
-        }
-    }
-
-    refreshIncreInfo(buildConfig, curResolveData)
-}
+// func analyseIncrementalCache(buildConfig: BuildConfig, curResolveData: ModuleResolve): Unit {
+//     let lastFileNameHashMap = HashMap<String, String>()
+//     let lastTimeStampMap = HashMap<String, Int64>()
+//     let lastBuildFlagMap = HashMap<String, Bool>()
+//     let lastHasSubpkgsMap = HashMap<String, Bool>()
+//     for ((rootPkgName, jsonData) in buildConfig.jsonInformation) {
+//         let cacheFile = Path(buildConfig.globalConfig.targetDir).join(rootPkgName).join(INCREMENTAL_CACHE).toString()
+//         if (!fileExists(cacheFile)) {
+//             buildConfig.changedModuleList.add(rootPkgName)
+//             continue
+//         }
+//         let lastCache = loadCacheFile(cacheFile) ?? IncrementalCache()
+//         if (lastCache.jsonHash != bufferHashCode(jsonData)) {
+//             buildConfig.changedModuleList.add(rootPkgName)
+//             continue
+//         }
+//         for ((pkgName, v) in lastCache.packageInformation) {
+//             lastBuildFlagMap[pkgName] = v.isBuilt
+//             lastFileNameHashMap[pkgName] = v.fileNameHash
+//             lastTimeStampMap[pkgName] = v.timeStamp
+//             lastHasSubpkgsMap[pkgName] = v.hasSubPkgs
+//             if (!COMMON_INFO.inWorkspace && buildConfig.packageList.exe.size == 1 &&
+//                 buildConfig.packageList.exe[0] == pkgName && v.exeName != buildConfig.exeName) {
+//                 buildConfig.rebuildList.add(pkgName)
+//             }
+//         }
+//     }
+// 
+//     for (r in curResolveData.resolves) {
+//         if (buildConfig.changedModuleList.contains(r.rootPkgName) || !buildConfig.pkgCacheMap.contains(r.fullName)) {
+//             buildConfig.rebuildList.add(r.fullName)
+//             continue
+//         }
+//         if (!lastFileNameHashMap.contains(r.fullName) ||
+//             lastFileNameHashMap[r.fullName] != buildConfig.pkgCacheMap[r.fullName].fileNameHash) {
+//             buildConfig.rebuildList.add(r.fullName)
+//             continue
+//         }
+//         if (!lastBuildFlagMap.contains(r.fullName) || !lastBuildFlagMap[r.fullName]) {
+//             buildConfig.rebuildList.add(r.fullName)
+//             continue
+//         }
+// 
+//         let hasSubPkgs = buildConfig.hasSubPkgs.contains(r.fullName) || buildConfig.requiredForTests // in the current compilation
+//         if (!lastHasSubpkgsMap.contains(r.fullName) || (lastHasSubpkgsMap[r.fullName] != hasSubPkgs)) {
+//             buildConfig.rebuildList.add(r.fullName)
+//             continue
+//         }
+// 
+//         if (!lastTimeStampMap.contains(r.fullName) ||
+//             buildConfig.pkgCacheMap[r.fullName].timeStamp > lastTimeStampMap[r.fullName]) {
+//             buildConfig.rebuildList.add(r.fullName)
+//             continue
+//         }
+//         if (r.outputType == Exe && !buildConfig.requiredForTests) {
+//             if (!hasExeFile(buildConfig, r.fullName)) {
+//                 buildConfig.rebuildList.add(r.fullName)
+//                 continue
+//             }
+//         }
+//     }
+// 
+//     refreshIncreInfo(buildConfig, curResolveData)
+// }
 
 func collectRebuildMacros(buildConfig: BuildConfig): Unit {
     for (name in buildConfig.rebuildList) {
@@ -563,18 +558,25 @@ func analyseRebuild(buildConfig: BuildConfig): Bool {
     return false
 }
 
-// Call cjc to compile.
 func startBuild(buildConfig: BuildConfig, res: ModuleResolve): Bool {
+    // TODO: I believe this is unnecessary, but need to check collectRebuildMacros
+    // if (buildConfig.isIncremental) {
+    //     analyseIncrementalCache(buildConfig, res)
+    //     collectRebuildMacros(buildConfig)
+    // }
+
     var flag: Bool = true
     try {
         flag = parallelBuild(res, buildConfig)
     } catch (e: Exception) {
+        println(e)
         return false
     }
 
-    if (!generateIncrementalCache(buildConfig, res)) {
-        return false
-    }
+    // TODO: I believe I already did that
+    // if (!generateIncrementalCache(buildConfig, res)) {
+    //     return false
+    // }
 
     if (!flag) {
         return false
@@ -632,66 +634,66 @@ func sortCompileCost(compilePerformancePath : String): Unit {
     return
 }
 
-func generateIncrementalCache(buildConfig: BuildConfig, curResolveData: ModuleResolve): Bool {
-    var successPkgs = ArrayList<String>()
-    for (item in curResolveData.resolves) {
-        if (item.buildFlag) {
-            successPkgs.add(item.fullName)
-        }
-    }
-
-    var cacheMap = HashMap<String, IncrementalCache>()
-    for ((rootPkgName, jsonData) in buildConfig.jsonInformation) {
-        cacheMap[rootPkgName] = IncrementalCache()
-        cacheMap[rootPkgName].jsonHash = bufferHashCode(jsonData)
-        cacheMap[rootPkgName].rootPkgName = rootPkgName
-    }
-
-    for ((pkgName, pkgData) in buildConfig.pkgCacheMap) {
-        if (!cacheMap.contains(pkgData.rootPkgName)) {
-            continue
-        }
-        let cacheItem = CacheItem(pkgData.rootPkgName, pkgData.fileNameHash, pkgData.timeStamp,
-            buildConfig.hasSubPkgs.contains(pkgName) || buildConfig.requiredForTests)
-        if (successPkgs.contains(pkgName)) {
-            cacheItem.isBuilt = true
-        }
-
-        cacheMap[pkgData.rootPkgName].packageInformation[pkgName] = cacheItem
-    }
-
-    if (buildConfig.packageList.exe.size == 1 && !COMMON_INFO.inWorkspace) {
-        let fullName = buildConfig.packageList.exe[0]
-        let rootPkgName = getRootPkgName(fullName)
-        if (cacheMap.contains(rootPkgName) && cacheMap[rootPkgName].packageInformation.contains(fullName)) {
-            cacheMap[rootPkgName].packageInformation[fullName].exeName = buildConfig.exeName
-        }
-    }
-
-    var cacheFlag = true
-    for ((k, v) in cacheMap) {
-        let cachePath = Path(buildConfig.globalConfig.targetDir).join(swapOrgName(k))
-        if (!createDirectory(cachePath.toString())) {
-            cacheFlag = false
-            continue
-        }
-        let cacheFile = cachePath.join(INCREMENTAL_CACHE).toString()
-        let cacheStr = v.serialize().toJson().toJsonString()
-        if (!createAndWriteFile(cacheFile, cacheStr)) {
-            cacheFlag = false
-        }
-    }
-
-    let endTimeCacheFile = Path(buildConfig.globalConfig.targetDir)
-        .join("${buildConfig.curModuleName}-cache.json")
-        .toString()
-    let endTime: String = DateTime.now().toUnixTimeStamp().toSeconds().toString()
-    if (!createAndWriteFile(endTimeCacheFile, endTime)) {
-        cacheFlag = false
-    }
-
-    return cacheFlag
-}
+// func generateIncrementalCache(buildConfig: BuildConfig, curResolveData: ModuleResolve): Bool {
+//     var successPkgs = ArrayList<String>()
+//     for (item in curResolveData.resolves) {
+//         if (item.buildFlag) {
+//             successPkgs.add(item.fullName)
+//         }
+//     }
+// 
+//     var cacheMap = HashMap<String, IncrementalCache>()
+//     for ((rootPkgName, jsonData) in buildConfig.jsonInformation) {
+//         cacheMap[rootPkgName] = IncrementalCache()
+//         cacheMap[rootPkgName].jsonHash = bufferHashCode(jsonData)
+//         cacheMap[rootPkgName].rootPkgName = rootPkgName
+//     }
+// 
+//     for ((pkgName, pkgData) in buildConfig.pkgCacheMap) {
+//         if (!cacheMap.contains(pkgData.rootPkgName)) {
+//             continue
+//         }
+//         let cacheItem = CacheItem(pkgData.rootPkgName, pkgData.fileNameHash, pkgData.timeStamp,
+//             buildConfig.hasSubPkgs.contains(pkgName) || buildConfig.requiredForTests)
+//         if (successPkgs.contains(pkgName)) {
+//             cacheItem.isBuilt = true
+//         }
+// 
+//         cacheMap[pkgData.rootPkgName].packageInformation[pkgName] = cacheItem
+//     }
+// 
+//     if (buildConfig.packageList.exe.size == 1 && !COMMON_INFO.inWorkspace) {
+//         let fullName = buildConfig.packageList.exe[0]
+//         let rootPkgName = getRootPkgName(fullName)
+//         if (cacheMap.contains(rootPkgName) && cacheMap[rootPkgName].packageInformation.contains(fullName)) {
+//             cacheMap[rootPkgName].packageInformation[fullName].exeName = buildConfig.exeName
+//         }
+//     }
+// 
+//     var cacheFlag = true
+//     for ((k, v) in cacheMap) {
+//         let cachePath = Path(buildConfig.globalConfig.targetDir).join(swapOrgName(k))
+//         if (!createDirectory(cachePath.toString())) {
+//             cacheFlag = false
+//             continue
+//         }
+//         let cacheFile = cachePath.join(INCREMENTAL_CACHE).toString()
+//         let cacheStr = v.serialize().toJson().toJsonString()
+//         if (!createAndWriteFile(cacheFile, cacheStr)) {
+//             cacheFlag = false
+//         }
+//     }
+// 
+//     let endTimeCacheFile = Path(buildConfig.globalConfig.targetDir)
+//         .join("${buildConfig.curModuleName}-cache.json")
+//         .toString()
+//     let endTime: String = DateTime.now().toUnixTimeStamp().toSeconds().toString()
+//     if (!createAndWriteFile(endTimeCacheFile, endTime)) {
+//         cacheFlag = false
+//     }
+// 
+//     return cacheFlag
+// }
 
 func constructCjcInvocation(compileTask: CompileTask, buildConfig: BuildConfig): ArrayList<String> {
     let res: ArrayList<String> = ArrayList<String>()
