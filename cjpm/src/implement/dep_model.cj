@@ -52,7 +52,6 @@ class DepModel {
     public var sourceCodePkgList: ArrayList<String> = ArrayList<String>()
     // Record all module.json information.
     public var jsonMap: HashMap<String, ArrayList<String>> = HashMap<String, ArrayList<String>>()
-    public var pkgCacheMap: HashMap<String, CacheItem> = HashMap<String, CacheItem>()
     let packageMtx: Mutex = Mutex()
     let errPrintMtx: Mutex = Mutex()
     let scanCjoMtx: Mutex = Mutex()
@@ -1257,7 +1256,6 @@ class DepModel {
                 return false
             }
             this.sourceCodePkgList.add(pkgInfo.fullName)
-            this.pkgCacheMap[pkgInfo.fullName] = CacheItem(pkgInfo.rootPkgName, fileNameHash, timeStamp)
         }
         return true
     }
