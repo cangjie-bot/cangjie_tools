@@ -33,9 +33,17 @@ void StructuralRuleGPKG01::CheckImportItemName(const Cangjie::AST::ImportSpec& i
         return;
     }
     const auto& ic = importSpec.content;
+
     if (ic.kind == AST::ImportKind::IMPORT_ALL) {
+        auto prefix = Utils::JoinStrings(ic.prefixPaths, ".");
+        if (ic.hasDoubleColon) {
+            size_t firstDotPos = prefix.find('.');
+            if (firstDotPos != std::string::npos) {
+                prefix.replace(firstDotPos, 1, "::");
+            }
+        }
         Diagnose(ic.begin, ic.end, CodeCheckDiagKind::G_PKG_01_avoid_wildcard,
-            ic.prefixPaths.empty() ? std::string() : Utils::JoinStrings(ic.prefixPaths, "."));
+            ic.prefixPaths.empty() ? std::string() : prefix);
     } else if (ic.kind == AST::ImportKind::IMPORT_MULTI) {
         for (const auto& item : ic.items) {
             if (item.kind == AST::ImportKind::IMPORT_ALL) {
