@@ -33,14 +33,32 @@ void StructuralRuleGPKG01::CheckImportItemName(const Cangjie::AST::ImportSpec& i
         return;
     }
     const auto& ic = importSpec.content;
+
     if (ic.kind == AST::ImportKind::IMPORT_ALL) {
+        auto prefix = Utils::JoinStrings(ic.prefixPaths, ".");
+        if (ic.hasDoubleColon) {
+            size_t firstDotPos = prefix.find('.');
+            if (firstDotPos != std::string::npos) {
+                prefix.replace(firstDotPos, 1, "::");
+            }
+        }
         Diagnose(ic.begin, ic.end, CodeCheckDiagKind::G_PKG_01_avoid_wildcard,
-            ic.prefixPaths.empty() ? std::string() : Utils::JoinStrings(ic.prefixPaths, "."));
+            ic.prefixPaths.empty() ? std::string() : prefix);
     } else if (ic.kind == AST::ImportKind::IMPORT_MULTI) {
+        std::string prefix = "";
+        if (!ic.prefixPaths.empty()) {
+            prefix = Utils::JoinStrings(ic.prefixPaths, ".") + ".";
+            if (ic.hasDoubleColon) {
+                size_t firstDotPos = prefix.find('.');
+                if (firstDotPos != std::string::npos) {
+                    prefix.replace(firstDotPos, 1, "::");
+                }
+            }
+        }
         for (const auto& item : ic.items) {
             if (item.kind == AST::ImportKind::IMPORT_ALL) {
                 Diagnose(item.begin, item.end, CodeCheckDiagKind::G_PKG_01_avoid_wildcard,
-                    item.prefixPaths.empty() ? std::string() : Utils::JoinStrings(item.prefixPaths, "."));
+                    item.prefixPaths.empty() ? prefix + std::string() : prefix + Utils::JoinStrings(item.prefixPaths, "."));
             }
         }
     }
