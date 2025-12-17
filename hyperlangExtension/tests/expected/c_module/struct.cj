@@ -21,13 +21,11 @@ public struct _cjbind_ty_1 {
 public struct Point {
     public let a: Int32
     public let b: Int32
-    public let __cjbind_anon_1: _cjbind_ty_1
     public let z: Int32
 
-    public init(a: Int32, b: Int32, __cjbind_anon_1: _cjbind_ty_1, z: Int32) {
+    public init(a: Int32, b: Int32, z: Int32) {
         this.a = a
         this.b = b
-        this.__cjbind_anon_1 = __cjbind_anon_1
         this.z = z
     }
 }
@@ -134,15 +132,11 @@ public struct _cjbind_ty_3 {
 
 @C
 public struct Point1 {
-    public let __cjbind_anon_1: _cjbind_ty_2
     public let test1: _cjbind_ty_2
-    public let __cjbind_anon_2: _cjbind_ty_3
     public let test2: _cjbind_ty_3
 
-    public init(__cjbind_anon_1: _cjbind_ty_2, test1: _cjbind_ty_2, __cjbind_anon_2: _cjbind_ty_3, test2: _cjbind_ty_3) {
-        this.__cjbind_anon_1 = __cjbind_anon_1
+    public init(test1: _cjbind_ty_2, test2: _cjbind_ty_3) {
         this.test1 = test1
-        this.__cjbind_anon_2 = __cjbind_anon_2
         this.test2 = test2
     }
 }
