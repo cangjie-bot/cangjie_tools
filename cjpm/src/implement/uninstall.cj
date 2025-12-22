@@ -13,15 +13,24 @@ import cjpm.config.*
 // Command uninstall implement.
 public func doUninstall(root: String, uninstallList: ArrayList<String>): Bool {
     var res: Bool = false
+    if (!directoryExists(getPath(root))) {
+        eprintln("Error: The root path `${root}` does not exist.")
+        return res
+    }
     installedBinList = loadInstallList(root) ?? HashMap<String, InstallBinary>()
+    var isSuccessedUninstall = false
     for (binName in uninstallList) {
         var uninstallRes = uninstallBinary(root, binName)
         res ||= uninstallRes
         if (!uninstallRes) {
             eprintln("Error: failed to uninstall ${binName}")
+        } else {
+            isSuccessedUninstall = true
         }
     }
-    saveInstallList(root)
+    if (isSuccessedUninstall) {
+        saveInstallList(root)
+    }
     return res
 }
 
