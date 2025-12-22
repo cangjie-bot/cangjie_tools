@@ -476,6 +476,7 @@ void CompletionImpl::NamedParameterComplete(const ark::ArkAST &input, const Cang
     std::vector<Cangjie::AST::FuncDecl*> funcDeclsWithOverride;
 
     auto decls = input.semaCache->GetOverloadDecls(funcToken);
+    // TODO: need to filter hide functions here
     for (auto &decl : decls) {
         auto *funcDecl = dynamic_cast<Cangjie::AST::FuncDecl*>(decl.get());
         if (funcDecl) {
