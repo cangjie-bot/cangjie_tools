@@ -57,6 +57,23 @@ TypeCompatibility CheckTypeCompatibility(const Ty *lvalue, const Ty *rvalue)
     return TypeCompatibility::INCOMPATIBLE;
 }
 
+bool IsHidedDecl(const Ptr<Node> node) {
+    if (MessageHeaderEndOfLine::GetIsDeveco()) {
+        return false;
+    }
+    auto decl = DynamicCast<Decl *>(node.get());
+    if (!decl) {
+        return false;
+    }
+    for (auto& annotation: decl->annotations) {
+        if (annotation->identifier != "Hide") {
+            continue;
+        }
+        return true;
+    }
+    return false;
+}
+
 bool IsFuncParameterTypesIdentical(const FuncTy &t1, const FuncTy &t2)
 {
     bool result{false};
