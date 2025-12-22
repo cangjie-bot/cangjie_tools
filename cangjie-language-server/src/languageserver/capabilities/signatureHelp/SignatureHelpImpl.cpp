@@ -541,6 +541,9 @@ void SignatureHelpImpl::FindFuncDeclByDeclType(Ptr<Ty> declTy, const std::string
                      decl->fullPackageName != id->fullPackageName && !decl->TestAttr(Attribute::PUBLIC)) {
             continue;
         }
+        if (IsHidedDecl(decl) || IsHidedDecl(decl->outerDecl)) {
+            continue;
+        }
         if (!decl || decl->identifier != funcName ||
             decl->astKind != Cangjie::AST::ASTKind::FUNC_DECL) {
             continue;
