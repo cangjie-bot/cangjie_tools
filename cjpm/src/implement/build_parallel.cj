@@ -454,9 +454,9 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
                 requireTasks.add(TaskIdentifier(fullName, targetConfigName, ""))
             }
             requireTasks.addIfSome(prevStage?.taskId)
-            let prevStageChir = prevStage?.chir
-            let prevStageCjo = prevStage?.commonCjo
-
+            let prevStageArtifacts: ?(String, String) = if (let Some(prevStage) <- prevStage) {
+                (prevStage.chir, prevStage.commonCjo)
+            } else { None }
 
             let thisStage: ?PrevStage = if (!product) {
                 PrevStage(
@@ -498,8 +498,7 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
                 isMacro: isMacro,
                 isLto: isLto,
                 ltoValue: ltoValue,
-                prevStageChir: prevStageChir,
-                prevStageCjo: prevStageCjo,
+                prevStageArtifacts: prevStageArtifacts,
                 isMultiplatform: isMultiplatform,
                 checkDepCjo: checkDepCjo,
                 supressed: supressed,
@@ -534,11 +533,9 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
 
 private func constructCustomizedOption(r: ResolveItem, buildConfig: BuildConfig): ArrayList<String> {
     let customizedOption = ArrayList<String>()
-    if (buildConfig.customizedOption.size != 0) {
-        for (k in buildConfig.customizedOption) {
-            if (let Some(option) <- r.customizedOption.get(k)) {
-                customizedOption.add(option)
-            }
+    for (k in buildConfig.customizedOption) {
+        if (let Some(option) <- r.customizedOption.get(k)) {
+            customizedOption.add(option)
         }
     }
     return customizedOption

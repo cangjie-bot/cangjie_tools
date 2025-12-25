@@ -987,10 +987,9 @@ public struct CompileTask {
         // A value of `--lto` flag to be passed to a compiler
         public let isLto!: Bool = false,
         public let ltoValue!: String = "",
-        // CHIR file to be merged from for multiplatform build
-        public let prevStageChir!: ?String = None, 
-        // The value of `--common-part-cjo` for multiplatform build
-        public let prevStageCjo!: ?String = None, 
+        // 0 - CHIR file with declarations to be merged for multiplatform build
+        // 1 - The value of `--common-part-cjo` for multiplatform build
+        public let prevStageArtifacts!: ?(String, String) = None, 
         // Whether the source code location is spread between multiple [[source-set]] src-dir
         public let isMultiplatform!: Bool = false, 
         public let checkDepCjo!: Bool = false,

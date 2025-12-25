@@ -806,13 +806,10 @@ func getTypeCommand(compileTask: CompileTask): ArrayList<String> {
         res.add("--export-for-test")
     }
 
-    if (let Some(chirpath) <- compileTask.prevStageChir) {
+    if (let Some((chirpath, commonCjo)) <- compileTask.prevStageArtifacts) {
         res.add(chirpath)
+        res.add("--common-part-cjo=${commonCjo}")
     }
-    if (let Some(commoncjo) <- compileTask.prevStageCjo) {
-        res.add("--common-part-cjo=${commoncjo}")
-    }
-
 
     if (compileTask.isMacro) {
         assertion { compileTask.outputType == Exe || compileTask.outputType == Dynamic }
@@ -1042,9 +1039,10 @@ func getBuildArgs(compileTask: CompileTask, buildConfig: BuildConfig): ArrayList
             continue
         }
 
-        var libPath: String = Path(compileTask.targetDir).join(swapOrgName(depRootName)).toString()
-        if (let Some(suffix) <- buildConfig.packageList.productSuffixes.get(depName)) {
-            libPath = getPath(libPath, suffix)
+        let libPath: String = if (let Some(suffix) <- buildConfig.packageList.productSuffixes.get(depName)) {
+            Path(compileTask.targetDir).join(swapOrgName(depRootName)).join(suffix).toString()
+        } else {
+            Path(compileTask.targetDir).join(swapOrgName(depRootName)).toString()
         }
 
         let linkArray: ArrayList<String> = linkPackage(depName, libPath, compileTask.isLto)
