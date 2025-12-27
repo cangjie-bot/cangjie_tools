@@ -15,15 +15,62 @@ import std.time.*
 import std.env.getVariables
 import cjpm.config.*
 
+var cb: (String) -> Unit = {_=>}
+
+foreign func CMonitor(s: CString, cb: CFunc<(CString) -> Unit>): Int64
+
+func monitor(macroSet: HashSet<String>, cjo2pkg: HashMap<String, String>, listenDirs: HashSet<String>, notify: (String) -> Unit): Unit {
+    var str = ""
+    for (dir in listenDirs) {
+        if(!exists(dir)) {
+            Directory.create(dir, recursive: true)
+        }
+        str += dir + ","
+    }
+    cb = {
+        cjopath =>
+        let pkgname = cjo2pkg[cjopath]
+        if(!macroSet.contains(pkgname)) {
+            notify(pkgname)
+        }
+    }
+    unsafe {
+        let cs = LibC.mallocCString(str)
+        CMonitor(cs, {dir => cb(dir.toString())})
+        LibC.free(cs)
+    }
+}
+
 class ParallelBuilder {
     var buildConfig = BuildConfig()
     var taskMap = HashMap<String, ResolveConfig>()
     let buildMutex = Mutex()
     var successPkgs = ArrayList<String>()
     let queue = LinkedBlockingQueue<(Option<String>, Option<String>, Option<String>, Option<String>, Bool)>()
+    let rDeps = HashMap<String, HashSet<String>>()
+    let sems = HashMap<String, SyncCounter>()
+    let res = HashMap<String, Bool>()
+    let nMutex = Mutex()
+    let notified = HashSet<String>()
 
     init(buildConfig: BuildConfig) {
         this.buildConfig = buildConfig
+    }
+
+    func notify(pkgName: String) {
+        synchronized (this.nMutex) {
+            if(notified.contains(pkgName)) {
+                return
+            }
+            notified.add(pkgName)
+        }
+        for (pkg in rDeps[pkgName]) {
+            sems[pkg].dec()
+        }
+    }
+
+    func notifyPh2(pkgName: String) {
+        sems[pkgName + ".ph2"].dec()
     }
 
     func checkDepFuture(dep: String, task: ResolveConfig, futTasks: HashMap<String, Future<Bool>>,
@@ -77,6 +124,69 @@ class ParallelBuilder {
             return logFlag
         }
 
+        let cjo2pkg = HashMap<String, String>()
+        let listenDirs = HashSet<String>()
+
+        let macroSet = HashSet<String>()
+        let macroPkgList = buildConfig.packageList.macros
+        for (m in macroPkgList) {
+            macroSet.add(m)
+        }
+
+        for (pkgName in buildConfig.packageList.all) {
+            if (!taskMap.contains(pkgName)) {
+                continue
+            }
+            let task = taskMap[pkgName]
+            let outputdir = if (task.nativePlatform) {task.nativePath} else {task.targetPath}
+            listenDirs.add(outputdir)
+            cjo2pkg.add(outputdir + "/" + pkgName + ".cjo.flag", pkgName)
+            if (!rDeps.contains(pkgName)) {
+                rDeps.add(pkgName, HashSet<String>())
+            }
+            if (!rDeps.contains(pkgName + ".ph2")) {
+                rDeps.add(pkgName + ".ph2", HashSet<String>())
+            }
+            var cnt = 0
+            for (dep in task.requirePkgs) {
+                if (!taskMap.contains(dep)) {
+                    continue
+                }
+                cnt++
+                if (!rDeps.contains(dep)) {
+                    rDeps.add(dep, HashSet<String>())
+                }
+                rDeps[dep].add(pkgName)
+            }
+            sems.add(pkgName, SyncCounter(cnt))
+            let outputType = task.outputType.toString()
+            let needLink = outputType == "dynamic" || outputType == "executable"
+            if (needLink) {
+                let linkSort = getDepSet(pkgName, buildConfig.requiresMap, buildConfig.superPkgSubMap, isForMacroRequire: macroPkgList.contains(pkgName))
+                var cnt = 0
+                for (link in linkSort) {
+                    if (!taskMap.contains(link)) {
+                        continue
+                    }
+                    if(!macroSet.contains(link)) { // 不需要 link 宏包
+                        if (!rDeps.contains(link + ".ph2")) {
+                            rDeps.add(link + ".ph2", HashSet<String>())
+                        }
+                        rDeps[link + ".ph2"].add(pkgName + ".ph2")
+                        cnt++
+                    }
+                }
+                sems.add(pkgName + ".ph2", SyncCounter(cnt + 1))
+            } else {
+                sems.add(pkgName + ".ph2", SyncCounter(1))
+            }
+        }
+
+        let monitorFuture = spawn {
+            =>
+            monitor(macroSet, cjo2pkg, listenDirs, notify)
+        }
+
         // Guaranteed valid order follows 'buildConfig.packageList.all'
         for (pkgName in this.buildConfig.packageList.all) {
             if (!this.taskMap.contains(pkgName)) {
@@ -90,12 +200,19 @@ class ParallelBuilder {
                 if (this.buildConfig.globalConfig.isProjectCombine && pkgName == buildConfig.globalConfig.rootName) {
                     for ((k,_) in this.taskMap) {
                         if (k != pkgName && !this.checkDepFuture(k, task, futTasks, sem)) {
+                            res.add(pkgName, false)
+                            notify(pkgName)
+                            notifyPh2(pkgName)
                             return false
                         }
                     }
                 } else {
+                    sems[pkgName].waitUntilZero()
                     for (dep in task.requirePkgs) {
-                        if (!this.checkDepFuture(dep, task, futTasks, sem)) {
+                        if (res.contains(dep) && !res[dep]) {
+                            res.add(pkgName, false)
+                            notify(pkgName)
+                            notifyPh2(pkgName)
                             return false
                         }
                     }
@@ -103,6 +220,9 @@ class ParallelBuilder {
                     if (let Some(superPkgCfg) <- task.superPkgCfg) {
                         for (dep in superPkgCfg.subPkgSet) {
                             if (!this.checkDepFuture(dep, task, futTasks, sem)) {
+                                res.add(pkgName, false)
+                                notify(pkgName)
+                                notifyPh2(pkgName)
                                 return false
                             }
                         }
@@ -127,6 +247,9 @@ class ParallelBuilder {
                     if (nochange) {
                         sem.release()
                         this.queue.add((None, None, None, None, false))
+                        res.add(pkgName, true)
+                        notify(pkgName)
+                        notifyPh2(pkgName)
                         return true
                     }
                 }
@@ -134,14 +257,17 @@ class ParallelBuilder {
                 if (!deleteLog(task)) {
                     sem.release()
                     this.queue.add((task.outLogFile, task.errLogFile, None, None, false))
+                    res.add(pkgName, false)
+                    notify(pkgName)
+                    notifyPh2(pkgName)
                     return false
                 }
 
                 var flag: Bool = true
-                if (task.targetPlatform && !runTask(task, this.buildConfig.globalConfig.ldPath)) {
+                if (task.targetPlatform && !runTask(getCommandArgs(task, this.buildConfig, false, false), task, this.buildConfig.globalConfig.ldPath)) {
                     flag = false
                 }
-                if (task.nativePlatform && !runTask(task, this.buildConfig.globalConfig.ldPath,
+                if (task.nativePlatform && !runTask(getCommandArgs(task, this.buildConfig, true, false), task, this.buildConfig.globalConfig.ldPath,
                     isNativeForCross: true)) {
                     flag = false
                 }
@@ -153,11 +279,72 @@ class ParallelBuilder {
                 } else if (task.nativePlatform) {
                     this.queue.add((None, None, task.nativeOutLog, task.nativeErrLog, true))
                 }
+                res.add(pkgName, flag)
+                notify(pkgName)
+                notifyPh2(pkgName)
                 return flag
             }
 
             synchronized(this.buildMutex) {
                 futTasks.add(pkgName, future)
+            }
+
+            sem.acquire()
+            let future2 = spawn {
+                =>
+                let outputType = task.outputType.toString()
+                let needLink = outputType == "dynamic" || outputType == "executable"
+                if (needLink) {
+                    let outputdir = if (task.nativePlatform) {task.nativePath} else {task.targetPath}
+                    let linkpath = outputdir + "/" + pkgName + ".link"
+                    sems[pkgName + ".ph2"].waitUntilZero()
+                    if (exists(linkpath)) {
+                        let content = String.fromUtf8(File.readFrom(linkpath))
+                        let array = content.split(' ')
+                        var args = ArrayList<String>()
+                        for (item in array) {
+                            let res = item.removePrefix("'").removeSuffix("'")
+                            if (!res.isEmpty()) {
+                                args.add(res)
+                            }
+                        }
+                        let tool = args[0]
+                        args.remove(at: 0)
+                        var outFile: File
+                        var errFile: File
+                        try {
+                            if (task.targetPlatform) {
+                                outFile = File(task.outLogFile, OpenMode.Append)
+                                errFile = File(task.errLogFile, OpenMode.Append)
+                            } else {
+                                outFile = File(task.nativeOutLog, OpenMode.Append)
+                                errFile = File(task.nativeErrLog, OpenMode.Append)
+                            }
+                        } catch (e: Exception) {
+                            eprintln(e.message)
+                            return false
+                        }
+                        if (buildConfig.globalConfig.isAnalysisCompilePerformance) {
+                            addStartTime(task.fullName + ".ph2", "link")
+                        }
+                        if (let Some(returnCode) <- execAndToFile(tool, args, outFile, errFile)) {
+                            if (returnCode == 0) {
+                                println("success to link for `${task.fullName}`")
+                            } else {
+                                println("Error: failed to link for `${task.fullName}`, return code is ${returnCode}")
+                            }
+                        }
+                        if (buildConfig.globalConfig.isAnalysisCompilePerformance) {
+                            addEndTime(task.fullName + ".ph2")
+                        }
+                        outFile.close()
+                        errFile.close()
+                    }
+                }
+                true
+            }
+            synchronized(this.buildMutex) {
+                futTasks.add(pkgName + "ph2", future2)
             }
         }
 
@@ -199,7 +386,7 @@ class ParallelBuilder {
         return delLog
     }
 
-    func runTask(resolveConfig: ResolveConfig, ldPath: HashSet<String>, isNativeForCross!: Bool = false): Bool {
+    func runTask(args: ArrayList<String>, resolveConfig: ResolveConfig, ldPath: HashSet<String>, isNativeForCross!: Bool = false): Bool {
         let envBuilder = EnvironmentBuilder()
         envBuilder.prepend(LD_PATH, ldPath)
 
@@ -209,8 +396,8 @@ class ParallelBuilder {
             cjcCalls.add(commonArgs)
             cjcCalls.add(platformArgs)
         } else {
-            let args = getCommandArgs(resolveConfig, this.buildConfig, isNativeForCross, false)
             args.add(all: getTypeCommand(resolveConfig, this.buildConfig, isNativeForCross))
+            args.add("--dry-link")
             cjcCalls.add(args)
         }
 
