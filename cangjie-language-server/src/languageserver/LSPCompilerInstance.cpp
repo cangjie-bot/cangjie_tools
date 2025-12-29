@@ -193,6 +193,8 @@ void LSPCompilerInstance::CompilePassForComplete(
     // Faster Completion needs pass: Parse, ConditionCompile and ImportPackage.
     diag.Reset();
     diag.SetSourceManager(&GetSourceManager());
+    // In Completion LSP, no need to collect tokens for macro.
+    invocation.globalOptions.skipCollectTokensForMacro = true;
     (void)Parse();
     (void)ConditionCompile();
     const auto filePath = GetSourceManager().GetSource(pos.fileID).path;
