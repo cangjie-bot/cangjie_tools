@@ -9,6 +9,7 @@
 
 #include <cassert>
 #include <set>
+#include <string>
 #include <utility>
 #include <sstream>
 #include "cangjie/AST/ASTContext.h"

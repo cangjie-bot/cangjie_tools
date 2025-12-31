@@ -175,12 +175,12 @@ void LSPCompilerInstance::UpdateDepGraph(
     graph->UpdateDependencies(fullPkgName, upstreamPkgs, edges);
 }
 
-void LSPCompilerInstance::PreCompileProcess()
+void LSPCompilerInstance::PreCompileProcess(const std::unique_ptr<ark::CjoManager> &cjoManager)
 {
     diag.Reset();
     diag.SetSourceManager(&GetSourceManager());
 
-    (void)Parse();
+    (void)Parse(cjoManager);
     // parse completion need condition compile
     (void)ConditionCompile();
     AddSourceToMember();
@@ -193,7 +193,7 @@ void LSPCompilerInstance::CompilePassForComplete(
     // Faster Completion needs pass: Parse, ConditionCompile and ImportPackage.
     diag.Reset();
     diag.SetSourceManager(&GetSourceManager());
-    (void)Parse();
+    (void)Parse(cjoManager);
     (void)ConditionCompile();
     const auto filePath = GetSourceManager().GetSource(pos.fileID).path;
     auto file = GetFileByPath(filePath).get();
@@ -337,11 +337,14 @@ void LSPCompilerInstance::IndexCjoToManager(
  *
  * @param cjoManager Read cjo cache and update cjo cache and state
  * @param graph
+ * @param realPkgName Update target package cjo cache, used in common-platform package 
  * @return true
  * @return false
  */
 bool LSPCompilerInstance::CompileAfterParse(
-    const std::unique_ptr<ark::CjoManager> &cjoManager, const std::unique_ptr<ark::DependencyGraph> &graph)
+    const std::unique_ptr<ark::CjoManager> &cjoManager,
+    const std::unique_ptr<ark::DependencyGraph> &graph,
+    const std::string &realPkgName)
 {
     ImportCjoToManager(cjoManager, graph);
     (void)ImportPackage();
@@ -362,11 +365,15 @@ bool LSPCompilerInstance::CompileAfterParse(
     std::vector<uint8_t> data;
     MarkBrokenDecls(*packages[0]);
     (void)ExportAST(false, data, *packages[0]);
-    auto oldData = cjoManager->GetData(pkgNameForPath);
-    bool changed = cjoManager->CheckChanged(pkgNameForPath, data);
+    std::string &cjoDataPkgName = pkgNameForPath;
+    if (!realPkgName.empty()) {
+        cjoDataPkgName = realPkgName;
+    }
+    auto oldData = cjoManager->GetData(cjoDataPkgName);
+    bool changed = cjoManager->CheckChanged(cjoDataPkgName, data);
     cjoData.data = data;
     cjoData.status = ark::DataStatus::FRESH;
-    cjoManager->SetData(pkgNameForPath, cjoData);
+    cjoManager->SetData(cjoDataPkgName, cjoData);
     return changed;
 }
 // LCOV_EXCL_START

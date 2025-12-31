@@ -67,7 +67,7 @@ public:
 
     virtual ~LSPCompilerInstance() { callback = nullptr; }
 
-    void PreCompileProcess();
+    void PreCompileProcess(const std::unique_ptr<ark::CjoManager> &cjoManager);
 
     void CompilePassForComplete(const std::unique_ptr<ark::CjoManager> &cjoManager,
         const std::unique_ptr<ark::DependencyGraph> &graph,
@@ -99,8 +99,15 @@ public:
 
     bool ToImportPackage(const std::string &curModuleName, const std::string &cjoPackage);
 
-    bool Parse()
+    bool Parse(const std::unique_ptr<ark::CjoManager> &cjoManager)
     {
+        if (!upstreamSourceSetName.empty()) {
+            const auto &realPkgName = upstreamSourceSetName + "-" + pkgNameForPath;
+            auto cache = cjoManager->GetData(realPkgName);
+            if (cache) {
+                importManager.SetPackageCjoCache(pkgNameForPath, *cache);
+            }
+        }
         return ExecuteCompilerApi("PerformParse", &CompilerInstance::PerformParse, this);
     }
 
@@ -145,7 +152,10 @@ public:
         const std::unique_ptr<ark::CjoManager> &cjoManager, const std::unique_ptr<ark::DependencyGraph> &graph);
 
     bool CompileAfterParse(
-        const std::unique_ptr<ark::CjoManager> &cjoManager, const std::unique_ptr<ark::DependencyGraph> &graph);
+        const std::unique_ptr<ark::CjoManager> &cjoManager,
+        const std::unique_ptr<ark::DependencyGraph> &graph,
+        const std::string &realPkgName = ""
+    );
 
     std::unordered_map<std::string, ark::EdgeType> UpdateUpstreamPkgs();
 
@@ -159,6 +169,7 @@ public:
     bool macroExpandSuccess = false;
     std::set<std::string> upstreamPkgs;
     const std::unique_ptr<ark::ModuleManager> &moduleManger;
+    std::string upstreamSourceSetName;
 
     static inline std::shared_mutex mtx;
     static inline PackageMap dependentPackageMap;
