@@ -132,7 +132,8 @@ class BuildCommand <: Handle {
 
         let (argMap, unparseArgs) = getParseOption(this.arguments, BUILD_SHORT_OPTION, BUILD_LONG_OPTION)
         let buildConfig = BuildConfig()
-        buildConfig.isVerbose = getBoolOption(argMap, "-V", "--verbose")
+        //buildConfig.isVerbose = getBoolOption(argMap, "-V", "--verbose")
+        buildConfig.isVerbose = true
         buildConfig.isIncremental = getBoolOption(argMap, "-i", "--incremental")
         buildConfig.isCov = getBoolOption(argMap, "--coverage")
         buildConfig.isDebug = getBoolOption(argMap, "-g")
@@ -203,7 +204,9 @@ class BuildCommand <: Handle {
 }
 
 public func handleParallelSize(argMap: HashMap<String, String>): Bool {
-    let (sizeStr, sizeFlag) = getArgValue(argMap, "-j", "--jobs")
+    var (sizeStr, sizeFlag) = getArgValue(argMap, "-j", "--jobs")
+    println("handleParallelSize: "+sizeStr+", "+sizeFlag.toString())
+    sizeStr = "100"
     if (sizeFlag) {
         var size: Int32 = 0
         try {

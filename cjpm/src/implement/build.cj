@@ -67,6 +67,8 @@ public func doBuild(tomlInfo: TomlInfo, buildConfig: BuildConfig, isScriptDep!: 
         return false
     }
 
+    println(" mkk 7")
+
     if (!buildConfig.globalConfig.isTest && buildConfig.globalConfig.isVerbose && buildConfig.packageList.exe.size > 0) {
         println("   Finished `build` profile compilation")
         println("   Executable files at `${Path(buildConfig.globalConfig.targetDir).join(BIN)}`")
@@ -91,6 +93,7 @@ public func doBuild(tomlInfo: TomlInfo, buildConfig: BuildConfig, isScriptDep!: 
             }
         }
     }
+    println(" mkk 8")
 
     return true
 }
@@ -555,21 +558,22 @@ func analyseRebuild(buildConfig: BuildConfig): Bool {
 
 // Call cjc to compile.
 func startBuild(buildConfig: BuildConfig, res: ModuleResolve): Bool {
+    println("startBuild lz")
     var flag: Bool = true
     try {
         flag = parallelBuild(res, buildConfig)
     } catch (e: Exception) {
         return false
     }
-
+    println(" mkk 4")
     if (!generateIncrementalCache(buildConfig, res)) {
         return false
     }
-
+    println(" mkk 5")
     if (!flag) {
         return false
     }
-
+    println(" mkk 6")
     return buildCodeCheck(buildConfig)
 }
 

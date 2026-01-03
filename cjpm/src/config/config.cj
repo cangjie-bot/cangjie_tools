@@ -927,7 +927,8 @@ public func linkPackage(libName: String, libPath: String, isLto: Bool): ArrayLis
         }
     }
 
-    if (fileExists(Path(libPath).join(makeCangjieStaticlibName(libName)).toString()) || 
+    if (fileExists(Path(libPath).join(makeCangjieStaticlibName(libName)).toString()) ||
+        fileExists(Path(libPath).join("${libName}.cjo").toString()) ||  
         fileExists(Path(libPath).join("lib${libName}.cjo").toString()) || 
         fileExists(Path(libPath).join("lib${libName}.so").toString()) || 
         fileExists(Path(libPath).join("lib${libName}.dll").toString()) || 

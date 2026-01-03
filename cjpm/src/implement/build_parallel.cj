@@ -65,11 +65,13 @@ class ParallelBuilder {
             notified.add(pkgName)
         }
         for (pkg in rDeps[pkgName]) {
+            println("'"+pkgName +"' notify '"+pkg+"'")
             sems[pkg].dec()
         }
     }
 
     func notifyPh2(pkgName: String) {
+        println("'"+pkgName +"' notify '"+pkgName+".ph2'")
         sems[pkgName + ".ph2"].dec()
     }
 
@@ -104,6 +106,7 @@ class ParallelBuilder {
     }
 
     func build(): Bool {
+        println("ParallelBuilder build lz")
         let sem = Semaphore(maxParallelSize)
         let futTasks = HashMap<String, Future<Bool>>()
 
@@ -159,11 +162,12 @@ class ParallelBuilder {
                 rDeps[dep].add(pkgName)
             }
             sems.add(pkgName, SyncCounter(cnt))
+            println("sems "+pkgName+": "+cnt.toString())
             let outputType = task.outputType.toString()
             let needLink = outputType == "dynamic" || outputType == "executable"
             if (needLink) {
+                let linkSet = HashSet<String>()
                 let linkSort = getDepSet(pkgName, buildConfig.requiresMap, buildConfig.superPkgSubMap, isForMacroRequire: macroPkgList.contains(pkgName))
-                var cnt = 0
                 for (link in linkSort) {
                     if (!taskMap.contains(link)) {
                         continue
@@ -173,12 +177,29 @@ class ParallelBuilder {
                             rDeps.add(link + ".ph2", HashSet<String>())
                         }
                         rDeps[link + ".ph2"].add(pkgName + ".ph2")
-                        cnt++
+                        linkSet.add(link)
                     }
                 }
+                if (let Some(superPkgCfg) <- task.superPkgCfg) {
+                    for (link in superPkgCfg.subPkgSet) {
+                        if (!taskMap.contains(link)) {
+                            continue
+                        }
+                        if(!macroSet.contains(link)) { // 不需要 link 宏包
+                            if (!rDeps.contains(link + ".ph2")) {
+                                rDeps.add(link + ".ph2", HashSet<String>())
+                            }
+                            rDeps[link + ".ph2"].add(pkgName + ".ph2")
+                            linkSet.add(link)
+                        }
+                    }
+                }
+                let cnt = linkSet.size
                 sems.add(pkgName + ".ph2", SyncCounter(cnt + 1))
+                println("sems "+pkgName + ".ph2"+": "+(cnt + 1).toString())
             } else {
                 sems.add(pkgName + ".ph2", SyncCounter(1))
+                println("sems "+pkgName + ".ph2"+": 1")
             }
         }
 
@@ -186,6 +207,8 @@ class ParallelBuilder {
             =>
             monitor(macroSet, cjo2pkg, listenDirs, notify)
         }
+
+        println("isProjectCombine: " + this.buildConfig.globalConfig.isProjectCombine.toString())
 
         // Guaranteed valid order follows 'buildConfig.packageList.all'
         for (pkgName in this.buildConfig.packageList.all) {
@@ -219,7 +242,7 @@ class ParallelBuilder {
 
                     if (let Some(superPkgCfg) <- task.superPkgCfg) {
                         for (dep in superPkgCfg.subPkgSet) {
-                            if (!this.checkDepFuture(dep, task, futTasks, sem)) {
+                            if (res.contains(dep) && !res[dep]) {
                                 res.add(pkgName, false)
                                 notify(pkgName)
                                 notifyPh2(pkgName)
@@ -271,6 +294,7 @@ class ParallelBuilder {
                     isNativeForCross: true)) {
                     flag = false
                 }
+                flag = true //temp
                 sem.release()
                 if (task.targetPlatform && task.nativePlatform) {
                     this.queue.add((task.outLogFile, task.errLogFile, task.nativeOutLog, task.nativeErrLog, true))
@@ -295,6 +319,7 @@ class ParallelBuilder {
                 let outputType = task.outputType.toString()
                 let needLink = outputType == "dynamic" || outputType == "executable"
                 if (needLink) {
+                    println(pkgName+" need link")
                     let outputdir = if (task.nativePlatform) {task.nativePath} else {task.targetPath}
                     let linkpath = outputdir + "/" + pkgName + ".link"
                     sems[pkgName + ".ph2"].waitUntilZero()
@@ -339,28 +364,37 @@ class ParallelBuilder {
                         }
                         outFile.close()
                         errFile.close()
+                    } else {
+                        println(pkgName+" no link file")
                     }
                 }
+                else {
+                    println(pkgName+" need not link")
+                }
+                sem.release()
+                notify(pkgName+".ph2")
                 true
             }
             synchronized(this.buildMutex) {
                 futTasks.add(pkgName + "ph2", future2)
             }
         }
-
         var isBuilt: Bool = true
         for ((pkgName, task) in futTasks) {
+            println(pkgName+" not donelz")
             if (!task.get()) {
                 isBuilt = false
             } else {
                 successPkgs.add(pkgName)
             }
+            println(pkgName+" has donelz")
         }
 
-        if (!logFuture.get()) {
-            isBuilt = false
-        }
-
+        println(" mkk 1")
+        // if (!logFuture.get()) {
+        //     isBuilt = false
+        // }
+        println(" mkk 2")
         return isBuilt
     }
 
@@ -515,6 +549,7 @@ func addEndTime(fullName: String): Unit {
 }
 
 func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
+    println("parallelBuild lz")
     let parallel = ParallelBuilder(buildConfig)
     res.forEachPkg(
         {
@@ -589,7 +624,7 @@ func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
     }
 
     let parallelResult: Bool = parallel.build()
-
+    println(" mkk 3")
     for (r in res.resolves) {
         if (parallel.successPkgs.contains(r.fullName)) {
             r.buildFlag = true
