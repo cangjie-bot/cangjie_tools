@@ -204,9 +204,10 @@ class BuildCommand <: Handle {
 }
 
 public func handleParallelSize(argMap: HashMap<String, String>): Bool {
+    return true
     var (sizeStr, sizeFlag) = getArgValue(argMap, "-j", "--jobs")
-    println("handleParallelSize: "+sizeStr+", "+sizeFlag.toString())
-    sizeStr = "100"
+    // println("handleParallelSize: "+sizeStr+", "+sizeFlag.toString())
+    // sizeStr = "100"
     if (sizeFlag) {
         var size: Int32 = 0
         try {

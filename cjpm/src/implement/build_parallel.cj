@@ -65,13 +65,13 @@ class ParallelBuilder {
             notified.add(pkgName)
         }
         for (pkg in rDeps[pkgName]) {
-            println("'"+pkgName +"' notify '"+pkg+"'")
+            //println("'"+pkgName +"' notify '"+pkg+"'")
             sems[pkg].dec()
         }
     }
 
     func notifyPh2(pkgName: String) {
-        println("'"+pkgName +"' notify '"+pkgName+".ph2'")
+        //println("'"+pkgName +"' notify '"+pkgName+".ph2'")
         sems[pkgName + ".ph2"].dec()
     }
 
@@ -106,7 +106,7 @@ class ParallelBuilder {
     }
 
     func build(): Bool {
-        println("ParallelBuilder build lz")
+        //println("ParallelBuilder build lz")
         let sem = Semaphore(maxParallelSize)
         let futTasks = HashMap<String, Future<Bool>>()
 
@@ -162,7 +162,7 @@ class ParallelBuilder {
                 rDeps[dep].add(pkgName)
             }
             sems.add(pkgName, SyncCounter(cnt))
-            println("sems "+pkgName+": "+cnt.toString())
+            //println("sems "+pkgName+": "+cnt.toString())
             let outputType = task.outputType.toString()
             let needLink = outputType == "dynamic" || outputType == "executable"
             if (needLink) {
@@ -196,10 +196,10 @@ class ParallelBuilder {
                 }
                 let cnt = linkSet.size
                 sems.add(pkgName + ".ph2", SyncCounter(cnt + 1))
-                println("sems "+pkgName + ".ph2"+": "+(cnt + 1).toString())
+                //println("sems "+pkgName + ".ph2"+": "+(cnt + 1).toString())
             } else {
                 sems.add(pkgName + ".ph2", SyncCounter(1))
-                println("sems "+pkgName + ".ph2"+": 1")
+                //println("sems "+pkgName + ".ph2"+": 1")
             }
         }
 
@@ -208,7 +208,7 @@ class ParallelBuilder {
             monitor(macroSet, cjo2pkg, listenDirs, notify)
         }
 
-        println("isProjectCombine: " + this.buildConfig.globalConfig.isProjectCombine.toString())
+        //println("isProjectCombine: " + this.buildConfig.globalConfig.isProjectCombine.toString())
 
         // Guaranteed valid order follows 'buildConfig.packageList.all'
         for (pkgName in this.buildConfig.packageList.all) {
@@ -319,7 +319,7 @@ class ParallelBuilder {
                 let outputType = task.outputType.toString()
                 let needLink = outputType == "dynamic" || outputType == "executable"
                 if (needLink) {
-                    println(pkgName+" need link")
+                    //println(pkgName+" need link")
                     let outputdir = if (task.nativePlatform) {task.nativePath} else {task.targetPath}
                     let linkpath = outputdir + "/" + pkgName + ".link"
                     sems[pkgName + ".ph2"].waitUntilZero()
@@ -353,11 +353,11 @@ class ParallelBuilder {
                             addStartTime(task.fullName + ".ph2", "link")
                         }
                         if (let Some(returnCode) <- execAndToFile(tool, args, outFile, errFile)) {
-                            if (returnCode == 0) {
-                                println("success to link for `${task.fullName}`")
-                            } else {
-                                println("Error: failed to link for `${task.fullName}`, return code is ${returnCode}")
-                            }
+                            // if (returnCode == 0) {
+                            //     println("success to link for `${task.fullName}`")
+                            // } else {
+                            //     println("Error: failed to link for `${task.fullName}`, return code is ${returnCode}")
+                            // }
                         }
                         if (buildConfig.globalConfig.isAnalysisCompilePerformance) {
                             addEndTime(task.fullName + ".ph2")
@@ -365,11 +365,11 @@ class ParallelBuilder {
                         outFile.close()
                         errFile.close()
                     } else {
-                        println(pkgName+" no link file")
+                        //println(pkgName+" no link file")
                     }
                 }
                 else {
-                    println(pkgName+" need not link")
+                    //println(pkgName+" need not link")
                 }
                 sem.release()
                 notify(pkgName+".ph2")
@@ -381,20 +381,20 @@ class ParallelBuilder {
         }
         var isBuilt: Bool = true
         for ((pkgName, task) in futTasks) {
-            println(pkgName+" not donelz")
+            //println(pkgName+" not donelz")
             if (!task.get()) {
                 isBuilt = false
             } else {
                 successPkgs.add(pkgName)
             }
-            println(pkgName+" has donelz")
+            //println(pkgName+" has donelz")
         }
 
-        println(" mkk 1")
+        //println(" mkk 1")
         // if (!logFuture.get()) {
         //     isBuilt = false
         // }
-        println(" mkk 2")
+        //println(" mkk 2")
         return isBuilt
     }
 
@@ -549,7 +549,7 @@ func addEndTime(fullName: String): Unit {
 }
 
 func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
-    println("parallelBuild lz")
+    //println("parallelBuild lz")
     let parallel = ParallelBuilder(buildConfig)
     res.forEachPkg(
         {
