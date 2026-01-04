@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -56,10 +56,10 @@ public func createSub(): JSValue/* FIXME: `Inheritances.SubClass` */ {
     }*/
 
 public open class ExportedInterface {
-    
+
     protected ExportedInterface(private var myOption!: Option<String> = None) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         if(let Some(v) <- myOption) {
@@ -67,13 +67,12 @@ public open class ExportedInterface {
         }
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): ExportedInterface {
         let obj = input.asObject()
         ExportedInterface(
         myOption: Option < String >.fromJSValue(context, obj["myOption"])
         )
     }
-    
-}
 
+}

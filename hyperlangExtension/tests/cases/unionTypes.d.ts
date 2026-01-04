@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -16,13 +16,13 @@ export class UnionTypes {
 
   // Method returning a union type
   getValueOrError(): number | string;
-  
+
   // Method with union type parameter
   setValue(value: string): number | boolean;
-  
+
   // // Method with union return and union parameter
   // processData(input: boolean | number): string | number;
-  
+
   // // Static method returning union type
   // static createOrNull(shouldCreate: boolean): UnionTypes | null;
 }

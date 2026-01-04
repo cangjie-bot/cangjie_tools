@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -19,12 +19,12 @@ import ohos.base.*
     }*/
 
 public open class Item<T> where T <: JSInteropType<T> {
-    
+
     protected Item(private var id: Float64,
     private var name: String,
     private var category: T) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["id"] = id.toJSValue(context)
@@ -32,7 +32,7 @@ public open class Item<T> where T <: JSInteropType<T> {
         obj["category"] = category.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): Item<T> {
         let obj = input.asObject()
         Item(
@@ -41,7 +41,7 @@ public open class Item<T> where T <: JSInteropType<T> {
         T.fromJSValue(context, obj["category"])
         )
     }
-    
+
 }
 
 /*interface Item1 {
@@ -51,12 +51,12 @@ public open class Item<T> where T <: JSInteropType<T> {
     }*/
 
 public open class Item1<T, U> where T <: JSInteropType<T>, U <: JSInteropType<U> {
-    
+
     protected Item1(private var id: Float64,
     private var name: U,
     private var category: T) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["id"] = id.toJSValue(context)
@@ -64,7 +64,7 @@ public open class Item1<T, U> where T <: JSInteropType<T>, U <: JSInteropType<U>
         obj["category"] = category.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): Item1<T, U> {
         let obj = input.asObject()
         Item1(
@@ -73,6 +73,5 @@ public open class Item1<T, U> where T <: JSInteropType<T>, U <: JSInteropType<U>
         T.fromJSValue(context, obj["category"])
         )
     }
-    
-}
 
+}

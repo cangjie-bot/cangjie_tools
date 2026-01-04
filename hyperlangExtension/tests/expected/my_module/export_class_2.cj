@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -15,7 +15,7 @@ public enum AutoGenType0 {
     | NUMBER(Float64)
     | BOOLEAN(Bool)
     | UNDEFINED
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case STRING(x) => context.string(x).toJSValue()
@@ -25,16 +25,16 @@ public enum AutoGenType0 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType0 {
-        
+
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
-        } 
+        }
         if(input.isNumber()) {
             return NUMBER(Float64.fromJSValue(context, input))
-        }  
+        }
         if (input.isBoolean()) {
             return BOOLEAN(Bool.fromJSValue(context, input))
-        } 
+        }
         if (input.isUndefined()) {
             return UNDEFINED
         }
@@ -49,10 +49,10 @@ public enum AutoGenType0 {
     }*/
 
 public class AppSettings {
-    
+
     protected AppSettings(var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief getInstance(): AppSettings
 	 */
@@ -69,13 +69,12 @@ public class AppSettings {
             ctx, info => AutoGenType0.fromJSValue(ctx, info)
         }
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): AppSettings {
         AppSettings(input.asObject())
     }
 }
-

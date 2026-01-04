@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -16,7 +16,7 @@ import ohos.base.*
     }*/
 
 public class Greeter {
-    
+
     protected Greeter(var arkts_object: JSObject) { }
     /**
 	 * @brief constructor(greeting : string): void
@@ -35,14 +35,13 @@ public class Greeter {
             clazz.new().asObject()
         }
     }
-    
-    
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): Greeter {
         Greeter(input.asObject())
     }
 }
-

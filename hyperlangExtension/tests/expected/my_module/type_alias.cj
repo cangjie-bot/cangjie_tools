@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -99,7 +99,7 @@ public enum TA710 {
     | BBB
     | CCC
     | DDD
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case AAA => context.string("aaa").toJSValue()
@@ -109,7 +109,7 @@ public enum TA710 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): TA710 {
-        
+
         throw Exception("unsupport type!")
     }
 }
@@ -118,7 +118,7 @@ public enum TA710 {
 public enum TA720 {
     | NUMBER(Float64)
     | STRING(String)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case NUMBER(x) => context.number(x).toJSValue()
@@ -126,10 +126,10 @@ public enum TA720 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): TA720 {
-        
+
         if(input.isNumber()) {
             return NUMBER(Float64.fromJSValue(context, input))
-        }  
+        }
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
         }
@@ -141,7 +141,7 @@ public enum TA720 {
 public enum TA730 {
     | PROMISE_STRING_(JSValue/* FIXME: `Promise<string>` */)
     | STRING(String)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case PROMISE_STRING_(x) => x
@@ -149,7 +149,7 @@ public enum TA730 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): TA730 {
-        
+
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
         }
@@ -161,7 +161,7 @@ public enum TA730 {
 public enum TA740 {
     | 111
     | TA710(TA710)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case 111 => context.string("111").toJSValue()
@@ -169,7 +169,7 @@ public enum TA740 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): TA740 {
-        
+
         throw Exception("unsupport type!")
     }
 }
@@ -212,7 +212,7 @@ public enum ARK1 {
     | INT64ARRAY(Array<Int64>)
     | UINT64ARRAY(Array<UInt64>)
     | FLOAT64ARRAY(Array<Float64>)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case NULL => context.null().toJSValue()
@@ -233,58 +233,58 @@ public enum ARK1 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): ARK1 {
-        
+
         if (input.isNull()) {
             return NULL
-        } 
+        }
         if(input.isNumber()) {
             return NUMBER(Float64.fromJSValue(context, input))
-        }  
+        }
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
-        } 
+        }
         if (input.isBoolean()) {
             return BOOLEAN(Bool.fromJSValue(context, input))
-        } 
+        }
         if (instanceof(input, "Uint8Array")) {
             let jsArray: JSValue = context.global["Uint8Array"].asObject().callMethod("from", [input])
             return UINT8ARRAY(fromJSArray<UInt8>(context, jsArray))
-        } 
+        }
         if (instanceof(input, "Float32Array")) {
             let jsArray: JSValue = context.global["Float32Array"].asObject().callMethod("from", [input])
             return UINT8ARRAY(fromJSArray<Float32>(context, jsArray))
-        } 
+        }
         if (input.isBigInt()) {
             return BIGINT(input.toBigInt())
-        } 
+        }
         if (instanceof(input, "Int8Array")) {
             let jsArray: JSValue = context.global["Int8Array"].asObject().callMethod("from", [input])
             return UINT8ARRAY(fromJSArray<Int8>(context, jsArray))
-        } 
+        }
         if (instanceof(input, "Int16Array")) {
             let jsArray: JSValue = context.global["Int16Array"].asObject().callMethod("from", [input])
             return UINT8ARRAY(fromJSArray<Int16>(context, jsArray))
-        } 
+        }
         if (instanceof(input, "Uint16Array")) {
             let jsArray: JSValue = context.global["Uint16Array"].asObject().callMethod("from", [input])
             return UINT8ARRAY(fromJSArray<UInt16>(context, jsArray))
-        } 
+        }
         if (instanceof(input, "Uint32Array")) {
             let jsArray: JSValue = context.global["Uint32Array"].asObject().callMethod("from", [input])
             return UINT8ARRAY(fromJSArray<UInt32>(context, jsArray))
-        } 
+        }
         if (instanceof(input, "Int32Array")) {
             let jsArray: JSValue = context.global["Int32Array"].asObject().callMethod("from", [input])
             return UINT8ARRAY(fromJSArray<Int32>(context, jsArray))
-        } 
+        }
         if (instanceof(input, "BigInt64Array")) {
             let jsArray: JSValue = context.global["BigInt64Array"].asObject().callMethod("from", [input])
             return UINT8ARRAY(fromJSArray<Int64>(context, jsArray))
-        } 
+        }
         if (instanceof(input, "BigUint64Array")) {
             let jsArray: JSValue = context.global["BigUint64Array"].asObject().callMethod("from", [input])
             return UINT8ARRAY(fromJSArray<UInt64>(context, jsArray))
-        } 
+        }
         if (instanceof(input, "Float64Array")) {
             let jsArray: JSValue = context.global["Float64Array"].asObject().callMethod("from", [input])
             return UINT8ARRAY(fromJSArray<Float64>(context, jsArray))
@@ -301,5 +301,3 @@ public type ApiResponse = JSValue/* FIXME: `{ data: T; status: number }` */
 
 
 public type AnimationItem = JSValue/* FIXME: `{ name: string; name1: string }` */
-
-

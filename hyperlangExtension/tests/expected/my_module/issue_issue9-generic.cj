@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -13,7 +13,7 @@ import ohos.base.*
 public enum AutoGenType0 < T > where T <: JSInteropType<T> {
     | T0(T)
     | STRING(String)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case T0(x) => x.toJSValue(context)
@@ -21,7 +21,7 @@ public enum AutoGenType0 < T > where T <: JSInteropType<T> {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType0 < T > {
-        
+
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
         }
@@ -33,7 +33,7 @@ public enum AutoGenType1 < T, U > where T <: JSInteropType<T>, U <: JSInteropTyp
     | T0(T)
     | U0(U)
     | STRING(String)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case T0(x) => x.toJSValue(context)
@@ -42,7 +42,7 @@ public enum AutoGenType1 < T, U > where T <: JSInteropType<T>, U <: JSInteropTyp
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType1 < T, U > {
-        
+
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
         }
@@ -54,7 +54,7 @@ public enum AutoGenType2 < T, W > where T <: JSInteropType<T>, W <: JSInteropTyp
     | T0(T)
     | W0(W)
     | STRING(String)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case T0(x) => x.toJSValue(context)
@@ -63,7 +63,7 @@ public enum AutoGenType2 < T, W > where T <: JSInteropType<T>, W <: JSInteropTyp
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType2 < T, W > {
-        
+
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
         }
@@ -75,7 +75,7 @@ public enum AutoGenType3 < T, M > where T <: JSInteropType<T>, M <: JSInteropTyp
     | T0(T)
     | M0(M)
     | STRING(String)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case T0(x) => x.toJSValue(context)
@@ -84,7 +84,7 @@ public enum AutoGenType3 < T, M > where T <: JSInteropType<T>, M <: JSInteropTyp
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType3 < T, M > {
-        
+
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
         }
@@ -100,10 +100,10 @@ public enum AutoGenType3 < T, M > where T <: JSInteropType<T>, M <: JSInteropTyp
     }*/
 
 public open class B<W, M> where W <: JSInteropType<W>, M <: JSInteropType<M> {
-    
+
     protected B(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief f1(t:T): T | W | String
 	 */
@@ -120,11 +120,11 @@ public open class B<W, M> where W <: JSInteropType<W>, M <: JSInteropType<M> {
             ctx, info => AutoGenType3< T, M >.fromJSValue(ctx, info)
         }
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): B<W, M> {
         B(input.asObject())
     }
@@ -136,10 +136,10 @@ public open class B<W, M> where W <: JSInteropType<W>, M <: JSInteropType<M> {
     }*/
 
 public class A<T, U> where T <: JSInteropType<T>, U <: JSInteropType<U> {
-    
+
     protected A(var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief f1(t:T): T | String
 	 */
@@ -156,11 +156,11 @@ public class A<T, U> where T <: JSInteropType<T>, U <: JSInteropType<U> {
             ctx, info => AutoGenType1< T, U >.fromJSValue(ctx, info)
         }
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): A<T, U> {
         A(input.asObject())
     }
@@ -184,5 +184,3 @@ public func testGeneric1 < T, U >(t: T): AutoGenType1 where T <: JSInteropType<T
         ctx, info => AutoGenType1.fromJSValue(ctx, info)
     }
 }
-
-

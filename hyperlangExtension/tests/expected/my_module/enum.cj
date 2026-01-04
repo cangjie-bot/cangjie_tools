@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -22,38 +22,38 @@ public enum Colors <: ToString & Equatable < Colors > {
     | Red
     | Green
     | Blue
-    | Yellow 
+    | Yellow
 
     func get(): String {
         match(this) {
-            case Red => "RED" 
-            case Green => "GREEN" 
-            case Blue => "BLUE" 
+            case Red => "RED"
+            case Green => "GREEN"
+            case Blue => "BLUE"
             case Yellow => "YELLOW"  //todo: please check the value
         }
     }
-    
+
     static func parse(val: String): Colors {
         match(val) {
-            case "RED" => Red 
-            case "GREEN" => Green 
-            case "BLUE" => Blue 
+            case "RED" => Red
+            case "GREEN" => Green
+            case "BLUE" => Blue
             case "YELLOW" => Yellow  //todo: please check the value
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?String): ?Colors {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         get()
     }
-    
+
     public override operator func ==(that: Colors): Bool {
         match((this, that)) {
             case(Red, Red) => true
@@ -63,7 +63,7 @@ public enum Colors <: ToString & Equatable < Colors > {
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: Colors): Bool {
         !(this == that)
     }
@@ -78,7 +78,7 @@ public enum Colors <: ToString & Equatable < Colors > {
 public enum Status <: ToString & Equatable < Status > {
     | Pending
     | Approved
-    | Rejected 
+    | Rejected
 
     func get(): Int32 {
         match(this) {
@@ -87,7 +87,7 @@ public enum Status <: ToString & Equatable < Status > {
             case Rejected => 2  //todo: please check the value
         }
     }
-    
+
     static func parse(val: Int32): Status {
         match(val) {
             case 0 => Pending  //todo: please check the value
@@ -96,14 +96,14 @@ public enum Status <: ToString & Equatable < Status > {
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?Int32): ?Status {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         match(this) {
             case Pending => "Pending"
@@ -111,7 +111,7 @@ public enum Status <: ToString & Equatable < Status > {
             case Rejected => "Rejected"
         }
     }
-    
+
     public override operator func ==(that: Status): Bool {
         match((this, that)) {
             case(Pending, Pending) => true
@@ -120,7 +120,7 @@ public enum Status <: ToString & Equatable < Status > {
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: Status): Bool {
         !(this == that)
     }
@@ -136,32 +136,32 @@ public enum Status <: ToString & Equatable < Status > {
 public enum Status1 <: ToString & Equatable < Status1 > {
     | Pending
     | Approved
-    | Rejected 
+    | Rejected
 
     func get(): Int32 {
         match(this) {
-            case Pending => 3 
-            case Approved => 4 
-            case Rejected => 5 
+            case Pending => 3
+            case Approved => 4
+            case Rejected => 5
         }
     }
-    
+
     static func parse(val: Int32): Status1 {
         match(val) {
-            case 3 => Pending 
-            case 4 => Approved 
-            case 5 => Rejected 
+            case 3 => Pending
+            case 4 => Approved
+            case 5 => Rejected
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?Int32): ?Status1 {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         match(this) {
             case Pending => "Pending"
@@ -169,7 +169,7 @@ public enum Status1 <: ToString & Equatable < Status1 > {
             case Rejected => "Rejected"
         }
     }
-    
+
     public override operator func ==(that: Status1): Bool {
         match((this, that)) {
             case(Pending, Pending) => true
@@ -178,7 +178,7 @@ public enum Status1 <: ToString & Equatable < Status1 > {
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: Status1): Bool {
         !(this == that)
     }
@@ -192,34 +192,34 @@ public enum Status1 <: ToString & Equatable < Status1 > {
 	}*/
 public enum Response1 <: ToString & Equatable < Response1 > {
     | No
-    | Yes 
+    | Yes
 
     func get(): String {
         match(this) {
-            case No => "0" 
-            case Yes => "YES" 
+            case No => "0"
+            case Yes => "YES"
         }
     }
-    
+
     static func parse(val: String): Response1 {
         match(val) {
-            case "0" => No 
-            case "YES" => Yes 
+            case "0" => No
+            case "YES" => Yes
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?String): ?Response1 {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         get()
     }
-    
+
     public override operator func ==(that: Response1): Bool {
         match((this, that)) {
             case(No, No) => true
@@ -227,7 +227,7 @@ public enum Response1 <: ToString & Equatable < Response1 > {
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: Response1): Bool {
         !(this == that)
     }
@@ -245,34 +245,34 @@ public enum SystemErrorCode <: ToString & Equatable < SystemErrorCode > {
     | success
     | invalidInput
     | networkError
-    | internalError 
+    | internalError
 
     func get(): Int32 {
         match(this) {
-            case success => 0 
-            case invalidInput => 1 
-            case networkError => 2 
-            case internalError => 3 
+            case success => 0
+            case invalidInput => 1
+            case networkError => 2
+            case internalError => 3
         }
     }
-    
+
     static func parse(val: Int32): SystemErrorCode {
         match(val) {
-            case 0 => success 
-            case 1 => invalidInput 
-            case 2 => networkError 
-            case 3 => internalError 
+            case 0 => success
+            case 1 => invalidInput
+            case 2 => networkError
+            case 3 => internalError
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?Int32): ?SystemErrorCode {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         match(this) {
             case success => "success"
@@ -281,7 +281,7 @@ public enum SystemErrorCode <: ToString & Equatable < SystemErrorCode > {
             case internalError => "internalError"
         }
     }
-    
+
     public override operator func ==(that: SystemErrorCode): Bool {
         match((this, that)) {
             case(success, success) => true
@@ -291,7 +291,7 @@ public enum SystemErrorCode <: ToString & Equatable < SystemErrorCode > {
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: SystemErrorCode): Bool {
         !(this == that)
     }
@@ -308,32 +308,32 @@ public enum SystemErrorCode <: ToString & Equatable < SystemErrorCode > {
 public enum LegacyStatus <: ToString & Equatable < LegacyStatus > {
     | active
     | inactive
-    | pending 
+    | pending
 
     func get(): Int32 {
         match(this) {
-            case active => 0 
-            case inactive => 1 
-            case pending => 2 
+            case active => 0
+            case inactive => 1
+            case pending => 2
         }
     }
-    
+
     static func parse(val: Int32): LegacyStatus {
         match(val) {
-            case 0 => active 
-            case 1 => inactive 
-            case 2 => pending 
+            case 0 => active
+            case 1 => inactive
+            case 2 => pending
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?Int32): ?LegacyStatus {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         match(this) {
             case active => "active"
@@ -341,7 +341,7 @@ public enum LegacyStatus <: ToString & Equatable < LegacyStatus > {
             case pending => "pending"
         }
     }
-    
+
     public override operator func ==(that: LegacyStatus): Bool {
         match((this, that)) {
             case(active, active) => true
@@ -350,11 +350,9 @@ public enum LegacyStatus <: ToString & Equatable < LegacyStatus > {
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: LegacyStatus): Bool {
         !(this == that)
     }
 }
 */
-
-

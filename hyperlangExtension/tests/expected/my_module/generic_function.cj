@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -60,5 +60,3 @@ public func _init(`type`: String, data: JSValue/* FIXME: `any` */): Unit {
 public func _getObject(extra: Float64, info: String): Unit {
     hmsGlobalApiCall < Unit >( "my_module_genericFunction", "getObject", { ctx =>[extra.toJSValue(ctx), info.toJSValue(ctx)] })
 }
-
-

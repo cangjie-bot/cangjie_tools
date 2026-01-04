@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -24,5 +24,3 @@ public func printToConsole(s: JSValue/* FIXME: `string & string` */): Unit {
 public func printToConsole(s: Array<JSValue/* FIXME: `object` */>): Unit {
     hmsGlobalApiCall < Unit >( "my_module_inconvertibleTypes", "printToConsole", { ctx =>[toJSArray < JSValue/* FIXME: `object` */ >(ctx, s, { ctx: JSContext, val: JSValue/* FIXME: `object` */ => val })] })
 }
-
-

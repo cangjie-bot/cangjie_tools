@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -54,10 +54,10 @@ public const o = "default"
     }*/
 
 public class BuildProfile {
-    
+
     protected BuildProfile(var arkts_object: JSObject) { }
-    
-    
+
+
     public static prop j: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -65,7 +65,7 @@ public class BuildProfile {
             }
         }
     }
-    
+
     public static prop m: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -73,7 +73,7 @@ public class BuildProfile {
             }
         }
     }
-    
+
     public static prop DEBUG: Bool {
         get() {
             checkThreadAndCall < Bool >(getMainContext()) {
@@ -81,7 +81,7 @@ public class BuildProfile {
             }
         }
     }
-    
+
     public static prop o: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -89,14 +89,13 @@ public class BuildProfile {
             }
         }
     }
-    
-    
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): BuildProfile {
         BuildProfile(input.asObject())
     }
 }
-

@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -20,36 +20,36 @@ public type ErrorCode = Float64
 /* enum EventType {
 	}*/
 public enum EventType <: ToString & Equatable < EventType > {
-    
+
     func get(): Int32 {
         match(this) {
         }
     }
-    
+
     static func parse(val: Int32): EventType {
         match(val) {
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?Int32): ?EventType {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         match(this) {
         }
     }
-    
+
     public override operator func ==(that: EventType): Bool {
         match((this, that)) {
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: EventType): Bool {
         !(this == that)
     }
@@ -62,7 +62,7 @@ public enum EventType <: ToString & Equatable < EventType > {
 	}*/
 public enum ListenerStatusNumeric <: ToString & Equatable < ListenerStatusNumeric > {
     | on
-    | off 
+    | off
 
     func get(): Int32 {
         match(this) {
@@ -70,7 +70,7 @@ public enum ListenerStatusNumeric <: ToString & Equatable < ListenerStatusNumeri
             case off => 1  //todo: please check the value
         }
     }
-    
+
     static func parse(val: Int32): ListenerStatusNumeric {
         match(val) {
             case 0 => on  //todo: please check the value
@@ -78,21 +78,21 @@ public enum ListenerStatusNumeric <: ToString & Equatable < ListenerStatusNumeri
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?Int32): ?ListenerStatusNumeric {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         match(this) {
             case on => "on"
             case off => "off"
         }
     }
-    
+
     public override operator func ==(that: ListenerStatusNumeric): Bool {
         match((this, that)) {
             case(on, on) => true
@@ -100,7 +100,7 @@ public enum ListenerStatusNumeric <: ToString & Equatable < ListenerStatusNumeri
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: ListenerStatusNumeric): Bool {
         !(this == that)
     }
@@ -113,34 +113,34 @@ public enum ListenerStatusNumeric <: ToString & Equatable < ListenerStatusNumeri
 	}*/
 public enum ListenerStatusString <: ToString & Equatable < ListenerStatusString > {
     | on
-    | off 
+    | off
 
     func get(): String {
         match(this) {
-            case on => "ON" 
-            case off => "OFF" 
+            case on => "ON"
+            case off => "OFF"
         }
     }
-    
+
     static func parse(val: String): ListenerStatusString {
         match(val) {
-            case "ON" => on 
-            case "OFF" => off 
+            case "ON" => on
+            case "OFF" => off
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?String): ?ListenerStatusString {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         get()
     }
-    
+
     public override operator func ==(that: ListenerStatusString): Bool {
         match((this, that)) {
             case(on, on) => true
@@ -148,7 +148,7 @@ public enum ListenerStatusString <: ToString & Equatable < ListenerStatusString 
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: ListenerStatusString): Bool {
         !(this == that)
     }
@@ -164,11 +164,11 @@ public enum ListenerStatusString <: ToString & Equatable < ListenerStatusString 
 
 public open class MyListener {
     let callbackManager = CallbackManager < String, JSValue >()
-    
-    
+
+
     protected MyListener(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief on(key: string, cb: (r: Record<string, string>) => void): void
 	 */
@@ -207,11 +207,11 @@ public open class MyListener {
             }
         }
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener {
         MyListener(input.asObject())
     }
@@ -223,11 +223,11 @@ public open class MyListener {
 
 public open class MyListener2 {
     let callbackManager = CallbackManager < String, JSValue >()
-    
-    
+
+
     protected MyListener2(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief on(key: string, cb: (r: ListenerStatusNumeric) => void): void
 	 */
@@ -247,11 +247,11 @@ public open class MyListener2 {
         callbackManager.put(key,(cb, jsCallback))
         jsObjApiCall < Unit >( arkts_object, "on", { __ctx =>[key.toJSValue(__ctx), jsCallback] })
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener2 {
         MyListener2(input.asObject())
     }
@@ -263,11 +263,11 @@ public open class MyListener2 {
 
 public open class MyListener3 {
     let callbackManager = CallbackManager < String, JSValue >()
-    
-    
+
+
     protected MyListener3(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief on(key: string, cb: (r: ListenerStatusString) => void): void
 	 */
@@ -287,11 +287,11 @@ public open class MyListener3 {
         callbackManager.put(key,(cb, jsCallback))
         jsObjApiCall < Unit >( arkts_object, "on", { __ctx =>[key.toJSValue(__ctx), jsCallback] })
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener3 {
         MyListener3(input.asObject())
     }
@@ -303,11 +303,11 @@ public open class MyListener3 {
 
 public open class MyListener5 {
     let callbackManager = CallbackManager < String, JSValue >()
-    
-    
+
+
     protected MyListener5(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief on(key: string, cb: Callback<number>): void
 	 */
@@ -327,11 +327,11 @@ public open class MyListener5 {
         callbackManager.put(key,(cb, jsCallback))
         jsObjApiCall < Unit >( arkts_object, "on", { __ctx =>[key.toJSValue(__ctx), jsCallback] })
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener5 {
         MyListener5(input.asObject())
     }
@@ -346,14 +346,14 @@ public open class MyListener5 {
     }*/
 
 public open class TestListener {
-    
+
     protected TestListener(private var onStart!: Option<() -> Unit> = None,
     private var onDestroy!: Option<() -> Unit> = None,
     private var onError!: Option<(code: ErrorCode, msg: String) -> Unit> = None,
     private var onTouch!: Option<() -> Unit> = None,
     private var onEvent!: Option<(e: EventType) -> Unit> = None) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         if(let Some(v) <- onStart) {
@@ -391,7 +391,7 @@ public open class TestListener {
         }
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): TestListener {
         let obj = input.asObject()
         TestListener(
@@ -445,7 +445,7 @@ public open class TestListener {
         }
         )
     }
-    
+
 }
 
 /*class MyListener4 {
@@ -454,11 +454,11 @@ public open class TestListener {
 
 public class MyListener4 {
     let callbackManager = CallbackManager < String, JSValue >()
-    
-    
+
+
     protected MyListener4(var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief on(key: string, cb: (r: ListenerStatusString) => void): void
 	 */
@@ -478,11 +478,11 @@ public class MyListener4 {
         callbackManager.put(key,(cb, jsCallback))
         jsObjApiCall < Unit >(getClassConstructorObj("my_module_functionTypes", "MyListener4"), arkts_object, "on", { __ctx =>[key.toJSValue(__ctx), jsCallback] })
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): MyListener4 {
         MyListener4(input.asObject())
     }
@@ -532,5 +532,3 @@ public func off(key: String, cb!:?Callback2Argument<JSValue/* FIXME: `Record` */
         }
     }
 }
-
-

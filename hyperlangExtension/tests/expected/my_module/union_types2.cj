@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -13,7 +13,7 @@ import ohos.base.*
 public enum AutoGenType0 {
     | NUMBER(Float64)
     | STRING(String)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case NUMBER(x) => context.number(x).toJSValue()
@@ -21,10 +21,10 @@ public enum AutoGenType0 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType0 {
-        
+
         if(input.isNumber()) {
             return NUMBER(Float64.fromJSValue(context, input))
-        }  
+        }
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
         }
@@ -35,7 +35,7 @@ public enum AutoGenType0 {
 public enum AutoGenType1 {
     | BOOLEAN(Bool)
     | STRING(String)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case BOOLEAN(x) => context.boolean(x).toJSValue()
@@ -43,10 +43,10 @@ public enum AutoGenType1 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType1 {
-        
+
         if (input.isBoolean()) {
             return BOOLEAN(Bool.fromJSValue(context, input))
-        } 
+        }
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
         }
@@ -57,7 +57,7 @@ public enum AutoGenType1 {
 public enum AutoGenType2 {
     | NUMBER(Float64)
     | _BOOLEAN_STRING___(JSValue/* FIXME: `(boolean | string)[]` */)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case NUMBER(x) => context.number(x).toJSValue()
@@ -65,10 +65,10 @@ public enum AutoGenType2 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType2 {
-        
+
         if(input.isNumber()) {
             return NUMBER(Float64.fromJSValue(context, input))
-        } 
+        }
         throw Exception("unsupport type!")
     }
 }
@@ -76,7 +76,7 @@ public enum AutoGenType2 {
 public enum AutoGenType3 {
     | NUMBER(Float64)
     | BOOLEAN__(JSValue/* FIXME: `boolean[]` */)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case NUMBER(x) => context.number(x).toJSValue()
@@ -84,10 +84,10 @@ public enum AutoGenType3 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType3 {
-        
+
         if(input.isNumber()) {
             return NUMBER(Float64.fromJSValue(context, input))
-        } 
+        }
         throw Exception("unsupport type!")
     }
 }
@@ -99,18 +99,18 @@ public enum AutoGenType3 {
     }*/
 
 public open class AutoGenType4 {
-    
+
     protected AutoGenType4(public var city: String,
     public var zipCode: String) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["city"] = city.toJSValue(context)
         obj["zipCode"] = zipCode.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType4 {
         let obj = input.asObject()
         AutoGenType4(
@@ -118,7 +118,7 @@ public open class AutoGenType4 {
         String.fromJSValue(context, obj["zipCode"])
         )
     }
-    
+
 }
 /***********OBJECT***********/
 
@@ -136,7 +136,7 @@ public open class AutoGenType4 {
     }*/
 
 public open class UserProfile {
-    
+
     protected UserProfile(private var array: Array<AutoGenType0>,
     private var test: (num: AutoGenType0) -> String,
     private var test1: AutoGenType2,
@@ -144,8 +144,8 @@ public open class UserProfile {
     private var name: String,
     private var address: AutoGenType4,
     private var id!: Option<AutoGenType0> = None) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["array"] = toJSArray < AutoGenType0 >(context, array, { ctx: JSContext, val: AutoGenType0 => val.toJSValue(ctx) })
@@ -163,7 +163,7 @@ public open class UserProfile {
         }
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): UserProfile {
         let obj = input.asObject()
         UserProfile(
@@ -182,6 +182,5 @@ public open class UserProfile {
         id: Option < AutoGenType0 >.fromJSValue(context, obj["id"])
         )
     }
-    
-}
 
+}

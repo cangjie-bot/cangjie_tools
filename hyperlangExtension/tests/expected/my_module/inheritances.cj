@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -22,23 +22,23 @@ import tpc.AbilityKit.common
     }*/
 
 public open class A {
-    
+
     protected A(private var p: Float64) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["p"] = p.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): A {
         let obj = input.asObject()
         A(
         Float64.fromJSValue(context, obj["p"])
         )
     }
-    
+
 }
 
 /*interface B {
@@ -46,18 +46,18 @@ public open class A {
     }*/
 
 public open class B <: A {
-    
+
     protected B(p: Float64,
     private var p1: Float64) { super(p) }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["p"] = p.toJSValue(context)
         obj["p1"] = p1.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): B {
         let obj = input.asObject()
         B(
@@ -65,22 +65,22 @@ public open class B <: A {
         Float64.fromJSValue(context, obj["p1"])
         )
     }
-    
+
 }
 
 /*interface ExportKeyword BuglyLogAdapter {
     }*/
 
 public open class BuglyLogAdapter <: p29 {
-    
+
     protected BuglyLogAdapter(public var arkts_object: JSObject) { super(arkts_object) }
-    
-    
-    
+
+
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): BuglyLogAdapter {
         BuglyLogAdapter(input.asObject())
     }
@@ -91,21 +91,21 @@ public open class BuglyLogAdapter <: p29 {
     }*/
 
 public open class C {
-    
+
     protected C(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief f(): void
 	 */
     public func f(): Unit {
         jsObjApiCall < Unit >( arkts_object, "f", emptyArg)
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): C {
         C(input.asObject())
     }
@@ -115,15 +115,15 @@ public open class C {
     }*/
 
 public open class D <: C {
-    
+
     protected D(public var arkts_object: JSObject) { super(arkts_object) }
-    
-    
-    
+
+
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): D {
         D(input.asObject())
     }
@@ -133,23 +133,23 @@ public open class D <: C {
     }*/
 
 public open class E <: A {
-    
+
     protected E(p: Float64) { super(p) }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["p"] = p.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): E {
         let obj = input.asObject()
         E(
         Float64.fromJSValue(context, obj["p"])
         )
     }
-    
+
 }
 
 /*interface F {
@@ -157,21 +157,21 @@ public open class E <: A {
     }*/
 
 public open class F <: C {
-    
+
     protected F(public var arkts_object: JSObject) { super(arkts_object) }
-    
-    
+
+
     /**
 	 * @brief g(): void
 	 */
     public func g(): Unit {
         jsObjApiCall < Unit >( arkts_object, "g", emptyArg)
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): F {
         F(input.asObject())
     }
@@ -182,23 +182,23 @@ public open class F <: C {
     }*/
 
 public open class SuperInterface {
-    
+
     protected SuperInterface(private var p: Float64) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["p"] = p.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): SuperInterface {
         let obj = input.asObject()
         SuperInterface(
         Float64.fromJSValue(context, obj["p"])
         )
     }
-    
+
 }
 
 /*class ExportKeyword DeclareKeyword SubClass {
@@ -206,10 +206,10 @@ public open class SuperInterface {
     }*/
 
 public class SubClass <: SuperClass {
-    
+
     protected SubClass(public var arkts_object: JSObject) { super(arkts_object) }
-    
-    
+
+
     public mut prop p: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -221,14 +221,14 @@ public class SubClass <: SuperClass {
                 ctx: JSContext => arkts_object["p"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
-    
+
+
     public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public  static func fromJSValue(context: JSContext, input: JSValue): SubClass {
         SubClass(input.asObject())
     }
@@ -239,10 +239,10 @@ public class SubClass <: SuperClass {
     }*/
 
 public class SubClass1 <: SuperClass1 {
-    
+
     protected SubClass1(public var arkts_object: JSObject) { super(arkts_object) }
-    
-    
+
+
     public mut prop p: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -254,14 +254,14 @@ public class SubClass1 <: SuperClass1 {
                 ctx: JSContext => arkts_object["p"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
-    
+
+
     public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public  static func fromJSValue(context: JSContext, input: JSValue): SubClass1 {
         SubClass1(input.asObject())
     }
@@ -273,11 +273,11 @@ public class SubClass1 <: SuperClass1 {
     }*/
 
 public class SubInterface <: SuperInterface {
-    
+
     protected SubInterface(public var arkts_object: JSObject) {
         super(Float64.fromJSValue(getMainContext(), arkts_object["p"])) }
-    
-    
+
+
     public mut prop p: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -289,9 +289,9 @@ public class SubInterface <: SuperInterface {
                 ctx: JSContext => arkts_object["p"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop p1: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -303,14 +303,14 @@ public class SubInterface <: SuperInterface {
                 ctx: JSContext => arkts_object["p1"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
-    
+
+
     public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public  static func fromJSValue(context: JSContext, input: JSValue): SubInterface {
         SubInterface(input.asObject())
     }
@@ -321,10 +321,10 @@ public class SubInterface <: SuperInterface {
     }*/
 
 public open class SuperClass {
-    
+
     protected SuperClass(public var arkts_object: JSObject) { }
-    
-    
+
+
     public mut prop p: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -336,14 +336,14 @@ public open class SuperClass {
                 ctx: JSContext => arkts_object["p"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): SuperClass {
         SuperClass(input.asObject())
     }
@@ -354,10 +354,10 @@ public open class SuperClass {
     }*/
 
 public open class SuperClass1 {
-    
+
     protected SuperClass1(public var arkts_object: JSObject) { }
-    
-    
+
+
     public mut prop p: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -369,16 +369,15 @@ public open class SuperClass1 {
                 ctx: JSContext => arkts_object["p"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): SuperClass1 {
         SuperClass1(input.asObject())
     }
 }
-
