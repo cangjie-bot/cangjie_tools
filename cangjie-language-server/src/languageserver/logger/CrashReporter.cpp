@@ -144,6 +144,7 @@ void InitStack(DWORD &dwImageType, STACKFRAME64 &frame, const CONTEXT &context)
 
 namespace ark {
 #ifdef __linux__
+// LCOV_EXCL_START
 void CrashReporter::SignalHandler(int sig)
 {
     std::string baseDir = Logger::GetLogPath();
@@ -184,6 +185,7 @@ void CrashReporter::RegisterHandlers()
         }
     }
 }
+// LCOV_EXCL_STOP
 #elif defined(_WIN32)
 LONG WINAPI VectoredExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo)
 {
