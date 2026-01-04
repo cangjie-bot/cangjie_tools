@@ -1322,7 +1322,7 @@ void ArkLanguageServer::CollectCA2AllImport(std::vector<CodeAction> &allImports,
         }
     }
 }
-// LCOV_EXCL_STOP
+
 void ArkLanguageServer::ReportCjoVersionErr(std::string message)
 {
     nlohmann::json reply;
@@ -1341,7 +1341,7 @@ void ArkLanguageServer::PublishCompletionTip(const CompletionTip &params)
     ValueOrError result(ValueOrErrorCheck::VALUE, reply);
     Notify("textDocument/publishCompletionTip", result);
 }
-
+// LCOV_EXCL_STOP
 void ArkLanguageServer::OnSignatureHelp(const SignatureHelpParams &params, nlohmann::json id)
 {
     Logger &logger = Logger::Instance();
@@ -1390,7 +1390,7 @@ void ArkLanguageServer::OnDocumentSymbol(const DocumentSymbolParams &params, nlo
     };
     Server->FindDocumentSymbol(params, reply);
 }
-
+// LCOV_EXCL_START
 void ArkLanguageServer::AddImportQuickFix(DiagnosticToken &diagnostic, ArkAST *arkAst)
 {
     std::string identifier = GetSubStrBetweenSingleQuote(diagnostic.message);
@@ -1594,7 +1594,7 @@ void ArkLanguageServer::RemoveAllUnusedImportsCodeAction(std::vector<DiagnosticT
     }
 }
 
-// LCOV_EXCL_START
+
 void ArkLanguageServer::HandleExternalImportSym(std::vector<CodeAction> &actions, const std::string &pkg,
     const lsp::Symbol &sym, Range textEditRange, const std::string &uri)
 {
