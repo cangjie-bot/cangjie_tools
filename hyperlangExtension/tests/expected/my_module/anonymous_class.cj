@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -13,7 +13,7 @@ import ohos.base.*
 public enum AutoGenType5 {
     | AUTOGENTYPE3(AutoGenType3)
     | AUTOGENTYPE4(AutoGenType4)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case AUTOGENTYPE3(x) => x.toJSValue(context)
@@ -21,7 +21,7 @@ public enum AutoGenType5 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType5 {
-        
+
         throw Exception("unsupport type!")
     }
 }
@@ -32,23 +32,23 @@ public enum AutoGenType5 {
     }*/
 
 public open class AutoGenType0 {
-    
+
     protected AutoGenType0(public var n: Float64) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["n"] = n.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType0 {
         let obj = input.asObject()
         AutoGenType0(
         Float64.fromJSValue(context, obj["n"])
         )
     }
-    
+
 }
 
 /*interface AutoGenType1 {
@@ -56,23 +56,23 @@ public open class AutoGenType0 {
     }*/
 
 public open class AutoGenType1 {
-    
+
     protected AutoGenType1(public var n: Float64) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["n"] = n.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType1 {
         let obj = input.asObject()
         AutoGenType1(
         Float64.fromJSValue(context, obj["n"])
         )
     }
-    
+
 }
 
 /*interface AutoGenType2 {
@@ -80,23 +80,23 @@ public open class AutoGenType1 {
     }*/
 
 public open class AutoGenType2 {
-    
+
     protected AutoGenType2(public var msg: String) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["msg"] = msg.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType2 {
         let obj = input.asObject()
         AutoGenType2(
         String.fromJSValue(context, obj["msg"])
         )
     }
-    
+
 }
 
 /*interface AutoGenType3 {
@@ -106,12 +106,12 @@ public open class AutoGenType2 {
     }*/
 
 public open class AutoGenType3 {
-    
+
     protected AutoGenType3(public var msg: String,
     public var data: String,
     public var code!: Option<JSValue/* FIXME: `undefined` */> = None) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["msg"] = msg.toJSValue(context)
@@ -121,7 +121,7 @@ public open class AutoGenType3 {
         }
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType3 {
         let obj = input.asObject()
         AutoGenType3(
@@ -130,7 +130,7 @@ public open class AutoGenType3 {
         code: obj["code"]
         )
     }
-    
+
 }
 
 /*interface AutoGenType4 {
@@ -140,12 +140,12 @@ public open class AutoGenType3 {
     }*/
 
 public open class AutoGenType4 {
-    
+
     protected AutoGenType4(public var code: Float64,
     public var msg: String,
     public var data!: Option<JSValue/* FIXME: `undefined` */> = None) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["code"] = code.toJSValue(context)
@@ -155,7 +155,7 @@ public open class AutoGenType4 {
         }
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType4 {
         let obj = input.asObject()
         AutoGenType4(
@@ -164,7 +164,7 @@ public open class AutoGenType4 {
         data: obj["data"]
         )
     }
-    
+
 }
 
 /*class ExportKeyword DeclareKeyword AnonymousClass {
@@ -185,10 +185,10 @@ public open class AutoGenType4 {
     }*/
 
 public class AnonymousClass {
-    
+
     protected AnonymousClass(var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief f1(p: {n: number}): {n: number}
 	 */
@@ -231,13 +231,12 @@ public class AnonymousClass {
             ctx, info => info
         }
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): AnonymousClass {
         AnonymousClass(input.asObject())
     }
 }
-

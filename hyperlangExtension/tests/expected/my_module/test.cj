@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -21,10 +21,10 @@ import std.collection.{ HashMap }
     }*/
 
 public class MessagePackage {
-    
+
     protected MessagePackage(var arkts_object: JSObject) { }
-    
-    
+
+
     public static mut prop idt: JSValue/* FIXME: `idt_struct` */ {
         get() {
             checkThreadAndCall < JSValue/* FIXME: `idt_struct` */ >(getMainContext()) {
@@ -36,14 +36,14 @@ public class MessagePackage {
                 ctx: JSContext => getClassConstructorObj("my_module_test", "MessagePackage")["idt"] = v
             }
         }
-        
+
     }
-    
-    
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): MessagePackage {
         MessagePackage(input.asObject())
     }
@@ -54,23 +54,22 @@ public class MessagePackage {
     }*/
 
 public class PushReporter {
-    
+
     protected PushReporter(var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief getTags(t12: Callback<Record<string, any>>): void
 	 */
     public static func getTags(t12: Callback<HashMap<String, JSValue/* FIXME: `any` */>>): Unit {
         jsObjApiCall < Unit >(getClassConstructorObj("my_module_test", "PushReporter"),  "getTags", { ctx =>[t12.toJSValue(ctx)] })
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): PushReporter {
         PushReporter(input.asObject())
     }
 }
-

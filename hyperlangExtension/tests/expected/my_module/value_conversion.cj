@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -31,7 +31,7 @@ import std.collection.{ HashMap }
     }*/
 
 public open class I1 {
-    
+
     protected I1(private var a: Float64,
     private var c: Array<UInt8>,
     private var e: Array<Float32>,
@@ -41,8 +41,8 @@ public open class I1 {
     private var b!: Option<String> = None,
     private var d!: Option<Array<UInt8>> = None,
     private var f!: Option<Bool> = None) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["a"] = a.toJSValue(context)
@@ -62,7 +62,7 @@ public open class I1 {
         }
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): I1 {
         let obj = input.asObject()
         I1(
@@ -77,7 +77,7 @@ public open class I1 {
         f: Option < Bool >.fromJSValue(context, obj["f"])
         )
     }
-    
+
 }
 
 /*class C1 {
@@ -94,10 +94,10 @@ public open class I1 {
     }*/
 
 public class C1 {
-    
+
     protected C1(var arkts_object: JSObject) { }
-    
-    
+
+
     public static mut prop sa: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -109,9 +109,9 @@ public class C1 {
                 ctx: JSContext => getClassConstructorObj("my_module_valueConversion", "C1")["sa"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public static mut prop sb: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -123,9 +123,9 @@ public class C1 {
                 ctx: JSContext => getClassConstructorObj("my_module_valueConversion", "C1")["sb"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public static prop sd: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -133,7 +133,7 @@ public class C1 {
             }
         }
     }
-    
+
     public static prop se: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -141,7 +141,7 @@ public class C1 {
             }
         }
     }
-    
+
     public mut prop va: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -153,9 +153,9 @@ public class C1 {
                 ctx: JSContext => arkts_object["va"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop vb: Array<Float32> {
         get() {
             checkThreadAndCall < Array<Float32> >(getMainContext()) {
@@ -167,9 +167,9 @@ public class C1 {
                 ctx: JSContext => arkts_object["vb"] = toJSArray < Float32 >(ctx, v, { ctx: JSContext, val: Float32 => val.toJSValue(ctx) })
             }
         }
-        
+
     }
-    
+
     public static mut prop sc: ?String {
         get() {
             checkThreadAndCall < ?String >(getMainContext()) {
@@ -181,9 +181,9 @@ public class C1 {
                 ctx: JSContext => getClassConstructorObj("my_module_valueConversion", "C1")["sc"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop vc: ?MyNumericEnum {
         get() {
             checkThreadAndCall < ?MyNumericEnum >(getMainContext()) {
@@ -195,9 +195,9 @@ public class C1 {
                 ctx: JSContext => arkts_object["vc"] = v.get().toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop vd: ?String {
         get() {
             checkThreadAndCall < ?String >(getMainContext()) {
@@ -209,9 +209,9 @@ public class C1 {
                 ctx: JSContext => arkts_object["vd"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop ve: ?Array<BigInt> {
         get() {
             checkThreadAndCall < ?Array<BigInt> >(getMainContext()) {
@@ -223,16 +223,15 @@ public class C1 {
                 ctx: JSContext => arkts_object["ve"] = toJSArray < BigInt >(ctx, v, { ctx: JSContext, val: BigInt => ctx.bigint(val).toJSValue(ctx) })
             }
         }
-        
+
     }
-    
-    
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): C1 {
         C1(input.asObject())
     }
 }
-

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+# Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 # This source file is part of the Cangjie Project, licensed under Apache-2.0
 # with Runtime Library Exception.
 #
@@ -25,7 +25,7 @@ def check_call(command):
         return subprocess.check_call(command)
     except subprocess.CalledProcessError as e:
         print(f"Command '{e.cmd}' returned non-zero exit status {e.returncode}.")
-        sys.exit(e.returncode) 
+        sys.exit(e.returncode)
 
 def read_cj_files(target_dir=None):
     """
@@ -35,10 +35,10 @@ def read_cj_files(target_dir=None):
     # 默认使用当前工作目录
     if target_dir is None:
         target_dir = os.getcwd()
-    
+
     print(f"正在读取目录 [{target_dir}] 下以.cj结尾的文件：")
     print("=" * 50)
-    
+
     # 遍历目录（含子目录）
     for root, dirs, files in os.walk(target_dir):
         for file in files:
@@ -47,7 +47,7 @@ def read_cj_files(target_dir=None):
                 full_path = os.path.join(root, file)
                 print(full_path)
                 check_call(['cjc', full_path, '--output-type=staticlib'])
-                
+
 
 if __name__ == "__main__":
     # 如需指定目录，修改为 read_cj_files("D:/test") 或 "/home/test"

@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -28,7 +28,7 @@ import ohos.base.*
     }*/
 
 public class TDDiagBuilder {
-    
+
     protected TDDiagBuilder(var arkts_object: JSObject) { }
     /**
 	 * @brief constructor(): void
@@ -40,7 +40,7 @@ public class TDDiagBuilder {
             clazz.new().asObject()
         }
     }
-    
+
     public static prop PLATFORM_OA: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -48,7 +48,7 @@ public class TDDiagBuilder {
             }
         }
     }
-    
+
     public static prop PLATFORM_PRO: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -56,7 +56,7 @@ public class TDDiagBuilder {
             }
         }
     }
-    
+
     public mut prop appId: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -68,9 +68,9 @@ public class TDDiagBuilder {
                 ctx: JSContext => arkts_object["appId"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop appKey: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -82,9 +82,9 @@ public class TDDiagBuilder {
                 ctx: JSContext => arkts_object["appKey"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop appVersion: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -96,9 +96,9 @@ public class TDDiagBuilder {
                 ctx: JSContext => arkts_object["appVersion"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop platform: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -110,9 +110,9 @@ public class TDDiagBuilder {
                 ctx: JSContext => arkts_object["platform"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop loggerAdapter: Option<LoggerAdapter> {
         get() {
             checkThreadAndCall < Option<LoggerAdapter> >(getMainContext()) {
@@ -124,9 +124,9 @@ public class TDDiagBuilder {
                 ctx: JSContext => arkts_object["loggerAdapter"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop xgTrafficQuota: Float64 {
         get() {
             checkThreadAndCall < Float64 >(getMainContext()) {
@@ -138,9 +138,9 @@ public class TDDiagBuilder {
                 ctx: JSContext => arkts_object["xgTrafficQuota"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop platform: Option<String> {
         get() {
             checkThreadAndCall < Option<String> >(getMainContext()) {
@@ -152,9 +152,9 @@ public class TDDiagBuilder {
                 ctx: JSContext => arkts_object["platform"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop crashListener: Option<JSValue/* FIXME: `ICrashListener` */> {
         get() {
             checkThreadAndCall < Option<JSValue/* FIXME: `ICrashListener` */> >(getMainContext()) {
@@ -166,9 +166,9 @@ public class TDDiagBuilder {
                 ctx: JSContext => arkts_object["crashListener"] = v.getOrDefault({ => ctx.object().toJSValue() })
             }
         }
-        
+
     }
-    
+
     public mut prop logUploadListener: ?JSValue/* FIXME: `LogUploadListener` */ {
         get() {
             checkThreadAndCall < ?JSValue/* FIXME: `LogUploadListener` */ >(getMainContext()) {
@@ -180,9 +180,9 @@ public class TDDiagBuilder {
                 ctx: JSContext => arkts_object["logUploadListener"] = v.getOrDefault({ => ctx.object().toJSValue() })
             }
         }
-        
+
     }
-    
+
     public mut prop initiativeUploadWhiteListTags: ?Array<String> {
         get() {
             checkThreadAndCall < ?Array<String> >(getMainContext()) {
@@ -194,14 +194,14 @@ public class TDDiagBuilder {
                 ctx: JSContext => arkts_object["initiativeUploadWhiteListTags"] = toJSArray < String >(ctx, v)
             }
         }
-        
+
     }
-    
-    
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): TDDiagBuilder {
         TDDiagBuilder(input.asObject())
     }
@@ -213,10 +213,10 @@ public class TDDiagBuilder {
     }*/
 
 public class d10 {
-    
+
     protected d10(var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief getInstance(): d10
 	 */
@@ -273,13 +273,12 @@ public class d10 {
             ctx, info => d10.fromJSValue(ctx, info)
         }
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): d10 {
         d10(input.asObject())
     }
 }
-

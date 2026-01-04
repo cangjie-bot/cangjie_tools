@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -13,7 +13,7 @@ import ohos.base.*
 public enum AutoGenType0 {
     | NUMBER(Float64)
     | STRING(String)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case NUMBER(x) => context.number(x).toJSValue()
@@ -21,10 +21,10 @@ public enum AutoGenType0 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType0 {
-        
+
         if(input.isNumber()) {
             return NUMBER(Float64.fromJSValue(context, input))
-        }  
+        }
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
         }
@@ -38,10 +38,10 @@ public enum AutoGenType0 {
     }*/
 
 public class C {
-    
+
     protected C(var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief f(p:T): number | String
 	 */
@@ -50,13 +50,12 @@ public class C {
             ctx, info => AutoGenType0.fromJSValue(ctx, info)
         }
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): C {
         C(input.asObject())
     }
 }
-

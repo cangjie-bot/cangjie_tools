@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -16,7 +16,7 @@ import std.collection.{ HashMap }
 public enum AutoGenType0 {
     | STRING(String)
     | NUMBER(Float64)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case STRING(x) => context.string(x).toJSValue()
@@ -24,13 +24,13 @@ public enum AutoGenType0 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType0 {
-        
+
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
-        } 
+        }
         if(input.isNumber()) {
             return NUMBER(Float64.fromJSValue(context, input))
-        } 
+        }
         throw Exception("unsupport type!")
     }
 }
@@ -49,32 +49,32 @@ public type Callback = (arg: T) -> Unit/* FIXME: `<T>(arg: T) => void` */
 public enum EMNum <: ToString & Equatable < EMNum > {
     | E1
     | E2
-    | E3 
+    | E3
 
     func get(): Int32 {
         match(this) {
-            case E1 => 111 
-            case E2 => 222 
-            case E3 => 333 
+            case E1 => 111
+            case E2 => 222
+            case E3 => 333
         }
     }
-    
+
     static func parse(val: Int32): EMNum {
         match(val) {
-            case 111 => E1 
-            case 222 => E2 
-            case 333 => E3 
+            case 111 => E1
+            case 222 => E2
+            case 333 => E3
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?Int32): ?EMNum {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         match(this) {
             case E1 => "E1"
@@ -82,7 +82,7 @@ public enum EMNum <: ToString & Equatable < EMNum > {
             case E3 => "E3"
         }
     }
-    
+
     public override operator func ==(that: EMNum): Bool {
         match((this, that)) {
             case(E1, E1) => true
@@ -91,7 +91,7 @@ public enum EMNum <: ToString & Equatable < EMNum > {
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: EMNum): Bool {
         !(this == that)
     }
@@ -106,36 +106,36 @@ public enum EMNum <: ToString & Equatable < EMNum > {
 public enum EMStr <: ToString & Equatable < EMStr > {
     | EA
     | EB
-    | EC 
+    | EC
 
     func get(): String {
         match(this) {
-            case EA => "aaa" 
-            case EB => "bbb" 
-            case EC => "ccc" 
+            case EA => "aaa"
+            case EB => "bbb"
+            case EC => "ccc"
         }
     }
-    
+
     static func parse(val: String): EMStr {
         match(val) {
-            case "aaa" => EA 
-            case "bbb" => EB 
-            case "ccc" => EC 
+            case "aaa" => EA
+            case "bbb" => EB
+            case "ccc" => EC
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?String): ?EMStr {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         get()
     }
-    
+
     public override operator func ==(that: EMStr): Bool {
         match((this, that)) {
             case(EA, EA) => true
@@ -144,7 +144,7 @@ public enum EMStr <: ToString & Equatable < EMStr > {
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: EMStr): Bool {
         !(this == that)
     }
@@ -159,10 +159,10 @@ public enum EMStr <: ToString & Equatable < EMStr > {
     }*/
 
 public open class Drivable {
-    
+
     protected Drivable(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief start(): void
 	 */
@@ -175,11 +175,11 @@ public open class Drivable {
     public func stop(): Unit {
         jsObjApiCall < Unit >( arkts_object, "stop", emptyArg)
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): Drivable {
         Drivable(input.asObject())
     }
@@ -196,10 +196,10 @@ public open class Drivable {
     }*/
 
 public open class IM {
-    
+
     protected IM(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief f1(): void
 	 */
@@ -260,11 +260,11 @@ public open class IM {
             ctx, info => BigInt.fromJSValue(ctx, info)
         }
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): IM {
         IM(input.asObject())
     }
@@ -277,7 +277,7 @@ public open class IM {
     }*/
 
 public open class Animal {
-    
+
     protected Animal(public var arkts_object: JSObject) { }
     /**
 	 * @brief constructor(name: string): void
@@ -296,7 +296,7 @@ public open class Animal {
             clazz.new().asObject()
         }
     }
-    
+
     public mut prop name: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -308,20 +308,20 @@ public open class Animal {
                 ctx: JSContext => arkts_object["name"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     /**
 	 * @brief move(distance: number): void
 	 */
     public func move(distance: Float64): Unit {
         jsObjApiCall < Unit >( arkts_object, "move", { ctx =>[distance.toJSValue(ctx)] })
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): Animal {
         Animal(input.asObject())
     }
@@ -333,9 +333,9 @@ public open class Animal {
     }*/
 
 public class AnimalProtect {
-    
+
     protected AnimalProtect(var arkts_object: JSObject) { }
-    
+
     // 受保护属性
     public mut prop name: String {
         get() {
@@ -348,9 +348,9 @@ public class AnimalProtect {
                 ctx: JSContext => arkts_object["name"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     /**
 	 * @brief makeSound(): void
 	 */
@@ -358,11 +358,11 @@ public class AnimalProtect {
     public func makeSound(): Unit {
         jsObjApiCall < Unit >( arkts_object, "makeSound", emptyArg)
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): AnimalProtect {
         AnimalProtect(input.asObject())
     }
@@ -374,9 +374,9 @@ public class AnimalProtect {
     }*/
 
 public class Box<T> where T <: JSInteropType<T> {
-    
+
     protected Box(var arkts_object: JSObject) { }
-    
+
     // 属性
     public mut prop value: T {
         get() {
@@ -389,9 +389,9 @@ public class Box<T> where T <: JSInteropType<T> {
                 ctx: JSContext => arkts_object["value"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     /**
 	 * @brief getValue(): T
 	 */
@@ -401,11 +401,11 @@ public class Box<T> where T <: JSInteropType<T> {
             ctx, info => T.fromJSValue(ctx, info)
         }
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): Box<T> {
         Box(input.asObject())
     }
@@ -429,9 +429,9 @@ public class Box<T> where T <: JSInteropType<T> {
     }*/
 
 public class CM {
-    
+
     protected CM(var arkts_object: JSObject) { }
-    
+
     // 静态成员
     public static mut prop sa: String {
         get() {
@@ -444,9 +444,9 @@ public class CM {
                 ctx: JSContext => getClassConstructorObj("my_module_methods", "CM")["sa"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop ma: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -458,9 +458,9 @@ public class CM {
                 ctx: JSContext => arkts_object["ma"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop mb: EMStr {
         get() {
             checkThreadAndCall < EMStr >(getMainContext()) {
@@ -472,9 +472,9 @@ public class CM {
                 ctx: JSContext => arkts_object["mb"] = v.get().toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop mc: (s: String, n: EMNum) -> Unit {
         get() {
             checkThreadAndCall < (s: String, n: EMNum) -> Unit >(getMainContext()) {
@@ -497,9 +497,9 @@ public class CM {
                 }).toJSValue()
             }
         }
-        
+
     }
-    
+
     /**
 	 * @brief f00(x: (obj: IM, cb: (msg: EMStr) => void) => void): void
 	 */
@@ -599,11 +599,11 @@ public class CM {
     public func f8(callback: AsyncCallback < Bool >, result: string|Promise<String>): Unit {
         jsObjApiCallPromise < Bool >( arkts_object, "f8", callback, { ctx =>[result] })
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): CM {
         CM(input.asObject())
     }
@@ -616,10 +616,10 @@ public class CM {
     }*/
 
 public class Calculator {
-    
+
     protected Calculator(var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief add(x: number, y: number): number
 	 */
@@ -642,11 +642,11 @@ public class Calculator {
             ctx, info => info
         }
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): Calculator {
         Calculator(input.asObject())
     }
@@ -658,9 +658,9 @@ public class Calculator {
     }*/
 
 public class Car {
-    
+
     protected Car(var arkts_object: JSObject) { }
-    
+
     // 只读属性
     public prop brand: String {
         get() {
@@ -669,7 +669,7 @@ public class Car {
             }
         }
     }
-    
+
     public mut prop name: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -681,14 +681,14 @@ public class Car {
                 ctx: JSContext => arkts_object["name"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
-    
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): Car {
         Car(input.asObject())
     }
@@ -700,10 +700,10 @@ public class Car {
     }*/
 
 public class Car1 <: Drivable {
-    
+
     protected Car1(public var arkts_object: JSObject) { super(arkts_object) }
-    
-    
+
+
     /**
 	 * @brief start(): void
 	 */
@@ -716,11 +716,11 @@ public class Car1 <: Drivable {
     public func stop(): Unit {
         jsObjApiCall < Unit >( arkts_object, "stop", emptyArg)
     }
-    
+
     public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public  static func fromJSValue(context: JSContext, input: JSValue): Car1 {
         Car1(input.asObject())
     }
@@ -731,21 +731,21 @@ public class Car1 <: Drivable {
     }*/
 
 public class Dog <: Animal {
-    
+
     protected Dog(public var arkts_object: JSObject) { super(arkts_object) }
-    
-    
+
+
     /**
 	 * @brief bark(): void
 	 */
     public func bark(): Unit {
         jsObjApiCall < Unit >( arkts_object, "bark", emptyArg)
     }
-    
+
     public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public  static func fromJSValue(context: JSContext, input: JSValue): Dog {
         Dog(input.asObject())
     }
@@ -756,7 +756,7 @@ public class Dog <: Animal {
     }*/
 
 public class Greeter {
-    
+
     protected Greeter(var arkts_object: JSObject) { }
     /**
 	 * @brief constructor(greeting: string): void
@@ -775,12 +775,12 @@ public class Greeter {
             clazz.new().asObject()
         }
     }
-    
-    
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): Greeter {
         Greeter(input.asObject())
     }
@@ -792,7 +792,7 @@ public class Greeter {
     }*/
 
 public class MyClass {
-    
+
     protected MyClass(var arkts_object: JSObject) { }
     /**
 	 * @brief constructor(name: string): void
@@ -811,7 +811,7 @@ public class MyClass {
             clazz.new().asObject()
         }
     }
-    
+
     public mut prop name: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -823,14 +823,14 @@ public class MyClass {
                 ctx: JSContext => arkts_object["name"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
-    
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): MyClass {
         MyClass(input.asObject())
     }
@@ -840,15 +840,15 @@ public class MyClass {
     }*/
 
 public class Person {
-    
+
     protected Person(var arkts_object: JSObject) { }
-    
-    
-    
+
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): Person {
         Person(input.asObject())
     }
@@ -862,10 +862,10 @@ public class Person {
     }*/
 
 public class RecordTest {
-    
+
     protected RecordTest(var arkts_object: JSObject) { }
-    
-    
+
+
     public mut prop recordTest: HashMap<String, String> {
         get() {
             checkThreadAndCall < HashMap<String, String> >(getMainContext()) {
@@ -877,9 +877,9 @@ public class RecordTest {
                 ctx: JSContext => arkts_object["recordTest"] = hashmap2Record<String>(ctx, v, { context, i => i.toJSValue(context) })
             }
         }
-        
+
     }
-    
+
     public mut prop recordTest1: HashMap<String, AutoGenType0> {
         get() {
             checkThreadAndCall < HashMap<String, AutoGenType0> >(getMainContext()) {
@@ -891,9 +891,9 @@ public class RecordTest {
                 ctx: JSContext => arkts_object["recordTest1"] = hashmap2Record<AutoGenType0>(ctx, v, { context, i => i.toJSValue(context) })
             }
         }
-        
+
     }
-    
+
     public mut prop recordTest2: Option<HashMap<String, String>> {
         get() {
             checkThreadAndCall < Option<HashMap<String, String>> >(getMainContext()) {
@@ -905,9 +905,9 @@ public class RecordTest {
                 ctx: JSContext => arkts_object["recordTest2"] = hashmap2Record<String>(ctx, v, { context, i => i.toJSValue(context) })
             }
         }
-        
+
     }
-    
+
     public mut prop recordTest3: Option<HashMap<String, AutoGenType0>> {
         get() {
             checkThreadAndCall < Option<HashMap<String, AutoGenType0>> >(getMainContext()) {
@@ -919,14 +919,14 @@ public class RecordTest {
                 ctx: JSContext => arkts_object["recordTest3"] = hashmap2Record<AutoGenType0>(ctx, v, { context, i => i.toJSValue(context) })
             }
         }
-        
+
     }
-    
-    
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): RecordTest {
         RecordTest(input.asObject())
     }
@@ -937,10 +937,10 @@ public class RecordTest {
     }*/
 
 public open class Shape {
-    
+
     protected Shape(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief getArea(): number
 	 */
@@ -948,11 +948,11 @@ public open class Shape {
     public func getArea(): Float64 {
         jsObjApiCall < Float64 >( arkts_object, "getArea", emptyArg)
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): Shape {
         Shape(input.asObject())
     }
@@ -965,7 +965,7 @@ public open class Shape {
     }*/
 
 public class TE {
-    
+
     protected TE(var arkts_object: JSObject) { }
     /**
   * @brief constructor(callback:AsyncCallback<string>, param1?:Array<UInt8>, param2?:Array<string>): void
@@ -984,7 +984,7 @@ public class TE {
             clazz.new().asObject()
         }
     }
-    
+
     /**
 	 * @brief f1(): void
 	 */
@@ -1007,11 +1007,11 @@ public class TE {
             ctx, info => info
         }
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): TE {
         TE(input.asObject())
     }
@@ -1024,10 +1024,10 @@ public class TE {
     }*/
 
 public class UMConfig {
-    
+
     protected UMConfig(var arkts_object: JSObject) { }
-    
-    
+
+
     public mut prop appKey: ?String {
         get() {
             checkThreadAndCall < ?String >(getMainContext()) {
@@ -1039,9 +1039,9 @@ public class UMConfig {
                 ctx: JSContext => arkts_object["appKey"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop channel: ?String {
         get() {
             checkThreadAndCall < ?String >(getMainContext()) {
@@ -1053,9 +1053,9 @@ public class UMConfig {
                 ctx: JSContext => arkts_object["channel"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop enableLog: ?Bool {
         get() {
             checkThreadAndCall < ?Bool >(getMainContext()) {
@@ -1067,14 +1067,14 @@ public class UMConfig {
                 ctx: JSContext => arkts_object["enableLog"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
-    
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): UMConfig {
         UMConfig(input.asObject())
     }
@@ -1259,5 +1259,3 @@ public func RecordTest2(eventID: String, params: HashMap<String, Float64>, param
 public func RecordAndOptionalTest3(eventID: String, params: Option<HashMap<String, JSValue/* FIXME: `string | number` */>>, params1: Option<HashMap<String, JSValue/* FIXME: `string | number` */>>): Unit {
     hmsGlobalApiCall < Unit >( "my_module_methods", "RecordAndOptionalTest3", { ctx =>[eventID.toJSValue(ctx), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params, { context, i => i.toJSValue(context) }), hashmap2Record<JSValue/* FIXME: `string | number` */>(ctx, params1, { context, i => i.toJSValue(context) })] })
 }
-
-

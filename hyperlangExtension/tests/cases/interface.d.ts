@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -64,7 +64,7 @@ interface ClockConstructor {
 
 export interface IWBAPI {
     authorize(context: common.UIAbilityContext, listener: WbASListener ): void
-    
+
     authorizeClient(context: Context, listener: WbASListener): void
 
     authorizeClient(context: BaseContext, listener: WbASListener): void
@@ -74,7 +74,7 @@ export interface IWBAPI {
 
 interface UnionInterface {
     foo(a: string|null): null | string;
-    goo(b: undefined | string): string | undefined;    
+    goo(b: undefined | string): string | undefined;
 }
 
 export interface LoggerAdapter {

@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -19,18 +19,18 @@ import std.collection.{ HashMap }
     }*/
 
 public open class AutoGenType0 {
-    
+
     protected AutoGenType0(public var city: String,
     public var zipCode: String) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["city"] = city.toJSValue(context)
         obj["zipCode"] = zipCode.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType0 {
         let obj = input.asObject()
         AutoGenType0(
@@ -38,7 +38,7 @@ public open class AutoGenType0 {
         String.fromJSValue(context, obj["zipCode"])
         )
     }
-    
+
 }
 /***********OBJECT***********/
 // 函数重载
@@ -48,10 +48,10 @@ public open class AutoGenType0 {
     }*/
 
 public open class Calculator {
-    
+
     protected Calculator(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief add(x: number, y: number): number
 	 */
@@ -64,11 +64,11 @@ public open class Calculator {
     public func add(x: String, y: String): String {
         jsObjApiCall < String >( arkts_object, "add", { ctx =>[x.toJSValue(ctx), y.toJSValue(ctx)] })
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): Calculator {
         Calculator(input.asObject())
     }
@@ -79,15 +79,15 @@ public open class Calculator {
     }*/
 
 public open class Callback1 {
-    
+
     protected Callback1(public var arkts_object: JSObject) { }
-    
-    
-    
+
+
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): Callback1 {
         Callback1(input.asObject())
     }
@@ -97,23 +97,23 @@ public open class Callback1 {
     }*/
 
 public open class ClockConstructor {
-    
+
     protected ClockConstructor() { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
-        
+
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): ClockConstructor {
         let obj = input.asObject()
         ClockConstructor(
-        
+
         )
     }
-    
+
 }
 // 动态属性
 /*interface Config {
@@ -121,15 +121,15 @@ public open class ClockConstructor {
     }*/
 
 public open class Config {
-    
+
     protected Config(public var arkts_object: JSObject) { }
-    
-    
-    
+
+
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): Config {
         Config(input.asObject())
     }
@@ -140,15 +140,15 @@ public open class Config {
     }*/
 
 public open class Dictionary {
-    
+
     protected Dictionary(public var arkts_object: JSObject) { }
-    
-    
-    
+
+
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): Dictionary {
         Dictionary(input.asObject())
     }
@@ -162,10 +162,10 @@ public open class Dictionary {
     }*/
 
 public open class IWBAPI {
-    
+
     protected IWBAPI(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief authorize(context: common.UIAbilityContext, listener: WbASListener): void
 	 */
@@ -190,11 +190,11 @@ public open class IWBAPI {
     public func authorizeClient(context: JSValue/* FIXME: `JSValue/* FIXME: `common.Context` */` */, listener: JSValue/* FIXME: `WbASListener` */): Unit {
         jsObjApiCall < Unit >( arkts_object, "authorizeClient", { ctx =>[context, listener] })
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): IWBAPI {
         IWBAPI(input.asObject())
     }
@@ -206,23 +206,23 @@ public open class IWBAPI {
     }*/
 
 public open class List {
-    
+
     protected List(private var items: Array<String>) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["items"] = toJSArray < String >(context, items)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): List {
         let obj = input.asObject()
         List(
         fromJSArray < String >(context, obj["items"])
         )
     }
-    
+
 }
 
 /*interface ExportKeyword LoggerAdapter {
@@ -233,10 +233,10 @@ public open class List {
     }*/
 
 public open class LoggerAdapter {
-    
+
     protected LoggerAdapter(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief setColorLevel(level: LogLevel): void
 	 */
@@ -267,11 +267,11 @@ public open class LoggerAdapter {
             }
         }
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): LoggerAdapter {
         LoggerAdapter(input.asObject())
     }
@@ -284,10 +284,10 @@ public open class LoggerAdapter {
     }*/
 
 public open class Person {
-    
+
     protected Person(public var arkts_object: JSObject) { }
-    
-    
+
+
     public mut prop name: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -299,20 +299,20 @@ public open class Person {
                 ctx: JSContext => arkts_object["name"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     /**
 	 * @brief greet(): String
 	 */
     public func greet(): String {
         jsObjApiCall < String >( arkts_object, "greet", emptyArg)
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): Person {
         Person(input.asObject())
     }
@@ -324,10 +324,10 @@ public open class Person {
     }*/
 
 public open class PluginContainer {
-    
+
     protected PluginContainer(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief registryPlugin(plugin: BasePlugin, cfg: UMConfig): BasePlugin
 	 */
@@ -344,11 +344,11 @@ public open class PluginContainer {
             ctx, info => Option<BasePlugin>.fromJSValue(ctx, info)
         }
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): PluginContainer {
         PluginContainer(input.asObject())
     }
@@ -360,18 +360,18 @@ public open class PluginContainer {
     }*/
 
 public open class Point {
-    
+
     protected Point(private let x: Float64,
     private let y: Float64) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["x"] = x.toJSValue(context)
         obj["y"] = y.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): Point {
         let obj = input.asObject()
         Point(
@@ -379,7 +379,7 @@ public open class Point {
         Float64.fromJSValue(context, obj["y"])
         )
     }
-    
+
 }
 // 可选属性
 /*interface Product {
@@ -387,10 +387,10 @@ public open class Point {
     }*/
 
 public open class Product {
-    
+
     protected Product(private var price!: Option<Float64> = None) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         if(let Some(v) <- price) {
@@ -398,14 +398,14 @@ public open class Product {
         }
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): Product {
         let obj = input.asObject()
         Product(
         price: Option < Float64 >.fromJSValue(context, obj["price"])
         )
     }
-    
+
 }
 
 /*interface UnionInterface {
@@ -414,10 +414,10 @@ public open class Product {
     }*/
 
 public open class UnionInterface {
-    
+
     protected UnionInterface(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief foo(a: string|null): null | String
 	 */
@@ -434,11 +434,11 @@ public open class UnionInterface {
             ctx, info => Option<String>.fromJSValue(ctx, info)
         }
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): UnionInterface {
         UnionInterface(input.asObject())
     }
@@ -454,12 +454,12 @@ public open class UnionInterface {
     }*/
 
 public open class UserProfile {
-    
+
     protected UserProfile(private var id: Float64,
     private var name: String,
     private var address: AutoGenType0) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["id"] = id.toJSValue(context)
@@ -467,7 +467,7 @@ public open class UserProfile {
         obj["address"] = address.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): UserProfile {
         let obj = input.asObject()
         UserProfile(
@@ -476,7 +476,7 @@ public open class UserProfile {
         AutoGenType0.fromJSValue(context, obj["address"])
         )
     }
-    
+
 }
 
 /*class ExportKeyword DeclareKeyword FirstContextualKeyword BasePlugin {
@@ -496,7 +496,7 @@ public open class UserProfile {
     }*/
 
 public open class BasePlugin {
-    
+
     protected BasePlugin(public var arkts_object: JSObject) { }
     /**
 	 * @brief constructor(d12: Biz_Type): void
@@ -515,7 +515,7 @@ public open class BasePlugin {
             clazz.new().asObject()
         }
     }
-    
+
     public mut prop pluginVersion: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -527,9 +527,9 @@ public open class BasePlugin {
                 ctx: JSContext => arkts_object["pluginVersion"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop pluginId: JSValue/* FIXME: `Biz_Type` */ {
         get() {
             checkThreadAndCall < JSValue/* FIXME: `Biz_Type` */ >(getMainContext()) {
@@ -541,9 +541,9 @@ public open class BasePlugin {
                 ctx: JSContext => arkts_object["pluginId"] = v
             }
         }
-        
+
     }
-    
+
     public mut prop alias: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -555,9 +555,9 @@ public open class BasePlugin {
                 ctx: JSContext => arkts_object["alias"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop alias_h: String {
         get() {
             checkThreadAndCall < String >(getMainContext()) {
@@ -569,9 +569,9 @@ public open class BasePlugin {
                 ctx: JSContext => arkts_object["alias_h"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop cfg: UMConfig {
         get() {
             checkThreadAndCall < UMConfig >(getMainContext()) {
@@ -583,9 +583,9 @@ public open class BasePlugin {
                 ctx: JSContext => arkts_object["cfg"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     public mut prop plugins: PluginContainer {
         get() {
             checkThreadAndCall < PluginContainer >(getMainContext()) {
@@ -597,9 +597,9 @@ public open class BasePlugin {
                 ctx: JSContext => arkts_object["plugins"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     /**
 	 * @brief getPluginId(): Biz_Type
 	 */
@@ -642,11 +642,11 @@ public open class BasePlugin {
             ctx, info => info
         }
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): BasePlugin {
         BasePlugin(input.asObject())
     }
@@ -660,7 +660,7 @@ public open class BasePlugin {
     }*/
 
 public class DefaultPluginContainer <: PluginContainer {
-    
+
     protected DefaultPluginContainer(public var arkts_object: JSObject) { super(arkts_object) }
     /**
 	 * @brief constructor(): void
@@ -672,7 +672,7 @@ public class DefaultPluginContainer <: PluginContainer {
             clazz.new().asObject()
         }
     }
-    
+
     public prop _pluginMap: Array<BasePlugin> {
         get() {
             checkThreadAndCall < Array<BasePlugin> >(getMainContext()) {
@@ -680,7 +680,7 @@ public class DefaultPluginContainer <: PluginContainer {
             }
         }
     }
-    
+
     /**
 	 * @brief registryPlugin(g12: BasePlugin, h12: UMConfig): BasePlugin
 	 */
@@ -697,13 +697,12 @@ public class DefaultPluginContainer <: PluginContainer {
             ctx, info => Option<BasePlugin>.fromJSValue(ctx, info)
         }
     }
-    
+
     public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public  static func fromJSValue(context: JSContext, input: JSValue): DefaultPluginContainer {
         DefaultPluginContainer(input.asObject())
     }
 }
-

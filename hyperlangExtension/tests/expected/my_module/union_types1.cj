@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -13,7 +13,7 @@ import ohos.base.*
 public enum AutoGenType0 {
     | BOOLEAN(Bool)
     | STRING(String)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case BOOLEAN(x) => context.boolean(x).toJSValue()
@@ -21,10 +21,10 @@ public enum AutoGenType0 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType0 {
-        
+
         if (input.isBoolean()) {
             return BOOLEAN(Bool.fromJSValue(context, input))
-        } 
+        }
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
         }
@@ -35,7 +35,7 @@ public enum AutoGenType0 {
 public enum AutoGenType1 {
     | STRING(String)
     | NUMBER(Float64)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case STRING(x) => context.string(x).toJSValue()
@@ -43,13 +43,13 @@ public enum AutoGenType1 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType1 {
-        
+
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
-        } 
+        }
         if(input.isNumber()) {
             return NUMBER(Float64.fromJSValue(context, input))
-        } 
+        }
         throw Exception("unsupport type!")
     }
 }
@@ -58,7 +58,7 @@ public enum AutoGenType1 {
 public enum a1 {
     | STRING(String)
     | NUMBER(Float64)
-    
+
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
             case STRING(x) => context.string(x).toJSValue()
@@ -66,13 +66,13 @@ public enum a1 {
         }
     }
     public static func fromJSValue(context: JSContext, input: JSValue): a1 {
-        
+
         if(input.isString()) {
             return STRING(String.fromJSValue(context, input))
-        } 
+        }
         if(input.isNumber()) {
             return NUMBER(Float64.fromJSValue(context, input))
-        } 
+        }
         throw Exception("unsupport type!")
     }
 }
@@ -87,10 +87,10 @@ public enum a1 {
     }*/
 
 public class A {
-    
+
     protected A(var arkts_object: JSObject) { }
-    
-    
+
+
     public mut prop a: a1 {
         get() {
             checkThreadAndCall < a1 >(getMainContext()) {
@@ -102,7 +102,7 @@ public class A {
                 ctx: JSContext => arkts_object["a"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
     // property
     public mut prop b: AutoGenType0 {
@@ -116,9 +116,9 @@ public class A {
                 ctx: JSContext => arkts_object["b"] = v.toJSValue(ctx)
             }
         }
-        
+
     }
-    
+
     /**
 	 * @brief test1(a:a1): String|number
 	 */
@@ -140,11 +140,11 @@ public class A {
     public func test2(a: Float64): Float64 {
         jsObjApiCall < Float64 >( arkts_object, "test2", { ctx =>[a.toJSValue(ctx)] })
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): A {
         A(input.asObject())
     }
@@ -160,5 +160,3 @@ public func test(a: a1): AutoGenType1 {
         ctx, info => AutoGenType1.fromJSValue(ctx, info)
     }
 }
-
-

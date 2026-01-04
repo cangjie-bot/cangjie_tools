@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -24,5 +24,3 @@ public func compress1(src: Array<UInt8>, maxSize!: Option < Float64 >= None): Ar
 public func compress1(src: Array<Float64>, maxSize!: Option < Float64 >= None): Array<UInt8> {
     hmsGlobalApiCall < Array<UInt8> >( "my_module_Index", "compress1", { ctx =>[toJSArray < Float64 >(ctx, src), maxSize.toJSValue(ctx)] })
 }
-
-

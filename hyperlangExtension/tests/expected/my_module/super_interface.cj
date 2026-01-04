@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -21,10 +21,10 @@ import ohos.base.*
     }*/
 
 public open class p29 {
-    
+
     protected p29(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief debug(arg: string): void
 	 */
@@ -55,13 +55,12 @@ public open class p29 {
     public func fatal(arg: String): Unit {
         jsObjApiCall < Unit >( arkts_object, "fatal", { ctx =>[arg.toJSValue(ctx)] })
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): p29 {
         p29(input.asObject())
     }
 }
-

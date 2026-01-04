@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -26,10 +26,10 @@ public const when = 0/* FIXME: Initialization is required */
     }*/
 
 public open class VerificationMode {
-    
+
     protected VerificationMode(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief times(count: Number): void
 	 */
@@ -60,11 +60,11 @@ public open class VerificationMode {
     public func atMost(count: JSValue/* FIXME: `Number` */): Unit {
         jsObjApiCall < Unit >( arkts_object, "atMost", { ctx =>[count] })
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): VerificationMode {
         VerificationMode(input.asObject())
     }
@@ -79,10 +79,10 @@ public open class VerificationMode {
     }*/
 
 public open class when {
-    
+
     protected when(public var arkts_object: JSObject) { }
-    
-    
+
+
     /**
 	 * @brief afterReturn(value: any): any
 	 */
@@ -113,11 +113,11 @@ public open class when {
     public func afterThrow(e_msg: String): String {
         jsObjApiCall < String >( arkts_object, "afterThrow", { ctx =>[e_msg.toJSValue(ctx)] })
     }
-    
+
     public open func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
     public open  static func fromJSValue(context: JSContext, input: JSValue): when {
         when(input.asObject())
     }
@@ -134,10 +134,10 @@ public open class when {
     }*/
 
 public class ArgumentMatchers {
-    
+
     protected ArgumentMatchers(var arkts_object: JSObject) { }
-    
-    
+
+
     public static mut prop any: JSValue/* FIXME: `UnsupportedType[FirstToken]` */ {
         get() {
             checkThreadAndCall < JSValue/* FIXME: `UnsupportedType[FirstToken]` */ >(getMainContext()) {
@@ -149,9 +149,9 @@ public class ArgumentMatchers {
                 ctx: JSContext => getClassConstructorObj("my_module_callSignature", "ArgumentMatchers")["any"] = v
             }
         }
-        
+
     }
-    
+
     public static mut prop anyString: JSValue/* FIXME: `UnsupportedType[FirstToken]` */ {
         get() {
             checkThreadAndCall < JSValue/* FIXME: `UnsupportedType[FirstToken]` */ >(getMainContext()) {
@@ -163,9 +163,9 @@ public class ArgumentMatchers {
                 ctx: JSContext => getClassConstructorObj("my_module_callSignature", "ArgumentMatchers")["anyString"] = v
             }
         }
-        
+
     }
-    
+
     public static mut prop anyBoolean: JSValue/* FIXME: `UnsupportedType[FirstToken]` */ {
         get() {
             checkThreadAndCall < JSValue/* FIXME: `UnsupportedType[FirstToken]` */ >(getMainContext()) {
@@ -177,9 +177,9 @@ public class ArgumentMatchers {
                 ctx: JSContext => getClassConstructorObj("my_module_callSignature", "ArgumentMatchers")["anyBoolean"] = v
             }
         }
-        
+
     }
-    
+
     public static mut prop anyNumber: JSValue/* FIXME: `UnsupportedType[FirstToken]` */ {
         get() {
             checkThreadAndCall < JSValue/* FIXME: `UnsupportedType[FirstToken]` */ >(getMainContext()) {
@@ -191,9 +191,9 @@ public class ArgumentMatchers {
                 ctx: JSContext => getClassConstructorObj("my_module_callSignature", "ArgumentMatchers")["anyNumber"] = v
             }
         }
-        
+
     }
-    
+
     public static mut prop anyObj: JSValue/* FIXME: `UnsupportedType[FirstToken]` */ {
         get() {
             checkThreadAndCall < JSValue/* FIXME: `UnsupportedType[FirstToken]` */ >(getMainContext()) {
@@ -205,9 +205,9 @@ public class ArgumentMatchers {
                 ctx: JSContext => getClassConstructorObj("my_module_callSignature", "ArgumentMatchers")["anyObj"] = v
             }
         }
-        
+
     }
-    
+
     public static mut prop anyFunction: JSValue/* FIXME: `UnsupportedType[FirstToken]` */ {
         get() {
             checkThreadAndCall < JSValue/* FIXME: `UnsupportedType[FirstToken]` */ >(getMainContext()) {
@@ -219,20 +219,20 @@ public class ArgumentMatchers {
                 ctx: JSContext => getClassConstructorObj("my_module_callSignature", "ArgumentMatchers")["anyFunction"] = v
             }
         }
-        
+
     }
-    
+
     /**
 	 * @brief matchRegexs(Regex: RegExp): void
 	 */
     public static func matchRegexs(Regex: JSValue/* FIXME: `RegExp` */): Unit {
         jsObjApiCall < Unit >(getClassConstructorObj("my_module_callSignature", "ArgumentMatchers"),  "matchRegexs", { ctx =>[Regex] })
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): ArgumentMatchers {
         ArgumentMatchers(input.asObject())
     }
@@ -249,7 +249,7 @@ public class ArgumentMatchers {
     }*/
 
 public class MockKit {
-    
+
     protected MockKit(var arkts_object: JSObject) { }
     /**
 	 * @brief constructor(): void
@@ -261,7 +261,7 @@ public class MockKit {
             clazz.new().asObject()
         }
     }
-    
+
     /**
 	 * @brief mockFunc(obj: Object, func: Function): Function
 	 */
@@ -304,11 +304,11 @@ public class MockKit {
     public func clearAll(): Unit {
         jsObjApiCall < Unit >( arkts_object, "clearAll", emptyArg)
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): MockKit {
         MockKit(input.asObject())
     }
@@ -328,5 +328,3 @@ public func MockSetup(target: JSValue/* FIXME: `Object` */, propertyName: String
 public func MockSetup(target: JSValue/* FIXME: `Object` */, propertyName: JSValue/* FIXME: `Symbol` */, descriptor: TypedPropertyDescriptor<() -> Unit>): Unit {
     hmsGlobalApiCall < Unit >( "my_module_callSignature", "MockSetup", { ctx =>[target, propertyName, descriptor.toJSValue(ctx)] })
 }
-
-

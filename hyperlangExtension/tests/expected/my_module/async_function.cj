@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -18,18 +18,18 @@ import tpc.AbilityKit.common
     }*/
 
 public open class AutoGenType0 {
-    
+
     protected AutoGenType0(public var a: Float64,
     public var b: String) { }
-    
-    
+
+
     public open func toJSValue(context: JSContext): JSValue {
         let obj = context.object()
         obj["a"] = a.toJSValue(context)
         obj["b"] = b.toJSValue(context)
         obj.toJSValue()
     }
-    
+
     public static func fromJSValue(context: JSContext, input: JSValue): AutoGenType0 {
         let obj = input.asObject()
         AutoGenType0(
@@ -37,7 +37,7 @@ public open class AutoGenType0 {
         String.fromJSValue(context, obj["b"])
         )
     }
-    
+
 }
 /***********ENUM***********/
 
@@ -49,36 +49,36 @@ public open class AutoGenType0 {
 public enum Colors <: ToString & Equatable < Colors > {
     | Red
     | Green
-    | Blue 
+    | Blue
 
     func get(): String {
         match(this) {
-            case Red => "RED" 
-            case Green => "GREEN" 
-            case Blue => "BLUE" 
+            case Red => "RED"
+            case Green => "GREEN"
+            case Blue => "BLUE"
         }
     }
-    
+
     static func parse(val: String): Colors {
         match(val) {
-            case "RED" => Red 
-            case "GREEN" => Green 
-            case "BLUE" => Blue 
+            case "RED" => Red
+            case "GREEN" => Green
+            case "BLUE" => Blue
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
-    
+
     static func tryParse(val: ?String): ?Colors {
         match(val) {
             case Some(v) => parse(v)
             case None => None
         }
     }
-    
+
     public func toString(): String {
         get()
     }
-    
+
     public override operator func ==(that: Colors): Bool {
         match((this, that)) {
             case(Red, Red) => true
@@ -87,7 +87,7 @@ public enum Colors <: ToString & Equatable < Colors > {
             case _ => false
         }
     }
-    
+
     public override operator func !=(that: Colors): Bool {
         !(this == that)
     }
@@ -101,7 +101,7 @@ public enum Colors <: ToString & Equatable < Colors > {
     }*/
 
 public class ASC {
-    
+
     protected ASC(var arkts_object: JSObject) { }
     /**
 	 * @brief constructor(param1:string, param2:{a:number,b:string}, param3:number, funcParam:()=>string, callback?:AsyncCallback<string>): void
@@ -120,7 +120,7 @@ public class ASC {
             clazz.new().asObject()
         }
     }
-    
+
     /**
 	 * @brief AS1(callback:AsyncCallback<void>): void
 	 */
@@ -129,11 +129,11 @@ public class ASC {
         let jsCallback = asyncCallbackWrapper < Unit >(ctx, callback)
         jsObjApiCall < Unit >(getClassConstructorObj("my_module_asyncFunction", "ASC"),  "AS1", { ctx =>[callback.toJSValue(ctx)] })
     }
-    
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): ASC {
         ASC(input.asObject())
     }
@@ -144,7 +144,7 @@ public class ASC {
     }*/
 
 public class ForParamToJs {
-    
+
     protected ForParamToJs(var arkts_object: JSObject) { }
     /**
 	 * @brief constructor(param1:common.Context, param2:Colors, param3:BigInt, param4:Uint8Array, param5:number[], param6:Array<number>, callback:AsyncCallback<string>, paramEnum:Array<Colors>, param7?:Array<number>, param8?:Colors, param9?:Array<UInt8>): void
@@ -163,12 +163,12 @@ public class ForParamToJs {
             clazz.new().asObject()
         }
     }
-    
-    
+
+
     func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
-    
+
      static func fromJSValue(context: JSContext, input: JSValue): ForParamToJs {
         ForParamToJs(input.asObject())
     }
@@ -238,5 +238,3 @@ public func as6(callback: AsyncCallback<Array<UInt8>>): Unit {
     let jsCallback = asyncCallbackWrapper < Array<UInt8> >(ctx, callback)
     hmsGlobalApiCall < Unit >( "my_module_asyncFunction", "as6", { ctx =>[callback.toJSValue(ctx)] })
 }
-
-
