@@ -8,6 +8,7 @@ package cjpm.implement
 
 import std.collection.*
 import std.fs.*
+import std.env.*
 import cjpm.config.*
 import cjpm.util.Result
 
@@ -35,7 +36,7 @@ public func makeScriptConfigByToml(rootPath: String, modulePath: String, tomlInf
             return scriptConfig
         }
     }
-    
+
     let (flag, errlog) = tomlInfo.isCompatible()
     if (!flag) {
         eprintln("Error: ${errlog} at ${Path(modulePath).join(CONFIG_FILE_NAME).toString()}")
@@ -330,16 +331,10 @@ func getScriptDepLink(modulePath: String, buildConfig: BuildConfig): Option<Arra
 }
 
 func getEnvMap(ldPath: HashSet<String>): HashMap<String, String> {
-    let ldPathString: String = getNativeLdLibraryConfig(ldPath)
-    let envs: HashMap<String, String> = HashMap<String, String>()
-    if (!LD_PATH.isEmpty() && !ldPathString.isEmpty()) {
-        envs.add(LD_PATH, ldPathString)
-        if (LD_PATH == "Path") {
-            envs.add("PATH", ldPathString)
-            envs.add("path", ldPathString)
-        }
-    }
-    return envs
+    let envBuilder = EnvironmentBuilder()
+    envBuilder.prepend(LD_PATH, ldPath)
+    envBuilder.prepend(LD_PATH, getExtraRuntimePaths())
+    return envBuilder.asCliStrings(getVariables())
 }
 
 func getCompileArgs(scriptConfig: ScriptConfig, buildConfig: BuildConfig): Option<(HashMap<String, String>, ArrayList<String>)> {
