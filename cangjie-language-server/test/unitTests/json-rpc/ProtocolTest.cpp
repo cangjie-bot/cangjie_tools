@@ -2378,3 +2378,96 @@ TEST_F(ProtocolTest, FromJSON_UnicodeCharacters) {
     EXPECT_EQ(reply.textDocument.uri.file, "file:///测试.cj");
     EXPECT_EQ(reply.textDocument.text, "中文测试 🚀");
 }
+
+// Case: textDocument is not an object
+TEST_F(ProtocolTest, FromJSON_DidOpen_NotObject) {
+    json params = R"({"textDocument": []})"_json;
+    DidOpenTextDocumentParams reply;
+    EXPECT_FALSE(FromJSON(params, reply));
+}
+
+// Case: textDocument fields are null (covers 4 sub-conditions)
+TEST_F(ProtocolTest, FromJSON_DidOpen_NullFields) {
+    DidOpenTextDocumentParams reply;
+    // uri is null
+    EXPECT_FALSE(FromJSON(R"({"textDocument": {"uri":null, "languageId":"Cangjie", "version":1, "text":""}})"_json, reply));
+    // languageId is null
+    EXPECT_FALSE(FromJSON(R"({"textDocument": {"uri":"a", "languageId":null, "version":1, "text":""}})"_json, reply));
+    // version is null
+    EXPECT_FALSE(FromJSON(R"({"textDocument": {"uri":"a", "languageId":"Cangjie", "version":null, "text":""}})"_json, reply));
+    // text is null
+    EXPECT_FALSE(FromJSON(R"({"textDocument": {"uri":"a", "languageId":"Cangjie", "version":1, "text":null}})"_json, reply));
+}
+
+// Case: languageId is not "Cangjie"
+TEST_F(ProtocolTest, FromJSON_DidOpen_WrongLanguage) {
+    json params = R"({"textDocument": {"uri":"a", "languageId":"java", "version":1, "text":""}})"_json;
+    DidOpenTextDocumentParams reply;
+    EXPECT_FALSE(FromJSON(params, reply));
+}
+
+// Case: position is not object, or fields are null
+TEST_F(ProtocolTest, FromJSON_Position_Invalid) {
+    TextDocumentPositionParams reply;
+    // position is not object
+    EXPECT_FALSE(FromJSON(R"({"textDocument":{"uri":"a"}, "position":123})"_json, reply));
+    // line is null
+    EXPECT_FALSE(FromJSON(R"({"textDocument":{"uri":"a"}, "position":{"line":null, "character":1}})"_json, reply));
+    // character is null
+    EXPECT_FALSE(FromJSON(R"({"textDocument":{"uri":"a"}, "position":{"line":1, "character":null}})"_json, reply));
+}
+
+// Case: triggerKind out of range (TriggerKind::INVOKED = 1, END = 3)
+TEST_F(ProtocolTest, FromJSON_SignatureHelpContext_Range) {
+    SignatureHelpContext reply;
+    // Less than INVOKED
+    EXPECT_FALSE(FromJSON(R"({"triggerKind": 0})"_json, reply));
+    // Greater than or equal to END
+    EXPECT_FALSE(FromJSON(R"({"triggerKind": 3})"_json, reply));
+    // Not an integer
+    EXPECT_FALSE(FromJSON(R"({"triggerKind": "1"})"_json, reply));
+}
+
+// Case: Missing capabilities or nested fields
+TEST_F(ProtocolTest, FromJSON_Initialize_MissingFields) {
+    InitializeParams reply;
+    // Missing capabilities
+    EXPECT_FALSE(FromJSON(R"({"rootUri":"a"})"_json, reply));
+
+    // capabilities.textDocument is null/missing
+    EXPECT_FALSE(FromJSON(R"({"rootUri":"a", "capabilities":{"textDocument":null}})"_json, reply));
+
+    // completion is present but completionItem is null (FetchTextDocument internal)
+    json js = R"({
+        "rootUri":"a",
+        "capabilities":{
+            "textDocument":{
+                "completion":{"completionItem": null}
+            }
+        }
+    })"_json;
+    EXPECT_FALSE(FromJSON(js, reply));
+}
+
+// Case: contentChanges is empty
+TEST_F(ProtocolTest, FromJSON_DidChange_EmptyChanges) {
+    json params = R"({
+        "textDocument": {"uri":"a", "version":1},
+        "contentChanges": []
+    })"_json;
+    DidChangeTextDocumentParams reply;
+    // The code returns !reply.contentChanges.empty(), so empty should be false
+    EXPECT_FALSE(FromJSON(params, reply));
+}
+
+// Case: Sub-parsing failure (selectedElement)
+TEST_F(ProtocolTest, FromJSON_FileRefactor_SubFailure) {
+    FileRefactorReqParams reply;
+    json params = R"({
+        "file": "a.cj",
+        "targetPath": "b.cj",
+        "selectedElement": null
+    })"_json;
+    // If FromJSON(params["selectedElement"], ...) fails, it returns false
+    EXPECT_FALSE(FromJSON(params, reply));
+}
