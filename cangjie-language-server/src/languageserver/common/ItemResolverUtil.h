@@ -64,13 +64,12 @@ public:
     static void DealTypeDetail(std::string &detail, Ptr<Cangjie::AST::Type> type, const std::string &filePath,
         Cangjie::SourceManager *sourceManager = nullptr);
 
-    static void ResolveFuncTypeParamSignature(std::string &detail,
-        const std::vector<OwnedPtr<Cangjie::AST::Type>> &paramTypes,
-        Cangjie::SourceManager *sourceManager, const std::string &filePath, bool needLastParam = true);
+    static void ResolveFuncTypeParamSignature(std::string &detail, const Cangjie::AST::VarDecl *paramFuncType,
+        Cangjie::SourceManager *sourceManager, const std::string &filePath, bool needLastParam = true, bool needRetType = true);
 
-    static void ResolveFuncTypeParamInsert(std::string &detail,
-        const std::vector<OwnedPtr<Cangjie::AST::Type>> &paramTypes, Cangjie::SourceManager *sourceManager,
-        const std::string &filePath, int &numParm, bool needLastParam = true, bool needDefaultParamName = false);
+    static void ResolveFuncTypeParamInsert(std::string &detail, const Cangjie::AST::VarDecl *paramFuncType,
+        Cangjie::SourceManager *sourceManager, const std::string &filePath, int &numParm, bool needLastParam = true,
+        bool needDefaultParamName = false, bool needRetType = true);
 
     static std::string ResolveFollowLambdaSignature(const Cangjie::AST::Node &node,
         Cangjie::SourceManager *sourceManager = nullptr, const std::string &initFuncReplace = "");
@@ -136,6 +135,20 @@ private:
                                          bool isCompletionInsert = false,
                                          bool isAfterAT = false);
 
+    static void HandleFuncTypeSignature(std::string &detail, const Cangjie::AST::FuncType *funcType,
+        Cangjie::SourceManager *sourceManager, const std::string &filePath,
+        bool needLastParam = true, bool needRetType = true);
+
+    static void HandleFuncTySignature(
+        std::string &detail, const Cangjie::AST::FuncTy *funcTy, bool needLastParam = true, bool needRetType = true);
+
+    static void HandleFuncTypeInsert(std::string &detail, const Cangjie::AST::FuncType *funcType,
+        Cangjie::SourceManager *sourceManager, const std::string &filePath, int &numParm, bool needLastParam = true,
+        bool needDefaultParamName = false, bool needRetType = true);
+
+    static void HandleFuncTyInsert(std::string &detail, const Cangjie::AST::FuncTy *funcTy, int &numParm,
+        bool needLastParam = true, bool needDefaultParamName = false, bool needRetType = true);
+
     template<typename T>
     static void ResolveFuncLikeDeclInsert(std::string &detail,
                                           const T &decl,
@@ -157,14 +170,17 @@ private:
     template<typename T> static void ResolveFollowLambdaFuncSignature(std::string &detail, const T &decl,
         Cangjie::SourceManager *sourceManager = nullptr, const std::string &initFuncReplace = "");
 
-    static void ResolveFollowLambdaVarSignature(std::string &detail, const Cangjie::AST::VarDecl &decl,
-        Cangjie::SourceManager *sourceManager = nullptr, const std::string &initFuncReplace = "");
-
     template<typename T> static void ResolveFollowLambdaFuncInsert(std::string &detail, const T &decl,
         Cangjie::SourceManager *sourceManager = nullptr, const std::string &initFuncReplace = "");
 
-    static void ResolveFollowLambdaVarInsert(std::string &detail, const Cangjie::AST::VarDecl &decl,
-        Cangjie::SourceManager *sourceManager = nullptr, const std::string &initFuncReplace = "");
+    static void ResolveFollowLambdaVarDetail(std::string &detail, const Cangjie::AST::VarDecl &decl,
+        Cangjie::SourceManager *sourceManager, bool isSignature);
+
+    static void HandleFollowLambdaVarType(std::string &detail, const Cangjie::AST::VarDecl &decl,
+        Cangjie::SourceManager *sourceManager, const std::string &filePath, bool isSignature);
+
+    static void HandleFollowLambdaVarTy(std::string &detail, const Cangjie::AST::VarDecl &decl,
+        Cangjie::SourceManager *sourceManager, const std::string &filePath, bool isSignature);
 
     static const int detailMaxLen = 256;
 
@@ -174,7 +190,7 @@ private:
     static void GetFuncNamedParam(std::string &detail, Cangjie::SourceManager *sourceManager,
         const std::string &filePath, const OwnedPtr<Cangjie::AST::FuncParam> &param);
 
-    template<typename T> static void DealEmptyParamFollowLambda(const T &decl,
+    template<typename T> static void ResolveParamBeforeFollowLambda(const T &decl,
         Cangjie::SourceManager *sourceManager, OwnedPtr<Cangjie::AST::FuncParamList> &paramList, std::string &signature,
         const std::string &myFilePath);
 };

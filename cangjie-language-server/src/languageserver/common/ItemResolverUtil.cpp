@@ -939,22 +939,42 @@ void ItemResolverUtil::ResolveMacroDeclSignature(std::string &detail, const Cang
 }
 
 void ItemResolverUtil::ResolveFuncTypeParamSignature(std::string &detail,
-                                                     const std::vector<OwnedPtr<Cangjie::AST::Type>> &paramTypes,
+                                                     const Cangjie::AST::VarDecl *paramFuncType,
                                                      Cangjie::SourceManager *sourceManager,
                                                      const std::string &filePath,
-                                                     bool needLastParam)
+                                                     bool needLastParam,
+                                                     bool needRetType)
 {
-    if (paramTypes.empty()) {
+    const auto isFuncType = (paramFuncType->type && paramFuncType->type->astKind == ASTKind::FUNC_TYPE)
+                      || (paramFuncType->ty && paramFuncType->ty->kind == TypeKind::TYPE_FUNC);
+    if (!isFuncType) {
         return;
     }
+    if (paramFuncType->type && paramFuncType->type->astKind == ASTKind::FUNC_TYPE) {
+        const auto funcType = DynamicCast<FuncType *>(paramFuncType->type.get());
+        if (!funcType) {
+            return;
+        }
+        HandleFuncTypeSignature(detail, funcType, sourceManager, filePath, needLastParam, needRetType);
+    } else {
+        const auto funcTy = DynamicCast<FuncTy *>(paramFuncType->ty.get());
+        if (!funcTy) {
+            return;
+        }
+        HandleFuncTySignature(detail, funcTy, needLastParam, needRetType);
+    }
+}
+
+void ItemResolverUtil::HandleFuncTypeSignature(std::string &detail, const Cangjie::AST::FuncType *funcType,
+    Cangjie::SourceManager *sourceManager, const std::string &filePath, bool needLastParam, bool needRetType)
+{
     bool firstParams = true;
-    size_t index = 0;
-    size_t paramCount = paramTypes.size();
+    size_t paramCount = funcType->paramTypes.size();
     if (!needLastParam && paramCount > 0) {
         paramCount--;
     }
     for (size_t i = 0; i < paramCount; i++) {
-        auto &paramType = paramTypes[i];
+        auto &paramType = funcType->paramTypes[i];
         if (!paramType) {
             continue;
         }
@@ -962,10 +982,10 @@ void ItemResolverUtil::ResolveFuncTypeParamSignature(std::string &detail,
             detail += ", ";
         }
         firstParams = false;
-        bool getTypeByNodeAndType = GetString(*paramType->ty) == "UnknownType"
-                                        || (sourceManager && paramType->astKind == Cangjie::AST::ASTKind::FUNC_TYPE);
+        const bool getTypeByNodeAndType = GetString(*paramType->ty) == "UnknownType"
+                                        || (sourceManager && paramType->astKind == ASTKind::FUNC_TYPE);
         if (getTypeByNodeAndType) {
-            ItemResolverUtil::AddTypeByNodeAndType(detail, filePath, paramType.get(), sourceManager);
+            AddTypeByNodeAndType(detail, filePath, paramType.get(), sourceManager);
         } else {
             if (!paramType->typeParameterName.empty()) {
                 detail += paramType->typeParameterName + ": ";
@@ -973,21 +993,82 @@ void ItemResolverUtil::ResolveFuncTypeParamSignature(std::string &detail,
             detail += GetString(*paramType->ty);
         }
     }
-}
-
-void ItemResolverUtil::ResolveFuncTypeParamInsert(std::string &detail,
-                                                  const std::vector<OwnedPtr<Cangjie::AST::Type>> &paramTypes,
-                                                  Cangjie::SourceManager *sourceManager,
-                                                  const std::string &filePath,
-                                                  int &numParm,
-                                                  bool needLastParam,
-                                                  bool needDefaultParamName)
-{
-    if (paramTypes.empty()) {
+    if (!needRetType) {
         return;
     }
+    detail += " => ";
+    if (funcType->retType && !FetchTypeString(*funcType->retType).empty()) {
+        DealTypeDetail(detail, funcType->retType.get(),
+            filePath, sourceManager);
+    }
+    detail += " }";
+}
+
+// LCOV_EXCL_START
+void ItemResolverUtil::HandleFuncTySignature(
+    std::string &detail, const Cangjie::AST::FuncTy *funcTy, bool needLastParam, bool needRetType)
+{
+    const auto paramTys = funcTy->paramTys;
     bool firstParams = true;
-    size_t paramCount = paramTypes.size();
+    size_t paramCount = paramTys.size();
+    if (!needLastParam && paramCount > 0) {
+        paramCount--;
+    }
+    for (size_t i = 0; i < paramCount; i++) {
+        auto &paramTy = paramTys[i];
+        if (!paramTy) {
+            continue;
+        }
+        if (!firstParams) {
+            detail += ", ";
+        }
+        firstParams = false;
+
+        detail += GetString(*paramTy);
+    }
+    if (!needRetType) {
+        return;
+    }
+    detail += " => ";
+    if (funcTy->retTy) {
+        detail += GetString(*funcTy->retTy);
+    }
+    detail += " }";
+}
+// LCOV_EXCL_STOP
+
+void ItemResolverUtil::ResolveFuncTypeParamInsert(std::string &detail, const Cangjie::AST::VarDecl *paramFuncType,
+    Cangjie::SourceManager *sourceManager, const std::string &filePath, int &numParm, bool needLastParam,
+    bool needDefaultParamName, bool needRetType)
+{
+    const auto isFuncType = (paramFuncType->type && paramFuncType->type->astKind == ASTKind::FUNC_TYPE)
+                      || (paramFuncType->ty && paramFuncType->ty->kind == TypeKind::TYPE_FUNC);
+    if (!isFuncType) {
+        return;
+    }
+    if (paramFuncType->type && paramFuncType->type->astKind == ASTKind::FUNC_TYPE) {
+        const auto funcType = DynamicCast<FuncType *>(paramFuncType->type.get());
+        if (!funcType) {
+            return;
+        }
+        HandleFuncTypeInsert(detail, funcType, sourceManager, filePath,
+            numParm, needLastParam, needDefaultParamName, needRetType);
+    } else {
+        const auto funcTy = DynamicCast<FuncTy *>(paramFuncType->ty.get());
+        if (!funcTy) {
+            return;
+        }
+        HandleFuncTyInsert(detail, funcTy, numParm, needLastParam, needDefaultParamName, needRetType);
+    }
+}
+
+void ItemResolverUtil::HandleFuncTypeInsert(std::string &detail,
+    const Cangjie::AST::FuncType *funcType, Cangjie::SourceManager *sourceManager,
+    const std::string &filePath, int &numParm, bool needLastParam, bool needDefaultParamName, bool needRetType)
+{
+    int temp = -1;
+    bool firstParams = true;
+    size_t paramCount = funcType->paramTypes.size();
     if (!needLastParam && paramCount > 0) {
         paramCount--;
     }
@@ -995,16 +1076,16 @@ void ItemResolverUtil::ResolveFuncTypeParamInsert(std::string &detail,
     size_t parameterNum = 1;
     std::string paramInsert;
     for (size_t i = 0; i < paramCount; i++) {
-        auto &paramType = paramTypes[i];
+        auto &paramType = funcType->paramTypes[i];
         if (!paramType) {
             continue;
         }
         if (!firstParams) {
             detail += ", ";
         }
-        if (numParm >= 0) {
-            detail += "${" + std::to_string(numParm) + ":";
-            numParm++;
+        if (temp >= 0) {
+            detail += "${" + std::to_string(temp) + ":";
+            temp++;
         }
         if (paramType->typeParameterName.empty() && needDefaultParamName) {
             std::string defaultName = "arg" + std::to_string(parameterNum);
@@ -1027,11 +1108,75 @@ void ItemResolverUtil::ResolveFuncTypeParamInsert(std::string &detail,
             detail += GetString(*paramType->ty);
         }
         firstParams = false;
-        if (numParm >= 0) {
+        if (temp >= 0) {
             detail += "}";
         }
     }
+    if (!needRetType) {
+        return;
+    }
+    detail += " => ";
+    if (funcType->retType && !FetchTypeString(*funcType->retType).empty()) {
+        detail += "${" + std::to_string(numParm) + ":";
+        DealTypeDetail(detail, funcType->retType.get(), filePath, sourceManager);
+        detail += "}";
+    }
+    detail += " }";
 }
+
+// LCOV_EXCL_START
+void ItemResolverUtil::HandleFuncTyInsert(std::string &detail, const Cangjie::AST::FuncTy *funcTy, int &numParm,
+    bool needLastParam, bool needDefaultParamName, bool needRetType)
+{
+    int temp = -1;
+    const auto paramTys = funcTy->paramTys;
+    bool firstParams = true;
+    size_t paramCount = paramTys.size();
+    if (!needLastParam && paramCount > 0) {
+        paramCount--;
+    }
+    std::unordered_set<std::string> parameterNameSet;
+    size_t parameterNum = 1;
+    std::string paramInsert;
+    for (size_t i = 0; i < paramCount; i++) {
+        auto &paramTy = paramTys[i];
+        if (!paramTy) {
+            continue;
+        }
+        if (!firstParams) {
+            detail += ", ";
+        }
+        if (temp >= 0) {
+            detail += "${" + std::to_string(temp) + ":";
+            temp++;
+        }
+        if (needDefaultParamName) {
+            std::string defaultName = "arg" + std::to_string(parameterNum);
+            while (parameterNameSet.find(defaultName) != parameterNameSet.end()) {
+                parameterNum++;
+                defaultName = "arg" + std::to_string(parameterNum);
+            }
+            detail += defaultName + ": ";
+            parameterNameSet.insert(defaultName);
+        }
+        detail += GetString(*paramTy);
+        firstParams = false;
+        if (temp >= 0) {
+            detail += "}";
+        }
+    }
+    if (!needRetType) {
+        return;
+    }
+    detail += " => ";
+    if (funcTy->retTy) {
+        detail += "${" + std::to_string(numParm) + ":";
+        detail += GetString(*funcTy->retTy);
+        detail += "}";
+    }
+    detail += " }";
+}
+// LCOV_EXCL_STOP
 
 int ItemResolverUtil::ResolveFuncParamInsert(std::string &detail, const std::string myFilePath,
     Ptr<Cangjie::AST::FuncParam> param, int numParm, Cangjie::SourceManager *sourceManager, bool isEnumConstruct)
@@ -1089,8 +1234,8 @@ std::string ItemResolverUtil::ResolveFollowLambdaSignature(const Cangjie::AST::N
             ResolveFollowLambdaFuncSignature(signature, decl, sourceManager, initFuncReplace);
             return signature;
         },
-        [&signature, sourceManager, initFuncReplace](const Cangjie::AST::VarDecl &decl) {
-            ResolveFollowLambdaVarSignature(signature, decl, sourceManager, initFuncReplace);
+        [&signature, sourceManager](const Cangjie::AST::VarDecl &decl) {
+            ResolveFollowLambdaVarDetail(signature, decl, sourceManager, true);
             return signature;
         },
         [&signature]() { return signature; });
@@ -1109,8 +1254,8 @@ std::string ItemResolverUtil::ResolveFollowLambdaInsert(const Cangjie::AST::Node
             ResolveFollowLambdaFuncInsert(insert, decl, sourceManager, initFuncReplace);
             return insert;
         },
-        [&insert, sourceManager, initFuncReplace](const Cangjie::AST::VarDecl &decl) {
-            ResolveFollowLambdaVarInsert(insert, decl, sourceManager, initFuncReplace);
+        [&insert, sourceManager](const Cangjie::AST::VarDecl &decl) {
+            ResolveFollowLambdaVarDetail(insert, decl, sourceManager, false);
             return insert;
         },
         [&insert]() { return insert; });
@@ -1133,11 +1278,9 @@ void ItemResolverUtil::ResolveFollowLambdaFuncSignature(std::string &detail, con
     if (!lastParam) {
         return;
     }
-    if (!lastParam->type || lastParam->type->astKind != ASTKind::FUNC_TYPE) {
-        return;
-    }
-    auto funcType = DynamicCast<FuncType *>(lastParam->type.get());
-    if (!funcType) {
+    auto isFollowLambda = (lastParam->type && lastParam->type->astKind == ASTKind::FUNC_TYPE)
+                          || (lastParam->ty && lastParam->ty->kind == TypeKind::TYPE_FUNC);
+    if (!isFollowLambda) {
         return;
     }
     std::string signature;
@@ -1156,25 +1299,18 @@ void ItemResolverUtil::ResolveFollowLambdaFuncSignature(std::string &detail, con
     if (decl.funcBody->generic != nullptr && !decl.TestAttr(Cangjie::AST::Attribute::ENUM_CONSTRUCTOR)) {
         signature += ItemResolverUtil::GetGenericParamByDecl(decl.funcBody->generic.get());
     }
-    bool isCustomAnnotationFlag = ItemResolverUtil::IsCustomAnnotation(decl);
-    DealEmptyParamFollowLambda(decl, sourceManager, paramList, signature, myFilePath);
-    ItemResolverUtil::ResolveFuncTypeParamSignature(signature, funcType->paramTypes,
+    ResolveParamBeforeFollowLambda(decl, sourceManager, paramList, signature, myFilePath);
+    ItemResolverUtil::ResolveFuncTypeParamSignature(signature, lastParam.get(),
         sourceManager, myFilePath);
-    signature += " => ";
-    if (funcType->retType && !ItemResolverUtil::FetchTypeString(*funcType->retType).empty()) {
-        ItemResolverUtil::DealTypeDetail(signature, funcType->retType.get(),
-            myFilePath, sourceManager);
-    }
-    signature += " }";
     if (!initFuncReplace.empty()) {
-        auto len = static_cast<long long>(decl.identifier.Val().size());
+        const auto len = static_cast<long long>(decl.identifier.Val().size());
         signature = signature.replace(signature.begin(), signature.begin() + len, initFuncReplace);
     }
     detail = signature;
 }
 
 template <typename T>
-void ItemResolverUtil::DealEmptyParamFollowLambda(const T &decl, Cangjie::SourceManager *sourceManager,
+void ItemResolverUtil::ResolveParamBeforeFollowLambda(const T &decl, Cangjie::SourceManager *sourceManager,
     OwnedPtr<Cangjie::AST::FuncParamList> &paramList, std::string &signature, const std::string &myFilePath)
 {
     if (paramList->params.size() == 1) {
@@ -1186,53 +1322,6 @@ void ItemResolverUtil::DealEmptyParamFollowLambda(const T &decl, Cangjie::Source
             sourceManager, myFilePath, false);
         signature += ") { ";
     }
-}
-
-void ItemResolverUtil::ResolveFollowLambdaVarSignature(std::string &detail, const Cangjie::AST::VarDecl &decl,
-    Cangjie::SourceManager *sourceManager, const std::string &initFuncReplace)
-{
-    if (!decl.type || decl.type->astKind != ASTKind::FUNC_TYPE) {
-        return;
-    }
-    std::string signature = decl.identifier;
-    std::string myFilePath;
-    if (decl.outerDecl != nullptr &&
-        decl.outerDecl->curFile != nullptr) { myFilePath = decl.outerDecl->curFile->filePath; }
-    if (decl.curFile != nullptr) { myFilePath = decl.curFile->filePath; }
-    auto funcType = DynamicCast<FuncType *>(decl.type.get());
-    if (!funcType) {
-        return;
-    }
-    if (funcType->paramTypes.empty()) {
-        return;
-    }
-    auto lastType = funcType->paramTypes.back().get();
-    if (!lastType || lastType->astKind != ASTKind::FUNC_TYPE) {
-        return;
-    }
-    auto lastFuncType = DynamicCast<FuncType *>(lastType.get());
-    if (!lastFuncType) {
-        return;
-    }
-
-    std::string flSignature = decl.identifier;
-    if (funcType->paramTypes.size() == 1) {
-        flSignature += " { ";
-    } else {
-        flSignature += "(";
-        ItemResolverUtil::ResolveFuncTypeParamSignature(flSignature, funcType->paramTypes,
-            sourceManager, myFilePath, false);
-        flSignature += ") { ";
-    }
-    ItemResolverUtil::ResolveFuncTypeParamSignature(flSignature, lastFuncType->paramTypes,
-        sourceManager, myFilePath);
-    flSignature += " => ";
-    if (lastFuncType->retType && !ItemResolverUtil::FetchTypeString(*lastFuncType->retType).empty()) {
-        ItemResolverUtil::DealTypeDetail(flSignature, lastFuncType->retType.get(),
-            myFilePath, sourceManager);
-    }
-    flSignature += " }";
-    detail = flSignature;
 }
 
 template<typename T>
@@ -1252,11 +1341,9 @@ void ItemResolverUtil::ResolveFollowLambdaFuncInsert(std::string &detail, const 
     if (!lastParam) {
         return;
     }
-    if (!lastParam->type || lastParam->type->astKind != ASTKind::FUNC_TYPE) {
-        return;
-    }
-    auto funcType = DynamicCast<FuncType *>(lastParam->type.get());
-    if (!funcType) {
+    auto isFollowLambda = (lastParam->type && lastParam->type->astKind == ASTKind::FUNC_TYPE)
+                          || (lastParam->ty && lastParam->ty->kind == TypeKind::TYPE_FUNC);
+    if (!isFollowLambda) {
         return;
     }
     std::string myFilePath;
@@ -1272,17 +1359,8 @@ void ItemResolverUtil::ResolveFollowLambdaFuncInsert(std::string &detail, const 
     }
     std::string insertText = decl.identifier;
     int numParm = BuildLambdaFuncPreParamInsert(decl, sourceManager, paramList, myFilePath, insertText);
-    int temp = -1;
-    ItemResolverUtil::ResolveFuncTypeParamInsert(insertText, funcType->paramTypes, sourceManager,
-        myFilePath, temp, true, true);
-    insertText += " => ";
-    if (funcType->retType && !ItemResolverUtil::FetchTypeString(*funcType->retType).empty()) {
-        insertText += "${" + std::to_string(numParm) + ":";
-        ItemResolverUtil::DealTypeDetail(insertText, funcType->retType.get(),
-            myFilePath, sourceManager);
-        insertText += "}";
-    }
-    insertText += " }";
+    ItemResolverUtil::ResolveFuncTypeParamInsert(insertText, lastParam.get(), sourceManager,
+        myFilePath, numParm, true, true);
     if (!initFuncReplace.empty()) {
         auto len = static_cast<long long>(decl.identifier.Val().size());
         insertText = insertText.replace(insertText.begin(), insertText.begin() + len, initFuncReplace);
@@ -1334,22 +1412,31 @@ int ItemResolverUtil::BuildLambdaFuncPreParamInsert(const T &decl, Cangjie::Sour
     return numParm;
 }
 
-void ItemResolverUtil::ResolveFollowLambdaVarInsert(std::string &detail, const Cangjie::AST::VarDecl &decl,
-    Cangjie::SourceManager *sourceManager, const std::string &initFuncReplace)
+void ItemResolverUtil::ResolveFollowLambdaVarDetail(std::string &detail, const Cangjie::AST::VarDecl &decl,
+    Cangjie::SourceManager *sourceManager, bool isSignature)
 {
-    if (!decl.type || decl.type->astKind != ASTKind::FUNC_TYPE) {
+    const auto isFuncType = (decl.type && decl.type->astKind == ASTKind::FUNC_TYPE)
+        || (decl.ty && decl.ty->kind == TypeKind::TYPE_FUNC);
+    if (!isFuncType) {
         return;
     }
-    std::string signature = decl.identifier;
     std::string myFilePath;
     if (decl.outerDecl != nullptr &&
         decl.outerDecl->curFile != nullptr) { myFilePath = decl.outerDecl->curFile->filePath; }
     if (decl.curFile != nullptr) { myFilePath = decl.curFile->filePath; }
-    auto funcType = DynamicCast<FuncType *>(decl.type.get());
-    if (!funcType) {
-        return;
+    if (decl.type && decl.type->astKind == ASTKind::FUNC_TYPE) {
+        HandleFollowLambdaVarType(detail, decl, sourceManager, myFilePath, isSignature);
+    } else {
+        HandleFollowLambdaVarTy(detail, decl, sourceManager, myFilePath, isSignature);
     }
-    if (funcType->paramTypes.empty()) {
+}
+
+void ItemResolverUtil::HandleFollowLambdaVarType(std::string &detail, const Cangjie::AST::VarDecl &decl,
+    Cangjie::SourceManager *sourceManager, const std::string &filePath, bool isSignature)
+{
+    detail = decl.identifier;
+    auto funcType = DynamicCast<FuncType *>(decl.type.get());
+    if (!funcType || funcType->paramTypes.empty()) {
         return;
     }
     auto lastType = funcType->paramTypes.back().get();
@@ -1360,35 +1447,68 @@ void ItemResolverUtil::ResolveFollowLambdaVarInsert(std::string &detail, const C
     if (!lastFuncType) {
         return;
     }
-    std::string flInsertText = decl.identifier;
-    int flNumParm = 1;
+    int numParm = 1;
     if (funcType->paramTypes.size() == 1) {
-        flInsertText += " { ";
+        detail += " { ";
     } else {
-        flInsertText += "(";
-        ItemResolverUtil::ResolveFuncTypeParamInsert(flInsertText, funcType->paramTypes,
-            sourceManager, myFilePath, flNumParm, false);
-        flInsertText += ") { ";
+        detail += "(";
+        if (isSignature) {
+            HandleFuncTypeSignature(detail, funcType, sourceManager, filePath, false, false);
+        } else {
+            HandleFuncTypeInsert(detail, funcType, sourceManager, filePath, numParm,
+                false, false, false);
+        }
+        detail += ") { ";
     }
-    int temp = -1;
-    ItemResolverUtil::ResolveFuncTypeParamInsert(flInsertText, lastFuncType->paramTypes,
-        sourceManager, myFilePath, temp, true, true);
-    flInsertText += " => ";
-    if (lastFuncType->retType && !ItemResolverUtil::FetchTypeString(*lastFuncType->retType).empty()) {
-        flInsertText += "${" + std::to_string(flNumParm) + ":";
-        ItemResolverUtil::DealTypeDetail(flInsertText, lastFuncType->retType.get(),
-            myFilePath, sourceManager);
-        flInsertText += "}";
+    if (isSignature) {
+        HandleFuncTypeSignature(detail, lastFuncType, sourceManager, filePath);
+    } else {
+        HandleFuncTypeInsert(detail, lastFuncType, sourceManager, filePath, numParm, true, true);
     }
-    flInsertText += " }";
-    detail = flInsertText;
+}
+
+void ItemResolverUtil::HandleFollowLambdaVarTy(std::string &detail, const Cangjie::AST::VarDecl &decl,
+    Cangjie::SourceManager *sourceManager, const std::string &filePath, bool isSignature)
+{
+    detail = decl.identifier;
+    auto funcTy = DynamicCast<FuncTy *>(decl.ty.get());
+    if (!funcTy || funcTy->paramTys.empty()) {
+        return;
+    }
+    auto lastTy = funcTy->paramTys.back().get();
+    if (!lastTy || lastTy->kind != TypeKind::TYPE_FUNC) {
+        return;
+    }
+    auto lastFuncTy = DynamicCast<FuncTy *>(lastTy);
+    if (!lastFuncTy) {
+        return;
+    }
+    int numParm = 1;
+    if (funcTy->paramTys.size() == 1) {
+        detail += " { ";
+    } else {
+        detail += "(";
+        if (isSignature) {
+            HandleFuncTySignature(detail, funcTy, false, false);
+        } else {
+            HandleFuncTyInsert(detail, funcTy, numParm, false, false, false);
+        }
+        detail += ") { ";
+    }
+    if (isSignature) {
+        HandleFuncTySignature(detail, lastFuncTy);
+    } else {
+        HandleFuncTyInsert(detail, lastFuncTy, numParm, true, true);
+    }
 }
 
 void ItemResolverUtil::ResolveParamListFuncTypeVarDecl(const Cangjie::AST::Node &node, std::string &label,
     std::string &insertText, SourceManager *sourceManager)
 {
-    auto decl = dynamic_cast<const Cangjie::AST::VarDecl*>(&node);
-    if (!decl || !decl->type || decl->type->astKind != ASTKind::FUNC_TYPE) {
+    auto decl = DynamicCast<Cangjie::AST::VarDecl *>(&node);
+    const auto isFuncType = decl && ((decl->type && decl->type->astKind == ASTKind::FUNC_TYPE)
+        || (decl->ty && decl->ty->kind == TypeKind::TYPE_FUNC));
+    if (!isFuncType) {
         return;
     }
     std::string signature = decl->identifier;
@@ -1396,20 +1516,15 @@ void ItemResolverUtil::ResolveParamListFuncTypeVarDecl(const Cangjie::AST::Node 
     if (decl->outerDecl != nullptr &&
         decl->outerDecl->curFile != nullptr) { myFilePath = decl->outerDecl->curFile->filePath; }
     if (decl->curFile != nullptr) { myFilePath = decl->curFile->filePath; }
-    auto funcType = DynamicCast<FuncType *>(decl->type.get());
-    if (!funcType) {
-        return;
-    }
     signature += "(";
-    ItemResolverUtil::ResolveFuncTypeParamSignature(signature, funcType->paramTypes,
-        sourceManager, myFilePath);
+    ResolveFuncTypeParamSignature(signature, decl, sourceManager, myFilePath, true, false);
     signature += ")";
     label = signature;
     insertText = decl->identifier;
     insertText += "(";
     int numParm = 1;
-    ItemResolverUtil::ResolveFuncTypeParamInsert(insertText, funcType->paramTypes, sourceManager,
-        myFilePath, numParm);
+    ResolveFuncTypeParamInsert(insertText, decl, sourceManager,
+        myFilePath, numParm, true, false, false);
     insertText += ")";
 }
 
