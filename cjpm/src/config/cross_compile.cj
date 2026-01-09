@@ -32,3 +32,10 @@ public func makeTargetExeName(exeName: String, target: String): String {
     }
     return exeName
 }
+
+public func makeTargetObjName(fileName: String, target: String): String {
+    if (target.contains("mingw32") || target.contains("windows-gnu")) {
+        return "${swapOrgName(fileName)}.obj"
+    }
+    return "${swapOrgName(fileName)}.o"
+}
