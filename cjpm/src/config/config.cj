@@ -55,6 +55,7 @@ public enum OutputType <: Serializable<OutputType> & ToString {
     | Dynamic
     | Exe
     | Chir
+    | Obj
     | Unknown(String)
 
     // output type is considered valid if it can be used in public API by the user
@@ -62,7 +63,7 @@ public enum OutputType <: Serializable<OutputType> & ToString {
     public prop isValid: Bool {
         get() {
             match (this) {
-                case Static | Dynamic | Exe => true
+                case Static | Dynamic | Exe | Obj => true
                 case Chir => false // This output type is currently for internal usage only
                 case Unknown(_) => false
             }
@@ -73,7 +74,7 @@ public enum OutputType <: Serializable<OutputType> & ToString {
         get() {
             match (this) {
                 case Static | Dynamic => true
-                case Exe | Chir | Unknown(_) => false
+                case Exe | Chir | Obj | Unknown(_) => false
             }
         }
     }
@@ -84,6 +85,7 @@ public enum OutputType <: Serializable<OutputType> & ToString {
             case Dynamic => "dynamic"
             case Exe => "executable"
             case Chir => "chir"
+            case Obj => "obj"
             case Unknown(s) => s
         }
     }
@@ -95,6 +97,7 @@ public enum OutputType <: Serializable<OutputType> & ToString {
                 case Dynamic => "dylib"
                 case Exe => "exe"
                 case Chir => "chir"
+                case Obj => "obj"
                 case Unknown(s) => s
             }
         }

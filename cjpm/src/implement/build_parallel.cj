@@ -18,6 +18,15 @@ import std.deriving.*
 import cjpm.config.*
 import cjpm.util.*
 
+enum Notification {
+    | CjoReady
+    | ObjReady
+    | ExeReady
+    | DylibReady
+    | StaticlibReady
+    | Err
+}
+
 type TaskMap = HashMap<TaskIdentifier, CompileTask>
 
 private enum MessageKind {
@@ -81,7 +90,7 @@ public class BoundedFileLogger {
                 } else {
                     print(logStr)
                 }
-            } catch (_: Exception){ 
+            } catch (_: Exception) {
                 return false
             }
             return true
@@ -93,10 +102,12 @@ public class BoundedFileLogger {
 }
 
 class ParallelBuilder {
-    var buildConfig = BuildConfig()
-    var taskMap = TaskMap()
+    let buildConfig: BuildConfig
+    let taskMap = TaskMap()
     let buildMutex = Mutex()
     let successPkgs = HashMap<String, Bool>()
+    let downstreamTasks = HashMap<TaskIdentifier, HashSet<TaskIdentifier>>()
+    let scs = HashMap<TaskIdentifier, SyncCounter>()
 
     init(buildConfig: BuildConfig) {
         this.buildConfig = buildConfig
@@ -127,9 +138,36 @@ class ParallelBuilder {
         return true
     }
 
+    func shouldNotify(downstreamTask: TaskIdentifier, task: TaskIdentifier, notification: Notification): Bool {
+        // TODO
+        true
+    }
+
+    func notify(task: TaskIdentifier, notification: Notification): Unit {
+        for (t in downstreamTasks[task]) {
+            if (shouldNotify(t, task, notification)) {
+                scs[t].dec()
+            }
+        }
+    }
+
     func build(): Bool {
         let logger = BoundedFileLogger(this.taskMap.size)
         logger.start()
+
+        let cjo2Task = HashMap<String, TaskIdentifier>()
+        let listenDirs = HashSet<String>()
+
+        for (taskId in this.buildConfig.packageList.allIds) {
+            if (!this.taskMap.contains(taskId)) {
+                continue
+            }
+            let task = this.taskMap[taskId]
+            listenDirs.add(task.targetPath)
+            cjo2Task.add(Path(task.targetPath).join("${task.fullName}.cjo.flag").toString(), taskId)
+        }
+
+        let watchFSFuture = spawn { => watchFS(cjo2Task, listenDirs, notify)}
 
         let sem = Semaphore(maxParallelSize)
         let futTasks = HashMap<TaskIdentifier, Future<Bool>>()
@@ -147,6 +185,7 @@ class ParallelBuilder {
                         if (!this.checkDepFuture(k, task, futTasks, sem)) {
                             sem.release()
                             logger.release()
+                            notify(taskId, Err)
                             return false
                         }
                     }
@@ -155,6 +194,7 @@ class ParallelBuilder {
                         if (!this.checkDepFuture(dep, task, futTasks, sem)) {
                             sem.release()
                             logger.release()
+                            notify(taskId, Err)
                             return false
                         }
                     }
@@ -165,6 +205,7 @@ class ParallelBuilder {
                             if (!this.checkDepFuture(depId, task, futTasks, sem)) {
                                 sem.release()
                                 logger.release()
+                                notify(taskId, Err)
                                 return false
                             }
                         }
@@ -196,6 +237,7 @@ class ParallelBuilder {
                 if (!deleteLog(task)) {
                     sem.release()
                     logger.release()
+                    notify(taskId, Err)
                     return false
                 }
 
@@ -206,6 +248,11 @@ class ParallelBuilder {
 
                 sem.release()
                 logger.log(task.outLogFile, task.errLogFile)
+                if (flag) {
+                    // TODO
+                } else {
+                    notify(taskId, Err)
+                }
                 return flag
             }
 
@@ -227,6 +274,9 @@ class ParallelBuilder {
         if (!logger.unsafeWait()) {
             isBuilt = false
         }
+
+        unsafe { stopFSWatcher() }
+        watchFSFuture.get()
 
         return isBuilt
     }
@@ -597,3 +647,31 @@ func futJudge(args: ArrayList<String>): Bool {
     }
     return (fut1.get() || fut2.get())
 }
+
+var watcherCb: (String) -> Unit = { _ => }
+
+func watchFS(cjo2task: HashMap<String, TaskIdentifier>, listenDirs: HashSet<String>, notify: (TaskIdentifier, Notification) -> Unit): Unit {
+    let dirs = StringBuilder()
+    for (dir in listenDirs) {
+        if (!exists(dir)) {
+            Directory.create(dir, recursive: true)
+        }
+        dirs.append("${dir},")
+    }
+    watcherCb = { cjo => notify(cjo2task[cjo], CjoReady) }
+    unsafe {
+        let cs = LibC.mallocCString(dirs.toString())
+        let res = initFSWatcher(cs, { cjo => watcherCb(cjo.toString()) })
+        LibC.free(cs)
+        if (!res) {
+            return
+        }
+        startFSWatcher()
+    }
+}
+
+foreign func initFSWatcher(dirs: CString, cb: CFunc<(CString) -> Unit>): Bool
+
+foreign func startFSWatcher(): Unit
+
+foreign func stopFSWatcher(): Unit
