@@ -18,6 +18,29 @@ import std.deriving.*
 import cjpm.config.*
 import cjpm.util.*
 
+type DownStreamTasks = HashMap<TaskIdentifier, HashSet<TaskIdentifier>>
+type Task2SyncCounter = HashMap<TaskIdentifier, SyncCounter>
+
+enum Notification {
+    | CjoReady
+    | ChirReady
+    | ObjReady
+    | ExeReady
+    | DylibReady
+    | StaticlibReady
+    | Err
+}
+
+let outputType2Notification = HashMap<String, Notification>(
+    [
+        ("static", StaticlibReady),
+        ("dynamic", DylibReady),
+        ("executable", ExeReady),
+        ("chir", ChirReady),
+        ("obj", ObjReady)
+    ]
+)
+
 type TaskMap = HashMap<TaskIdentifier, CompileTask>
 
 private enum MessageKind {
@@ -71,7 +94,7 @@ public class BoundedFileLogger {
     private static func printLogs(outLogFile: String, errLogFile: String): Bool {
         var logFlag: Bool = true
         func printLogFile(logFile: String, toStrerr: Bool): Bool {
-            if (!fileExists(outLogFile)) {
+            if (!fileExists(logFile)) {
                 return true
             }
             try {
@@ -81,7 +104,9 @@ public class BoundedFileLogger {
                 } else {
                     print(logStr)
                 }
-            } catch (_: Exception){ 
+            } catch (e: Exception) {
+                eprintln(e.message)
+                eprintln("Error: failed to read '${logFile}'")
                 return false
             }
             return true
@@ -93,25 +118,23 @@ public class BoundedFileLogger {
 }
 
 class ParallelBuilder {
-    var buildConfig = BuildConfig()
-    var taskMap = TaskMap()
-    let buildMutex = Mutex()
+    let buildConfig: BuildConfig
+    let taskMap: TaskMap
+    let downstreamTasks: DownStreamTasks
+    let scs: Task2SyncCounter
+    let orderedTasks: Array<TaskIdentifier>
     let successPkgs = HashMap<String, Bool>()
+    let notifyMutex = Mutex()
+    let notified = DownStreamTasks()
 
-    init(buildConfig: BuildConfig) {
+    init(buildConfig: BuildConfig, taskMap: TaskMap, downstreamTasks: DownStreamTasks,
+        scs: Task2SyncCounter, orderedTasks: Array<TaskIdentifier>) {
         this.buildConfig = buildConfig
-    }
-
-    func checkDepFuture(dep: TaskIdentifier, task: CompileTask, futTasks: HashMap<TaskIdentifier, Future<Bool>>,
-        sem: Semaphore): Bool {
-        var fut: Future<Bool>
-        synchronized(this.buildMutex) {
-            if (!futTasks.contains(dep)) {
-                return true
-            }
-            fut = futTasks[dep]
-        }
-        return fut.get()
+        this.taskMap = taskMap
+        this.downstreamTasks = downstreamTasks
+        this.scs = scs
+        this.orderedTasks = orderedTasks
+        orderedTasks.forEach { task => notified.add(task, HashSet<TaskIdentifier>()) }
     }
 
     func checkNoChange(depPkg: String): Bool {
@@ -127,50 +150,71 @@ class ParallelBuilder {
         return true
     }
 
+    private func shouldNotify(downstreamTask: TaskIdentifier, task: TaskIdentifier, notification: Notification): Bool {
+        synchronized (this.notifyMutex) {
+	        if (!notified.get(task).getOrThrow().add(downstreamTask)) {
+	            return false
+	        }
+	    }
+        match (notification) {
+            case CjoReady =>
+                if (taskMap.get(task)?.isMacro ?? true) {
+                    false
+                } else {
+                    match (downstreamTask.compilePhase) {
+                        case LinkOnly => false
+                        case SkipLink => true
+                        case Default =>
+                            if (let Some(compileTask) <- taskMap.get(downstreamTask)) {
+                                !compileTask.isLto &&
+                                !compileTask.isMultiplatform &&
+                                compileTask.outputType == OutputType.Static
+                            } else { false }
+                    }
+                }
+            case _ => true
+        }
+    }
+
+    private func notify(task: TaskIdentifier, notification: Notification): Unit {
+        for (t in downstreamTasks[task]) {
+            if (shouldNotify(t, task, notification)) {
+                scs[t].dec()
+            }
+        }
+    }
+
+    private func getCjo2TaskAndListenDirs(): (HashMap<String, TaskIdentifier>, HashSet<String>) {
+        let cjo2Task = HashMap<String, TaskIdentifier>()
+        let listenDirs = HashSet<String>()
+        for (taskId in orderedTasks) {
+            let task = this.taskMap[taskId]
+            listenDirs.add(task.targetPath)
+            cjo2Task.add(Path(task.targetPath).join("${task.fullName}.cjo.flag").toString(), taskId)
+        }
+        (cjo2Task, listenDirs)
+    }
+
     func build(): Bool {
         let logger = BoundedFileLogger(this.taskMap.size)
         logger.start()
 
+        let (cjo2Task, listenDirs) = getCjo2TaskAndListenDirs()
+        let watchFSFuture = spawn { => watchFS(cjo2Task, listenDirs, notify)}
+
         let sem = Semaphore(maxParallelSize)
         let futTasks = HashMap<TaskIdentifier, Future<Bool>>()
+        let buildResult = AtomicBool(true)
         // Guaranteed valid order follows 'buildConfig.packageList.all'
-        for (taskId in this.buildConfig.packageList.allIds) {
-            if (!this.taskMap.contains(taskId)) {
-                continue
-            }
-
+        for (taskId in orderedTasks) {
             sem.acquire()
             let task = this.taskMap[taskId]
-            let future = spawn { =>
-                if (this.buildConfig.globalConfig.isProjectCombine && taskId.fullName == buildConfig.globalConfig.rootName) {
-                    for ((k,_) in this.taskMap where k != taskId) {
-                        if (!this.checkDepFuture(k, task, futTasks, sem)) {
-                            sem.release()
-                            logger.release()
-                            return false
-                        }
-                    }
-                } else {
-                    for (dep in task.requireTasks) {
-                        if (!this.checkDepFuture(dep, task, futTasks, sem)) {
-                            sem.release()
-                            logger.release()
-                            return false
-                        }
-                    }
-
-                    if (let Some(superPkgCfg) <- task.superPkgCfg) {
-                        for (dep in superPkgCfg.subPkgSet) {
-                            let depId = TaskIdentifier(dep, task.target, "")
-                            if (!this.checkDepFuture(depId, task, futTasks, sem)) {
-                                sem.release()
-                                logger.release()
-                                return false
-                            }
-                        }
-                    }
+            let action = { =>
+                scs[taskId].waitUntilZero()
+                if (!buildResult.load()) {
+                    logger.release()
+                    return false
                 }
-
                 if (task.checkDepCjo) {
                     var nochange: Bool = true
                     for (depPkg in task.requireTasks) {
@@ -187,14 +231,12 @@ class ParallelBuilder {
                         }
                     }
                     if (nochange) {
-                        sem.release()
                         logger.release()
                         return true
                     }
                 }
 
                 if (!deleteLog(task)) {
-                    sem.release()
                     logger.release()
                     return false
                 }
@@ -202,33 +244,43 @@ class ParallelBuilder {
                 let cjcCall = constructCjcInvocation(task, this.buildConfig)
                 let envBuilder = EnvironmentBuilder()
                 envBuilder.prepend(LD_PATH, this.buildConfig.globalConfig.ldPath)
-                let flag = runTask(task, cjcCall, envBuilder) 
-
-                sem.release()
+                let res = runTask(task, cjcCall, envBuilder) 
                 logger.log(task.outLogFile, task.errLogFile)
-                return flag
+                res
+            }
+            
+            let future = spawn { =>
+                let res = action()
+                sem.release()
+                if (!res) {
+                    buildResult.store(false)
+                }
+                let notification = if (res) {
+                    outputType2Notification.get(task.outputType.toString()).getOrThrow()
+                } else { Err }
+                notify(taskId, notification)
+                res
             }
 
-            synchronized(this.buildMutex) {
-                futTasks.add(taskId, future)
-            }
+            futTasks.add(taskId, future)
         }
 
-        var isBuilt: Bool = true
         for ((id, task) in futTasks) {
             if (!task.get()) {
-                isBuilt = false
                 successPkgs.add(id.fullName, false)
-            } else if (!successPkgs.contains(id.fullName)) {
-                successPkgs.add(id.fullName, true)
+            } else {
+                successPkgs.addIfAbsent(id.fullName, true)
             }
         }
 
         if (!logger.unsafeWait()) {
-            isBuilt = false
+            buildResult.store(false)
         }
 
-        return isBuilt
+        unsafe { stopFSWatcher() }
+        watchFSFuture.get()
+
+        buildResult.load()
     }
 
     func deleteLog(task: CompileTask): Bool {
@@ -363,7 +415,7 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
     let customizedOption = constructCustomizedOption(r, buildConfig)
     let hasSubPkgs = buildConfig.hasSubPkgs.contains(fullName)
     let exportForTests = requiredForTests && r.hasTestFiles
-    let isMacro = buildConfig.packageList.macros.contains(fullName)
+    let isMacro = buildConfig.packageList.isMacro(fullName)
     let superPkgCfg = r.superPkgCfg
     let isAnalysisCompilePerformance = !isMultiplatform && buildConfig.globalConfig.isAnalysisCompilePerformance
 
@@ -397,21 +449,12 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
 
         // Multiplatform packages need an arbitrary number of `cjc` calls
         // Non-multiplatform packages consist of single `sourceSetEntry`
-        func createForSingleSourceSet(sourceSetEntry: CJMPPackageInfo, prevStage: ?PrevStage): (?CompileTask, ?PrevStage) {
+        func createForSingleSourceSet(sourceSetEntry: CJMPPackageInfo, prevStage: ?PrevStage):
+            (?ArrayList<CompileTask>, ?PrevStage) {
             let packagePath = sourceSetEntry.srcDir.toString()
             let product = sourceSetEntry.product
             let sourceSetDir = sourceSetEntry.outputSuffix.toString()
             let sourceSetFeatures = sourceSetEntry.features
-
-            let taskId = TaskIdentifier(
-                fullName,
-                target,
-                if (!product) { sourceSetDir } else { "" }
-            )
-
-            let logPath = Path(targetDir).join(".build-logs").join(swapOrgName(rootPkgName)).join(sourceSetDir).toString()
-            let outLogFile = Path(logPath).join("${swapOrgName(fullName)}.outlog").toString()
-            let errLogFile = Path(logPath).join("${swapOrgName(fullName)}.errlog").toString()
 
             let supressed = ArrayList<String>()
 
@@ -440,23 +483,45 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
             } else {
                 Path(targetDir).join(swapOrgName(rootPkgName)).join(sourceSetDir).toString()
             }
+
+            let logPath = Path(targetDir).join(".build-logs").join(swapOrgName(rootPkgName)).join(sourceSetDir).toString()
             if (!createDirectory(targetPath) || !createDirectory(logPath)) {
                 return (None, None)
             }
 
-            let requireTasks = r.requires.iterator().map { it => 
-                let waitTarget = if (buildConfig.packageList.macros.contains(it)) {
-                    targetConfigName
-                } else { target }
-                TaskIdentifier(it, waitTarget, "") 
+            let requireTasks = r.requires.iterator().map { name =>
+                let isMacro = buildConfig.packageList.isMacro(name)
+                let waitTarget = if (isMacro) { targetConfigName } else { target }
+                let needLink = !isMultiplatform &&
+                               !buildConfig.isLto &&
+                               !isMacro &&
+                               (buildConfig.packageList.isDyLib(name) || buildConfig.packageList.isExe(name))
+                let compilePhase = if (needLink) { SkipLink } else { CompilePhase.Default }
+                TaskIdentifier(name, waitTarget, "", compilePhase: compilePhase)
             } |> collectHashSet
             if (isMacro && isCrossCompile) {
-                requireTasks.add(TaskIdentifier(fullName, targetConfigName, ""))
+                requireTasks.add(TaskIdentifier(fullName, targetConfigName, "", compilePhase: CompilePhase.Default))
             }
             requireTasks.addIfSome(prevStage?.taskId)
             let prevStageArtifacts: ?(String, String) = if (let Some(prevStage) <- prevStage) {
                 (prevStage.chir, prevStage.commonCjo)
             } else { None }
+
+            let needLink = !isMultiplatform &&
+                           !buildConfig.isLto &&
+                           !isMacro &&
+                           (outputType == Dynamic || outputType == Exe)
+
+            let compilePhase = if (needLink) { SkipLink } else { CompilePhase.Default }
+
+            let taskId = TaskIdentifier(
+                fullName,
+                target,
+                if (!product) { sourceSetDir } else { "" },
+                compilePhase: compilePhase
+            )
+
+            let (outLogFile, errLogFile) = getLogFile(logPath, taskId)
 
             let thisStage: ?PrevStage = if (!product) {
                 PrevStage(
@@ -477,7 +542,7 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
                 rootPkgName: rootPkgName,
                 fullName: fullName,
                 filename: filename,
-                outputType: outputType,
+                outputType: if (needLink) { Obj } else { outputType },
                 target: target,
                 isCrossCompile: isCrossCompile,
                 compileOption: compileOption,
@@ -503,20 +568,82 @@ func createCompileTasks(r: ResolveItem, buildConfig: BuildConfig): ?ArrayList<Co
                 checkDepCjo: checkDepCjo,
                 supressed: supressed,
                 outLogFile: outLogFile,
-                errLogFile: errLogFile
+                errLogFile: errLogFile,
+                compileTarget: if (needLink) { outputType } else { Unknown("") }
             )
 
-            return (task, thisStage)
+            let compileTasks = ArrayList<CompileTask>([task])
+
+            if (needLink) {
+                let taskId = TaskIdentifier(
+                    fullName,
+                    target,
+                    if (!product) { sourceSetDir } else { "" },
+                    compilePhase: LinkOnly
+                )
+                let prevStageArtifacts =
+                    (Path(task.targetPath).join(getOutput(task).getOrThrow()).toString(), "")
+                let requireTasks = getDepSet(fullName, buildConfig)
+                    .filter { name => !buildConfig.packageList.isMacro(name) && !buildConfig.packageList.isTest(name) }
+                    .map { name =>
+                        let needLink = buildConfig.packageList.isDyLib(name) || buildConfig.packageList.isExe(name)
+                        let compilePhase = if (needLink) { LinkOnly } else { CompilePhase.Default }
+                        TaskIdentifier(name, target, "", compilePhase: compilePhase) }
+                requireTasks.add(task.id)
+                let (outLogFile, errLogFile) = getLogFile(logPath, taskId)
+                let linkTask = CompileTask(
+                    id: taskId,
+                    targetDir: targetDir,
+                    targetPath: targetPath,
+                    packagePath: packagePath,
+                    product: product,
+                    sourceSetDir: sourceSetDir,
+                    sourceSetFeatures: sourceSetFeatures,
+                    rootPkgName: rootPkgName,
+                    fullName: fullName,
+                    filename: filename,
+                    outputType: outputType,
+                    target: target,
+                    isCrossCompile: isCrossCompile,
+                    compileOption: compileOption,
+                    overrideOption: overrideOption,
+                    linkOption: linkOption,
+                    customizedOption: customizedOption,
+                    superPkgCfg: superPkgCfg,
+                    requiredForTests: requiredForTests,
+                    exportForTests: exportForTests,
+                    requireTasks: requireTasks,
+                    allEnabledFeatures: allEnabledFeatures,
+                    featureMapping: featureMapping,
+                    isAnalysisCompilePerformance: isAnalysisCompilePerformance,
+                    hasSubPkgs: hasSubPkgs,
+                    isDebug: isDebug,
+                    isCov: isCov,
+                    mockSupported: mockSupported,
+                    isMacro: isMacro,
+                    isLto: isLto,
+                    ltoValue: ltoValue,
+                    prevStageArtifacts: prevStageArtifacts,
+                    isMultiplatform: isMultiplatform,
+                    checkDepCjo: checkDepCjo,
+                    supressed: supressed,
+                    outLogFile: outLogFile,
+                    errLogFile: errLogFile
+                )
+                compileTasks.add(linkTask)
+            }
+
+            (compileTasks, thisStage)
         }
 
         let sourceSetUnwrap = ArrayList<CompileTask>()
         var prevStage: ?PrevStage = None
         for (sourceSetEntry in r.packagePath._sources) {
-            let (task, thisStage) = createForSingleSourceSet(sourceSetEntry, prevStage)
-            sourceSetUnwrap.add(task ?? return None)
+            let (tasks, thisStage) = createForSingleSourceSet(sourceSetEntry, prevStage)
+            sourceSetUnwrap.add(all: tasks ?? return None)
             prevStage = thisStage
         }
-        return sourceSetUnwrap
+        sourceSetUnwrap
     }
 
     let result = ArrayList<CompileTask>()
@@ -541,27 +668,69 @@ private func constructCustomizedOption(r: ResolveItem, buildConfig: BuildConfig)
     return customizedOption
 }
 
-func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
-    let parallel = ParallelBuilder(buildConfig)
+private func getDownstreamTasksAndSynCounters(buildConfig: BuildConfig, taskMap: TaskMap,
+    orderedTasks: ArrayList<TaskIdentifier>): (DownStreamTasks, Task2SyncCounter) {
+    let downstreamTasks = DownStreamTasks()
+    let scs = Task2SyncCounter()
+    for (taskId in orderedTasks where taskMap.contains(taskId)) {
+        let depTasks = HashSet<TaskIdentifier>()
+        downstreamTasks.addIfAbsent(taskId, HashSet<TaskIdentifier>())
+        if (buildConfig.globalConfig.isProjectCombine && taskId.fullName == buildConfig.globalConfig.rootName) {
+            for ((k, _) in taskMap where k != taskId && taskMap.contains(k)) {
+                depTasks.add(k)
+                downstreamTasks.addIfAbsent(k, HashSet<TaskIdentifier>())
+                downstreamTasks[k].add(taskId)
+            }
+        } else {
+            let task = taskMap[taskId]
+            for (dep in task.requireTasks where taskMap.contains(dep)) {
+                depTasks.add(dep)
+                downstreamTasks.addIfAbsent(dep, HashSet<TaskIdentifier>())
+                downstreamTasks[dep].add(taskId)
+            }
 
-    res.forEachPkg { r: ResolveItem =>
+            if (let Some(superPkgCfg) <- task.superPkgCfg) {
+                for (dep in superPkgCfg.subPkgSet) {
+                    let depId = TaskIdentifier(dep, task.target, "")
+                    if (!taskMap.contains(depId)) {
+                        continue
+                    }
+                    depTasks.add(depId)
+                    downstreamTasks.addIfAbsent(depId, HashSet<TaskIdentifier>())
+                    downstreamTasks[depId].add(taskId)
+                }
+            }
+        }
+        scs.add(taskId, SyncCounter(depTasks.size))
+    }
+    (downstreamTasks, scs)
+}
+
+func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
+    let (taskMap, orderedTasks) = res.resolves.fold((TaskMap(), ArrayList<TaskIdentifier>())) {
+        acc, r: ResolveItem =>
         if (buildConfig.isIncremental && !buildConfig.rebuildList.contains(r.fullName)) {
-            return true
+            return acc
         }
         if (!r.hasProdFiles) {
             buildConfig.rebuildList.remove(r.fullName)
-            return true
+            return acc
         }
-        let compileTasks = createCompileTasks(r, buildConfig) ?? return false
-        for (config in compileTasks) {
-            parallel.taskMap.add(config.id, config)
+        let compileTasks = createCompileTasks(r, buildConfig) ?? return acc
+        for (task in compileTasks) {
+            acc[0].add(task.id, task)
+            acc[1].add(task.id)
         }
-        return true
+        acc
     }
 
-    if (!parallel.taskMap.isEmpty()) {
+    if (!taskMap.isEmpty()) {
         buildConfig.isRebuild = true
     }
+
+    let (downstreamTasks, scs) = getDownstreamTasksAndSynCounters(buildConfig, taskMap, orderedTasks)
+
+    let parallel = ParallelBuilder(buildConfig, taskMap, downstreamTasks, scs, orderedTasks.toArray())
 
     let parallelResult: Bool = parallel.build()
 
@@ -571,7 +740,7 @@ func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
         }
     }
 
-    return parallelResult
+    parallelResult
 }
 
 func calculateParallel(currentParalla: Int64): Int64 {
@@ -597,3 +766,38 @@ func futJudge(args: ArrayList<String>): Bool {
     }
     return (fut1.get() || fut2.get())
 }
+
+func getLogFile(dir: String, taskId: TaskIdentifier): (String, String) {
+    let logFileName = "${taskId.fullName}.${taskId.target}.${taskId.sourceSetDir}.${taskId.compilePhase.toString()}"
+	let outLogFile = Path(dir).join("${logFileName}.outlog").toString()
+	let errLogFile = Path(dir).join("${logFileName}.errlog").toString()
+    (outLogFile, errLogFile)
+}
+
+var watcherCb: (String) -> Unit = { _ => }
+
+func watchFS(cjo2task: HashMap<String, TaskIdentifier>, listenDirs: HashSet<String>, notify: (TaskIdentifier, Notification) -> Unit): Unit {
+    let dirs = StringBuilder()
+    for (dir in listenDirs) {
+        if (!exists(dir)) {
+            Directory.create(dir, recursive: true)
+        }
+        dirs.append("${dir},")
+    }
+    watcherCb = { cjo => notify(cjo2task[cjo], CjoReady) }
+    unsafe {
+        let cs = LibC.mallocCString(dirs.toString())
+        let res = initFSWatcher(cs, { cjo => watcherCb(cjo.toString()) })
+        LibC.free(cs)
+        if (!res) {
+            return
+        }
+        startFSWatcher()
+    }
+}
+
+foreign func initFSWatcher(dirs: CString, cb: CFunc<(CString) -> Unit>): Bool
+
+foreign func startFSWatcher(): Unit
+
+foreign func stopFSWatcher(): Unit
