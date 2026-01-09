@@ -68,6 +68,8 @@ public struct FullName <: Serializable<FullName> {
     }
 }
 
+type StdDeps = ArrayList<HashMap<String, Array<String>>>
+
 public class RequiresPackages <: Serializable<RequiresPackages> {
     public var packageName: String = ""
     public var accessLevel: String = ""
@@ -75,7 +77,7 @@ public class RequiresPackages <: Serializable<RequiresPackages> {
     public var mockUsed: Bool = false
     public var testUsed: Bool = false
     public var dependencies: ArrayList<FullName> = ArrayList<FullName>()
-    public var stdDependencies: ArrayList<FullName> = ArrayList<FullName>()
+    public var stdDependencies: StdDeps = StdDeps()
     public var features: HashSet<Feature> = HashSet()
     public var product: Bool = false
     public var timeStamp: Int64 = 0
@@ -87,7 +89,7 @@ public class RequiresPackages <: Serializable<RequiresPackages> {
         result.add(field<String>("accessLevel", this.accessLevel))
         result.add(field<Int64>("timeStamp", this.timeStamp))
         result.add(field<ArrayList<FullName>>(DEPENDENCIES, this.dependencies))
-        result.add(field<ArrayList<FullName>>("std-dependencies", this.stdDependencies))
+        result.add(field<StdDeps>("std-dependencies", this.stdDependencies))
         result.add(field("features", features |> map { it => it.toString() } |> collectArray))
         result.add(field("product", product))
         result.add(field<Bool>("testUsed", this.testUsed))
@@ -125,10 +127,7 @@ public class RequiresPackages <: Serializable<RequiresPackages> {
         }
         result.dependencies = allDependencies |> filter {dependency: FullName => !dependency.isStdlibPackage} |>
             collectArrayList<FullName>
-        result.stdDependencies = allDependencies |> filter {dependency: FullName => dependency.isStdlibPackage} |>
-            collectArrayList<FullName>
-        result.stdDependencies.add(all: ArrayList<FullName>.deserialize(
-            (dms.get("std-dependencies") as DataModelSeq) ?? DataModelSeq()))
+        result.stdDependencies = StdDeps.deserialize((dms.get("std-dependencies") as DataModelSeq) ?? DataModelSeq())
         return result
     }
 }
