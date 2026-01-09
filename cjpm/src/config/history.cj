@@ -45,15 +45,6 @@ public class ModuleResolve <: Serializable<ModuleResolve> {
             crossBinDeps: HashMap<String, BinDeps>.deserialize(dms.get("crossBinDeps"))
         )
     }
-
-    public func forEachPkg(fn: (ResolveItem) -> Bool): Bool {
-        for (v in this.resolves) {
-            if (!fn(v)) {
-                return false
-            }
-        }
-        return true
-    }
 }
 
 // the 'incremental-cache.json' model for each module.
