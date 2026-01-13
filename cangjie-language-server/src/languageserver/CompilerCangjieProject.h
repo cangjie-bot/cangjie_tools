@@ -483,6 +483,11 @@ public:
     
     void EmitDiagsOfFile(const std::string &filePath);
 
+    void UpdateFileStatusInCI(const std::string& pkgName, const std::string& file,
+        CompilerInstance::SrcCodeChangeState state);
+        
+    void UpdatePackageStatusInCI(const std::string& pkgName, ChangeState state);
+
 private:
     CompilerCangjieProject(Callbacks *cb, lsp::IndexDatabase *arkIndexDB);
 
