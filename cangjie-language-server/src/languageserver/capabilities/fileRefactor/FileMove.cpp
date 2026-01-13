@@ -441,7 +441,7 @@ std::unique_ptr<ArkAST> FileMove::CreateArkAST(LSPCompilerInstance *ci,
         if (!f || f->filePath != filePath) {
             continue;
         }
-        std::pair<std::string, std::string> paths = { f->filePath, ci->bufferCache[filePath] };
+        std::pair<std::string, std::string> paths = { f->filePath, ci->srcBuffer[filePath].code };
         auto arkAST = std::make_unique<ArkAST>(paths, f.get(), ci->diag,
             pkgInstance, &ci->GetSourceManager());
         std::string absName = FileStore::NormalizePath(f->filePath);
