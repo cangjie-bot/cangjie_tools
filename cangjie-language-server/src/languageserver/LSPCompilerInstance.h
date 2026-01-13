@@ -67,7 +67,7 @@ public:
 
     virtual ~LSPCompilerInstance() { callback = nullptr; }
 
-    void PreCompileProcess(const std::unique_ptr<ark::CjoManager> &cjoManager);
+    void PreCompileProcess();
 
     void CompilePassForComplete(const std::unique_ptr<ark::CjoManager> &cjoManager,
         const std::unique_ptr<ark::DependencyGraph> &graph,
@@ -99,15 +99,8 @@ public:
 
     bool ToImportPackage(const std::string &curModuleName, const std::string &cjoPackage);
 
-    bool Parse(const std::unique_ptr<ark::CjoManager> &cjoManager)
+    bool Parse()
     {
-        if (!upstreamSourceSetName.empty()) {
-            const auto &realPkgName = upstreamSourceSetName + "-" + pkgNameForPath;
-            auto cache = cjoManager->GetData(realPkgName);
-            if (cache) {
-                importManager.SetPackageCjoCache(pkgNameForPath, *cache);
-            }
-        }
         return ExecuteCompilerApi("PerformParse", &CompilerInstance::PerformParse, this);
     }
 
@@ -157,11 +150,11 @@ public:
         const std::string &realPkgName = ""
     );
 
-    std::unordered_map<std::string, ark::EdgeType> UpdateUpstreamPkgs();
+    std::unordered_map<std::string, ark::EdgeType> UpdateUpstreamPkgs(bool isCear = true);
 
     void UpdateDepGraph(bool isIncrement = true, const std::string &prePkgName = "");
 
-    void UpdateDepGraph(const std::unique_ptr<ark::DependencyGraph> &graph, const std::string &prePkgName);
+    void UpdateDepGraph(const std::unique_ptr<ark::DependencyGraph> &graph, const std::string &prePkgName, bool isCear = true);
 
     ark::Callbacks *callback = nullptr;
     std::string pkgNameForPath; // Real Package Name

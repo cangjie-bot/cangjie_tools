@@ -58,7 +58,7 @@ LSPCompilerInstance::LSPCompilerInstance(ark::Callbacks *cb, CompilerInvocation 
                              &importManager, false);
 }
 
-std::unordered_map<std::string, ark::EdgeType> LSPCompilerInstance::UpdateUpstreamPkgs()
+std::unordered_map<std::string, ark::EdgeType> LSPCompilerInstance::UpdateUpstreamPkgs(bool isCear)
 {
     const auto packages = GetSourcePackages();
     if (packages.empty()) {
@@ -111,7 +111,11 @@ std::unordered_map<std::string, ark::EdgeType> LSPCompilerInstance::UpdateUpstre
             depPkgs.insert(realDep);
         }
     }
-    upstreamPkgs = depPkgs;
+    if (isCear) {
+        upstreamPkgs = depPkgs;
+    } else {
+        upstreamPkgs.insert(depPkgs.begin(), depPkgs.end());
+    }
     return depPkgsEdges;
 }
 // LCOV_EXCL_START
@@ -169,18 +173,18 @@ void LSPCompilerInstance::UpdateDepGraph(bool isIncrement, const std::string &pr
 }
 // LCOV_EXCL_STOP
 void LSPCompilerInstance::UpdateDepGraph(
-    const std::unique_ptr<ark::DependencyGraph> &graph, const std::string &fullPkgName)
+    const std::unique_ptr<ark::DependencyGraph> &graph, const std::string &fullPkgName, bool isCear)
 {
-    auto edges = UpdateUpstreamPkgs();
+    auto edges = UpdateUpstreamPkgs(isCear);
     graph->UpdateDependencies(fullPkgName, upstreamPkgs, edges);
 }
 
-void LSPCompilerInstance::PreCompileProcess(const std::unique_ptr<ark::CjoManager> &cjoManager)
+void LSPCompilerInstance::PreCompileProcess()
 {
     diag.Reset();
     diag.SetSourceManager(&GetSourceManager());
 
-    (void)Parse(cjoManager);
+    (void)Parse();
     // parse completion need condition compile
     (void)ConditionCompile();
     AddSourceToMember();
@@ -193,7 +197,7 @@ void LSPCompilerInstance::CompilePassForComplete(
     // Faster Completion needs pass: Parse, ConditionCompile and ImportPackage.
     diag.Reset();
     diag.SetSourceManager(&GetSourceManager());
-    (void)Parse(cjoManager);
+    (void)Parse();
     (void)ConditionCompile();
     const auto filePath = GetSourceManager().GetSource(pos.fileID).path;
     auto file = GetFileByPath(filePath).get();
@@ -315,6 +319,14 @@ void LSPCompilerInstance::ImportCjoToManager(
         }
         importManager.SetPackageCjoCache(package, *cjoCache);
     }
+    if (upstreamSourceSetName.empty()) {
+        return;
+    }
+    auto cjoCache = cjoManager->GetData(upstreamSourceSetName + "-" + pkgNameForPath);
+    if (!cjoCache) {
+        return;
+    }
+    importManager.SetPackageCjoCache(pkgNameForPath, *cjoCache);
 }
 
 void LSPCompilerInstance::IndexCjoToManager(
@@ -365,7 +377,7 @@ bool LSPCompilerInstance::CompileAfterParse(
     std::vector<uint8_t> data;
     MarkBrokenDecls(*packages[0]);
     (void)ExportAST(false, data, *packages[0]);
-    std::string &cjoDataPkgName = pkgNameForPath;
+    std::string cjoDataPkgName = pkgNameForPath;
     if (!realPkgName.empty()) {
         cjoDataPkgName = realPkgName;
     }

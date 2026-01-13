@@ -190,7 +190,7 @@ bool ModuleManager::isCommonPlatformModule(const std::string &filePath)
 {
     std::string normalizeFilePath = Normalize(filePath);
     for (const auto &item : moduleInfoMap) {
-        if (IsUnderPath(item.second.modulePath, normalizeFilePath)) {
+        if (IsUnderPath(item.second.modulePath, normalizeFilePath, true)) {
             return item.second.isCommonPlatformModule;
         }
     }

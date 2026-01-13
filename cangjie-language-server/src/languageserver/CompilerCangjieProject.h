@@ -121,6 +121,7 @@ public:
 
     ArkAST *GetArkAST(const std::string &fileName)
     {
+        // todo
         std::unique_lock<std::recursive_mutex> lock(fileCacheMtx);
         if (fileCache.find(fileName) != fileCache.end()) {
             return fileCache[fileName].get();
@@ -468,6 +469,7 @@ public:
 
     std::string GetContentByFile(const std::string& filePath)
     {
+        // todo
         auto fullPkgName = GetFullPkgName(filePath);
         if (auto found = pkgInfoMap.find(fullPkgName); found != pkgInfoMap.end()) {
             if (auto buffer = found->second->bufferCache.find(filePath); buffer != found->second->bufferCache.end()) {
@@ -504,6 +506,13 @@ public:
     std::vector<std::string> GetSourceSetNamesByPackage(const std::string &packageName);
 
     std::string GetSourceSetNameByPath(const std::string &path);
+
+    PkgInfo* GetTargetPkgInfo(const std::string &fullPackageName, const std::string &filePath);
+
+    void InsertFileBufferCache(
+        const std::string &fullPackageName, const std::string &filePath, const std::string &content);
+
+    std::string GetFileBufferCacheContent(const std::string &fullPackageName, const std::string &filePath);
 
 private:
     CompilerCangjieProject(Callbacks *cb, lsp::IndexDatabase *arkIndexDB);

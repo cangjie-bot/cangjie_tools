@@ -94,7 +94,7 @@ void CjdIndexer::ParsePackageDependencies()
         ci->cangjieHome = CompilerCangjieProject::GetInstance()->GetModulesHome();
         ci->loadSrcFilesFromCache = true;
         ci->bufferCache = item.second->bufferCache;
-        ci->PreCompileProcess(cjoManager);
+        ci->PreCompileProcess();
         std::string fullPackageName = item.first;
         ci->UpdateDepGraph(graph, item.first);
         ciMap[fullPackageName] = std::move(ci);

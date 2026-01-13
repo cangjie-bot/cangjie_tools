@@ -16,7 +16,7 @@ namespace ark {
 enum class CangjieFileKind {
     MISSING,
     IN_OLD_PACKAGE,
-    IN_DERIVATIVE_PACKAGE,
+    IN_NEW_DERIVATIVE_PACKAGE,
     IN_NEW_PACKAGE,
     IN_PROJECT_NOT_IN_SOURCE
 };
