@@ -544,3 +544,38 @@ std::string LSPCompilerInstance::Denoising(std::string candidate)
 {
     return ark::CompilerCangjieProject::GetInstance()->Denoising(candidate);
 }
+
+void LSPCompilerInstance::SetBufferCache(const std::unordered_map<std::string, std::string> &bufferCache)
+{
+    for (auto& it: bufferCache) {
+        this->srcBuffer[it.first] = SrcCodeCacheInfo({SrcCodeChangeState::ADDED, it.second});
+    }
+}
+
+void LSPCompilerInstance::SetBufferCacheForParse(const std::unordered_map<std::string, std::string> &bufferCache)
+{
+    std::lock_guard lock(fileStatusLock);
+    for (auto it = fileStatus.begin(); it != fileStatus.end();) {
+        if (bufferCache.find(it->first) == bufferCache.end()) {
+            if (srcBuffer.find(it->first) != srcBuffer.end()) {
+                srcBuffer[it->first].state = SrcCodeChangeState::DELETED;
+            }
+            it = fileStatus.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    
+    for (auto& it: bufferCache) {
+        if (fileStatus.find(it.first) == fileStatus.end()) {
+            fileStatus[it.first] = SrcCodeChangeState::ADDED;
+        }
+
+        if (fileStatus[it.first] == SrcCodeChangeState::UNCHANGED) {
+            this->srcBuffer[it.first].state = SrcCodeChangeState::UNCHANGED;
+        } else {
+            this->srcBuffer[it.first] = SrcCodeCacheInfo({fileStatus[it.first], it.second});
+            fileStatus[it.first] = SrcCodeChangeState::UNCHANGED;
+        }
+    }
+}
