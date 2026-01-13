@@ -201,7 +201,7 @@ void LSPCompilerInstance::CompilePassForComplete(
     if (file && !ark::InImportSpec(*file, pos) && name != "SignatureHelp") {
         return;
     }
-    ImportCjoToManager(cjoManager, graph);
+    ImportCjoToManagerForComplete(cjoManager, graph);
     (void)ImportPackage();
 }
 
@@ -315,6 +315,54 @@ void LSPCompilerInstance::ImportCjoToManager(
         }
         importManager.SetPackageCjoCache(package, *cjoCache);
     }
+}
+
+void LSPCompilerInstance::ImportCjoToManagerForComplete(
+    const std::unique_ptr<ark::CjoManager> &cjoManager, const std::unique_ptr<ark::DependencyGraph> &graph)
+{
+    std::string curModuleName = invocation.globalOptions.moduleName;
+
+    // Import stdlib cjo, priority is low.
+    for (const auto &cjoCache : cjoFileCacheMap) {
+        importManager.SetPackageCjoCache(cjoCache.first, cjoCache.second);
+    }
+
+    // import cjo for bin dependencies in cjpm.toml
+    ImportAllUsrCjo(curModuleName);
+
+    // Import user's source code, priority is high.
+    const auto allDependencies = graph->FindAllDependencies(pkgNameForPath);
+    // Update the not imported pkgs status
+    // std::lock_guard lock(pkgStatusLock);
+    // for (auto& it: allUpstreamPkgStatus) {
+    //     if (allDependencies.find(it.first) == allDependencies.end()) {
+    //         it.second = ChangeState::DELETE;
+    //     }
+    // }
+
+    for (auto &package : allDependencies) {
+        auto cjoCache = cjoManager->GetData(package);
+        if (!cjoCache) {
+            continue;
+        }
+        // if (allUpstreamPkgStatus.find(package) == allUpstreamPkgStatus.end()) {
+        //     allUpstreamPkgStatus[package] = ChangeState::ADD;
+        // }
+        // set cjo which from compile with it's status 
+        importManager.SetPackageCjoCache(package, *cjoCache/*, allUpstreamPkgStatus[package]*/);
+        // fresh package status once it's setted
+        // allUpstreamPkgStatus[package] = ChangeState::NO_CHANGE;
+    }
+
+    // notify frontend deleted packages
+    // for (auto it = allUpstreamPkgStatus.begin(); it != allUpstreamPkgStatus.end();) {
+    //     if (it->second == ChangeState::DELETE) {
+    //         importManager.SetPackageCjoCache(it->first, {}/*, allUpstreamPkgStatus[package]*/);
+    //         it = allUpstreamPkgStatus.erase(it);
+    //     } else {
+    //         ++it;
+    //     }
+    // }
 }
 
 void LSPCompilerInstance::IndexCjoToManager(
@@ -543,4 +591,39 @@ void LSPCompilerInstance::MarkBrokenDecls(Package &pkg)
 std::string LSPCompilerInstance::Denoising(std::string candidate)
 {
     return ark::CompilerCangjieProject::GetInstance()->Denoising(candidate);
+}
+
+void LSPCompilerInstance::SetBufferCache(const std::unordered_map<std::string, std::string> &bufferCache)
+{
+    for (auto& it: bufferCache) {
+        this->srcBuffer[it.first] = SrcCodeCacheInfo({SrcCodeChangeState::ADDED, it.second});
+    }
+}
+
+void LSPCompilerInstance::SetBufferCacheForParse(const std::unordered_map<std::string, std::string> &bufferCache)
+{
+    std::lock_guard lock(fileStatusLock);
+    for (auto it = fileStatus.begin(); it != fileStatus.end();) {
+        if (bufferCache.find(it->first) == bufferCache.end()) {
+            if (srcBuffer.find(it->first) != srcBuffer.end()) {
+                srcBuffer[it->first].state = SrcCodeChangeState::DELETED;
+            }
+            it = fileStatus.erase(it);
+        } else {
+            ++it;
+        }
+    }
+    
+    for (auto& it: bufferCache) {
+        if (fileStatus.find(it.first) == fileStatus.end()) {
+            fileStatus[it.first] = SrcCodeChangeState::ADDED;
+        }
+        
+        if (fileStatus[it.first] == SrcCodeChangeState::UNCHANGED) {
+            this->srcBuffer[it.first].state = SrcCodeChangeState::UNCHANGED;
+        } else {
+            this->srcBuffer[it.first] = SrcCodeCacheInfo({fileStatus[it.first], it.second});
+            fileStatus[it.first] = SrcCodeChangeState::UNCHANGED;
+        }
+    }
 }
