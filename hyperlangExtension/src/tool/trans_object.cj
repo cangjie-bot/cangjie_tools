@@ -212,7 +212,7 @@ public class TransObject {
             }
             isPublicType = processArkMethod(constructorToken, methodToken, paramToken)
             let modifiers = if (this.cjModifiers.contains("open")) {
-                "public open "
+                "public "
             } else if (arkParents.size > 0) {
                 "public "
             } else {

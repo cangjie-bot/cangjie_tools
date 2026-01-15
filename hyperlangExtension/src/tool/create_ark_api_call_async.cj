@@ -20,14 +20,15 @@ public func createArkAPICallAsync(gconfig: GlobalConfig): String {
 
 package ${moduleName}
 
-import std.collection.{concurrent.ConcurrentHashMap, HashMap}
+internal import std.collection.HashMap
+import std.collection.{concurrent.ConcurrentHashMap}
 import std.collection.{all, any}
 import std.sync.ReentrantMutex
 import ohos.ark_interop.*
 import std.convert.*
 import std.process.*
 import std.time.*
-import ohos.base.UIThread
+import ohos.base.Main
 
 foreign func gettid(): Int64
 
@@ -68,7 +69,7 @@ protected func getMainContext(): JSContext {
     if (curTid == mainThreadId) {
         initJs()
     } else {
-        let f = spawn (UIThread) {
+        let f = spawn (Main) {
             initJs()
         }
         f.get()
@@ -79,7 +80,7 @@ protected func checkThreadAndCall<T>(ctx: JSContext, f: (JSContext) -> T): T {
     if (ctx.isInBindThread()) {
         f(ctx)
     } else {
-        let fut = spawn (UIThread) {
+        let fut = spawn (Main) {
             f(ctx)
         }
         fut.get()
