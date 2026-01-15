@@ -334,11 +334,32 @@ public class TypeType <: Serializable<TypeType> {
             case TsUnion(arr) =>
                 // filt option type
                 let nonNullTypes: ArrayList<TsType> = ArrayList<TsType>()
+                var hasNullish = false
                 for (e in arr) {
                     match (e) {
-                        case TsNull | TsUndefined | TsVoid => ()
+                        case TsNull | TsUndefined | TsVoid => hasNullish = true
                         case _ => nonNullTypes.add(e)
                     }
+                }
+                var allStringLiteral = nonNullTypes.size > 0
+                for (t in nonNullTypes) {
+                    if (let TsStringLiteral(_) <- t) {
+                        ()
+                    } else {
+                        allStringLiteral = false
+                        break
+                    }
+                }
+                if (allStringLiteral) {
+                    let nameToken = Token(TokenKind.IDENTIFIER, name)
+                    let aliasType = if (hasNullish) {
+                        "Option<String>"
+                    } else {
+                        "String"
+                    }
+                    tok.append(quote(public type $(nameToken) = ))
+                    tok.append(Token(TokenKind.IDENTIFIER, aliasType) + nl)
+                    return tok
                 }
                 if (nonNullTypes.size != 1) {
                     // handle union type, convert it to enum
