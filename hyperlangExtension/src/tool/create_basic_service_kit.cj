@@ -20,9 +20,8 @@ public func createBasicServiceKit(gconfig: GlobalConfig): String {
 
 package ${moduleName}
 
-public import ohos.business_exception.BusinessException
-public import ohos.callback_invoke.allbackObject
-public import kit.PerformanceAnalysisKit.Hilog
+public import ohos.base.BusinessException
+public import ohos.base.AsyncCallback
 
 protected type AsyncCallback<T> = (?BusinessException, ?T) -> Unit
 """
