@@ -286,7 +286,7 @@ public class A2CJ {
 
     public func handleUseContext(gconfig: GlobalConfig, out: Tokens): Unit {
         if (gconfig.moduleMeta.useContext) {
-            out.append(quote(import tpc.AbilityKit.common) + nl)
+            out.append(quote(import ohos.ability.*) + nl)
         }
     }
 
