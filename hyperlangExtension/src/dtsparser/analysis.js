@@ -63,7 +63,7 @@ function newEnumJson() {
 }
 
 function newTypeJosn() {
-    return { 'name': '', 'type': '' };
+    return { 'name': '', 'type': '', 'typeParameters': [] };
 }
 
 function newVariableJson() {
@@ -489,6 +489,7 @@ class ASTVisitor {
 
         rjson[rjson.length - 1].info.name = node.name.escapedText;
         rjson[rjson.length - 1].info.typeNode = this.serializeType(node.type);
+        this.handleTypeParameters(node, rjson[rjson.length - 1].info);
 
         if (node.type.kind === 150) {
             rjson[rjson.length - 1].info.type = 'number';

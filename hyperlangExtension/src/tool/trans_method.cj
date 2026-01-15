@@ -189,7 +189,7 @@ public class TransMethod {
         } else {
             third_param.append(quote({$(ctxToken) => [$(transparamToken)]}))
         }
-        let forth_param = getAsyncRetToken(this.cjRetType, retTypeToken)
+        let forth_param = getAsyncRetToken(this.methodType.returnTypeNode)
 
         let apiToken = if (gconfig.isOhos) {
             Token(TokenKind.IDENTIFIER, "ohosGlobalApiCall")
@@ -258,7 +258,7 @@ public class TransMethod {
         let typeParameters = getTypeParametersToken(this.methodType.typeParameters)
         let typeConstraintsToken = getTypeConstraintsToken(this.methodType.typeParameters)
 
-        let forth_param = getAsyncRetToken(this.cjRetType, retTypeToken)
+        let forth_param = getAsyncRetToken(this.methodType.returnTypeNode)
 
         let cbToken = if (hasAsyncCallback) {
             handleAsyncCallBack() + nl
@@ -455,8 +455,45 @@ public class TransMethod {
         }
     }
 
-    func getAsyncRetToken(retType: String, retTypeToken: Token, sync!: Bool = false): Tokens {
-        let cjType = TypeMap.typeMap(retType)
+    private func getOptionInnerType(typeStr: String): ?String {
+        if (!typeStr.startsWith("Option<") || !typeStr.endsWith(">")) {
+            return None
+        }
+        Some(typeStr[7..(typeStr.size - 1)])
+    }
+
+    private func optionFromJS(innerType: String, valueToken: Token): Tokens {
+        let ctxToken = quote(ctx)
+        let valueTokens = Tokens(valueToken)
+        if (gconfig.isEnum(innerType)) {
+            let innerToken = Token(TokenKind.IDENTIFIER, innerType)
+            let elemType = match (gconfig.moduleMeta.symbols.get(innerType)) {
+                case Some("enum-string") => quote(String)
+                case Some(_) | None => quote(Int32)
+            }
+            let optValue = quote(fromJSOption<$(elemType)>($(ctxToken), $(valueTokens)))
+            return quote($(innerToken).tryParse($(optValue)))
+        } else if (isArray(innerType)) {
+            let elemType = getArrayInnerType(innerType)
+            let elemToken = Token(TokenKind.IDENTIFIER, elemType)
+            let elemCtor = if (elemType.startsWith("JSValue")) {
+                quote({_: JSContext, v: JSValue => v})
+            } else {
+                quote({ctx: JSContext, v: JSValue => $(elemToken).fromJSValue(ctx, v)})
+            }
+            return quote(fromJSArrayOption<$(elemToken)>($(ctxToken), $(valueTokens), $(elemCtor)))
+        } else if (isBigInt(innerType)) {
+            return quote(fromJSOption<BigInt>($(ctxToken), $(valueTokens), {ctx: JSContext, v: JSValue => v.asBigInt(ctx).toBigInt()}))
+        } else if (innerType.startsWith("JSValue")) {
+            return quote(fromJSOption<JSValue>($(ctxToken), $(valueTokens), {_: JSContext, v: JSValue => v}))
+        } else {
+            let innerToken = Token(TokenKind.IDENTIFIER, innerType)
+            return quote(fromJSOption<$(innerToken)>($(ctxToken), $(valueTokens), {ctx: JSContext, v: JSValue => $(innerToken).fromJSValue(ctx, v)}))
+        }
+    }
+
+    func getAsyncRetToken(retTypeNode: TsType, sync!: Bool = false): Tokens {
+        let cjType = retTypeNode.toCJType()
         if (interopTypes.contains(cjType)) {
             return quote()
         }
@@ -466,37 +503,12 @@ public class TransMethod {
             Token(TokenKind.IDENTIFIER, "info")
         }
         let retToken = Tokens()
-        if (gconfig.isEnum(cjType)) {
-            retToken.append(
-                quote({
-                ctx, info => $(retTypeToken).parse(Int32.fromJSValue(ctx, $(valueToken)))
-            }))
-        } else if (isArray(cjType)) {
-            let innerType = getArrayInnerType(cjType)
-            let innerToken = Token(TokenKind.IDENTIFIER, innerType)
-            let fromValue = if (innerType.startsWith("JSValue")) {
-                quote()
-            } else {
-                quote(.fromJSValue(ctx, retArr[index]))
-            }
-            retToken.append(
-                quote({
-                ctx, info =>
-                    let retArr = $(valueToken).asArray()
-                    Array<$(innerToken)>(retArr.size) {
-                        index => $(innerToken)$(fromValue)
-                    }
-            }))
-        } else {
-            let innerToken = if (quote($(retTypeToken)).toString().startsWith("JSValue")) {
-                quote($(valueToken))
-            } else {
-                quote($(retTypeToken).fromJSValue(ctx, $(valueToken)))
-            }
-            retToken.append(quote({
-                ctx, info => $(innerToken)
-            }))
-        }
+        let ctxToken = quote(ctx)
+        let valueTokens = Tokens(valueToken)
+        let fromJs = retTypeNode.fromJSValue(gconfig, valueTokens, ctxToken)
+        retToken.append(quote({
+            ctx, info => $(fromJs)
+        }))
         retToken
     }
 
@@ -507,6 +519,14 @@ public class TransMethod {
             return quote()
         }
         let retToken = Tokens()
+        if (let Some(innerType) <- getOptionInnerType(cjType)) {
+            let valueToken = Token(TokenKind.IDENTIFIER, "info")
+            let optValue = optionFromJS(innerType, valueToken)
+            retToken.append(quote({
+                ctx, info => $(optValue)
+            }))
+            return retToken
+        }
         if (gconfig.isEnum(cjType)) {
             retToken.append(
                 quote({
@@ -548,19 +568,28 @@ public class TransMethod {
         let prefix: ArrayList<Modifier> = cjModifiers |> map {mdf => Modifier(Token(TokenKind.IDENTIFIER, mdf))} |>
             collectArrayList
 
-        let innerType = Token(TokenKind.IDENTIFIER, callbackInnerType)
+        let promiseInnerType = match (this.methodType.returnTypeNode) {
+            case TsTypeRef("Promise", arr) =>
+                if (arr.size > 0) {
+                    arr[0]
+                } else {
+                    TsVoid
+                }
+            case _ => this.methodType.returnTypeNode
+        }
+        let innerType = Token(TokenKind.IDENTIFIER, promiseInnerType.toCJType())
         let paramToken = quote(callback: AsyncCallback<$(innerType)>)
-        if (this.methodType.params.size > 0) {
+        if (this.methodType.parameters.size > 0) {
             paramToken.append(commaToken)
         }
-        paramToken.append(getParamToken())
+        paramToken.append(paramListToCJ())
         let ctxToken = quote(ctx)
 
         let transparamToken = (parametersToJS(ctxToken) |> reduce {l, r => l + commaToken + r}).getOrDefault {
             => quote()
         }
 
-        let transParam = if (this.methodType.params.size == 0) {
+        let transParam = if (this.methodType.parameters.size == 0) {
             quote(emptyArg)
         } else {
             quote({$(ctxToken) => [$(transparamToken)]})
@@ -572,7 +601,7 @@ public class TransMethod {
             Token(TokenKind.IDENTIFIER, "hmsGlobalApiCallPromise")
         }
 
-        let resolveRetToken = getAsyncRetToken(this.cjRetType, innerType)
+        let resolveRetToken = getAsyncRetToken(promiseInnerType)
         let moduleName = gconfig.requireModuleName
 
         let staticConstructor = if (this.isStatic) {

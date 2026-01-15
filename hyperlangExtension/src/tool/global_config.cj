@@ -278,11 +278,24 @@ public class GlobalConfig {
                     }
                 } 
                 let nonNullTypes = ArrayList<TsType>()
+                var hasNullish = false
                 for (e in elements) {
                     match (e) {
-                        case TsNull | TsUndefined => ()
+                        case TsNull | TsUndefined | TsVoid => hasNullish = true
                         case _ => nonNullTypes.add(e)
                     }
+                }
+                var allStringLiteral = nonNullTypes.size > 0
+                for (t in nonNullTypes) {
+                    if (let TsStringLiteral(_) <- t) {
+                        ()
+                    } else {
+                        allStringLiteral = false
+                        break
+                    }
+                }
+                if (allStringLiteral) {
+                    return Some(if (hasNullish) {TsOptional(TsString)} else {TsString})
                 }
                 let result = ArrayList<String>()
                 for (e in elements) {
