@@ -39,8 +39,12 @@ public class TransObject {
         this.arkParentsMethods = objectType.parentsMethods
         this.arkComment = objectType.comment
         this.arkName = objectType.name
-        this.arkParents = objectType.parents
-        for (parent in arkParents) {
+        this.arkParents = ArrayList<String>()
+        for (parent in objectType.parents) {
+            if (parent == "" || parent == "undefined") {
+                continue
+            }
+            this.arkParents.add(parent)
             if (objectType.nameSpace.classes.contains(parent)) {
                 this.arkParentsCategories.add("class")
             } else {
@@ -148,6 +152,19 @@ public class TransObject {
         for (i in arkProperties) {
             totalProperties.add((i, false))
         }
+        // Ensure non-optional params come before named optional params
+        let requiredProps = ArrayList<(Property, Bool)>()
+        let optionalProps = ArrayList<(Property, Bool)>()
+        for (item in totalProperties) {
+            if (item[0].isOptional) {
+                optionalProps.add(item)
+            } else {
+                requiredProps.add(item)
+            }
+        }
+        totalProperties.clear()
+        totalProperties.add(all: requiredProps)
+        totalProperties.add(all: optionalProps)
 
         // generate properties
         genProperties(totalProperties, property, fromJSValueItem, getPropertyItem)
@@ -212,7 +229,7 @@ public class TransObject {
             }
             isPublicType = processArkMethod(constructorToken, methodToken, paramToken)
             let modifiers = if (this.cjModifiers.contains("open")) {
-                "public open "
+                "public "
             } else if (arkParents.size > 0) {
                 "public "
             } else {

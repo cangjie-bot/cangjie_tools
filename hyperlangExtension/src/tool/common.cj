@@ -42,9 +42,13 @@ public let stropToken: Token = Token(TokenKind.IDENTIFIER, "?String")
 public let commaToken: Token = Token(TokenKind.COMMA)
 public let noneToken: Token = Token(TokenKind.IDENTIFIER, "None")
 public let deriveToStringToken: Token = Token(TokenKind.IDENTIFIER, "@Derive[ToString]")
-public let cangjieKeyword = ["type", "in", "func", "enum", "package", "import", "class", "interface", "let", "var",
-    "const", "init", "this", "super", "if", "else", "case", "try", "catch", "finally", "for", "do", "while", "throw",
-    "return", "continue", "break", "is", "as", "match", "where", "extend", "spawn", "macro", "quote"]
+public let cangjieKeyword = ["as", "abstract", "break", "Bool", "case", "catch", "class", "const", "continue", "Rune",
+    "do", "else", "enum", "extend", "for", "func", "false", "finally", "foreign", "Float16", "Float32", "Float64",
+    "if", "in", "is", "init", "import", "interface", "Int8", "Int16", "Int32", "Int64", "IntNative", "let", "mut",
+    "main", "macro", "match", "Nothing", "open", "operator", "override", "prop", "public", "package", "private",
+    "protected", "quote", "redef", "return", "spawn", "super", "static", "struct", "synchronized", "try", "this",
+    "true", "type", "throw", "This", "unsafe", "Unit", "UInt8", "UInt16", "UInt32", "UInt64", "UIntNative", "var",
+    "VArray", "where", "while"]
 public let ViewBase: Array<String> = ["AlphabetIndexer", "Blank", "Button", "Checkbox", "CheckboxGroup", "DataPanel",
     "Datepicker", "Divider", "Gauge", "Image", "ImageSpan", "LoadingProgress", "Menu", "MenuItem", "MenuItemGroup",
     "Progress", "QRCode", "Radio", "Rating", "RichEditor", "RichText", "ScrollBar", "Search", "Select", "Slider", "Span",
@@ -314,6 +318,7 @@ public class TypeType <: Serializable<TypeType> {
     public var comment: String = ""
     public var aliasType: String = ""
     public var tsType: TsType = TsAny
+    public var typeParameters: ArrayList<TypeParameter> = ArrayList<TypeParameter>()
 
     public init() {}
 
@@ -325,20 +330,43 @@ public class TypeType <: Serializable<TypeType> {
     }
 
     public func signature(): String {
-        "type ${name} = ${tsType}"
+        let tp = getTypeParametersToken(typeParameters).toString()
+        "type ${name}${tp} = ${tsType}"
     }
 
     public func generate(): Tokens {
         let tok = Tokens()
+        let nameToken = Token(TokenKind.IDENTIFIER, name)
+        let typeParametersToken = getTypeParametersToken(typeParameters)
         match (tsType) {
             case TsUnion(arr) =>
                 // filt option type
                 let nonNullTypes: ArrayList<TsType> = ArrayList<TsType>()
+                var hasNullish = false
                 for (e in arr) {
                     match (e) {
-                        case TsNull | TsUndefined | TsVoid => ()
+                        case TsNull | TsUndefined | TsVoid => hasNullish = true
                         case _ => nonNullTypes.add(e)
                     }
+                }
+                var allStringLiteral = nonNullTypes.size > 0
+                for (t in nonNullTypes) {
+                    if (let TsStringLiteral(_) <- t) {
+                        ()
+                    } else {
+                        allStringLiteral = false
+                        break
+                    }
+                }
+                if (allStringLiteral) {
+                    let aliasType = if (hasNullish) {
+                        "Option<String>"
+                    } else {
+                        "String"
+                    }
+                    tok.append(quote(public type $(nameToken)$(typeParametersToken) = ))
+                    tok.append(Token(TokenKind.IDENTIFIER, aliasType) + nl)
+                    return tok
                 }
                 if (nonNullTypes.size != 1) {
                     // handle union type, convert it to enum
@@ -348,8 +376,7 @@ public class TypeType <: Serializable<TypeType> {
                 }
             case _ => ()
         }
-        let nameToken = Token(TokenKind.IDENTIFIER, name)
-        tok.append(quote(public type $(nameToken) = ))
+        tok.append(quote(public type $(nameToken)$(typeParametersToken) = ))
         tok.append(Token(TokenKind.IDENTIFIER, tsType.toCJType()) + nl)
         return tok
     }
@@ -373,6 +400,11 @@ public class TypeType <: Serializable<TypeType> {
         }
         let result = TypeType(String.deserialize(dms2.get("name")), String.deserialize(dms2.get("comment")),
             String.deserialize(dms2.get("type")), TsType.fromSExp(String.deserialize(dms2.get("typeNode"))))
+        let typeParams = match (dms2.get("typeParameters")) {
+            case data: DataModelSeq => ArrayList<TypeParameter>.deserialize(data)
+            case _ => ArrayList<TypeParameter>()
+        }
+        result.typeParameters = typeParams
         userDefinedNames.add(result.name)
         return result
     }

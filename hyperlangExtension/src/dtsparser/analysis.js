@@ -63,7 +63,7 @@ function newEnumJson() {
 }
 
 function newTypeJosn() {
-    return { 'name': '', 'type': '' };
+    return { 'name': '', 'type': '', 'typeParameters': [] };
 }
 
 function newVariableJson() {
@@ -467,9 +467,16 @@ class ASTVisitor {
             rjson[rjson.length - 1].info.comment = comment;
 
             rjson[rjson.length - 1].info.name = declaration.name.escapedText;
+            const literalValue = declaration.type && ts.isLiteralTypeNode(declaration.type) ?
+                declaration.type.literal.getText(this.sourceFile) : '';
             if (!declaration.initializer || !declaration.initializer.getText()) {
-                rjson[rjson.length - 1].info.comment = '/*\n' + comment;
-                rjson[rjson.length - 1].info.value = fixme + '\n*/';
+                if (literalValue !== '') {
+                    rjson[rjson.length - 1].info.comment = comment;
+                    rjson[rjson.length - 1].info.value = literalValue;
+                } else {
+                    rjson[rjson.length - 1].info.comment = '/*\n' + comment;
+                    rjson[rjson.length - 1].info.value = fixme + '\n*/';
+                }
             } else {
                 rjson[rjson.length - 1].info.comment = comment;
                 rjson[rjson.length - 1].info.value = declaration.initializer.getText();
@@ -489,6 +496,7 @@ class ASTVisitor {
 
         rjson[rjson.length - 1].info.name = node.name.escapedText;
         rjson[rjson.length - 1].info.typeNode = this.serializeType(node.type);
+        this.handleTypeParameters(node, rjson[rjson.length - 1].info);
 
         if (node.type.kind === 150) {
             rjson[rjson.length - 1].info.type = 'number';
