@@ -277,7 +277,7 @@ class ParallelBuilder {
             buildResult.store(false)
         }
 
-        unsafe { stopFSWatcher() }
+        //unsafe { stopFSWatcher() }
         watchFSFuture.get()
 
         buildResult.load()
@@ -787,19 +787,19 @@ func watchFS(cjo2task: HashMap<String, TaskIdentifier>, listenDirs: HashSet<Stri
         dirs.append("${dir},")
     }
     watcherCb = { cjo => notify(cjo2task[cjo], CjoReady) }
-    unsafe {
-        let cs = LibC.mallocCString(dirs.toString())
-        let res = initFSWatcher(cs, { cjo => watcherCb(cjo.toString()) })
-        LibC.free(cs)
-        if (!res) {
-            return
-        }
-        startFSWatcher()
-    }
+    // unsafe {
+    //     let cs = LibC.mallocCString(dirs.toString())
+    //     let res = initFSWatcher(cs, { cjo => watcherCb(cjo.toString()) })
+    //     LibC.free(cs)
+    //     if (!res) {
+    //         return
+    //     }
+    //     startFSWatcher()
+    // }
 }
 
-foreign func initFSWatcher(dirs: CString, cb: CFunc<(CString) -> Unit>): Bool
+// foreign func initFSWatcher(dirs: CString, cb: CFunc<(CString) -> Unit>): Bool
 
-foreign func startFSWatcher(): Unit
+// foreign func startFSWatcher(): Unit
 
-foreign func stopFSWatcher(): Unit
+// foreign func stopFSWatcher(): Unit
