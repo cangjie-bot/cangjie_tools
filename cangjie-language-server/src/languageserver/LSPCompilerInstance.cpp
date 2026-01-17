@@ -618,7 +618,7 @@ void LSPCompilerInstance::SetBufferCacheForParse(const std::unordered_map<std::s
         if (fileStatus.find(it.first) == fileStatus.end()) {
             fileStatus[it.first] = SrcCodeChangeState::ADDED;
         }
-        
+
         if (fileStatus[it.first] == SrcCodeChangeState::UNCHANGED) {
             this->srcBuffer[it.first].state = SrcCodeChangeState::UNCHANGED;
         } else {

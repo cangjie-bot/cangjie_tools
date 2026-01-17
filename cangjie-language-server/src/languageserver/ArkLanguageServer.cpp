@@ -4,12 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-#include "ArkLanguageServer.h"
 #include <iostream>
 #include <map>
 #include <set>
 #include <mutex>
 #include <utility>
+#include "ArkLanguageServer.h"
 #include "cangjie/Frontend/CompilerInstance.h"
 #include "capabilities/semanticHighlight/SemanticTokensAdaptor.h"
 #include "capabilities/shutdown/Shutdown.h"

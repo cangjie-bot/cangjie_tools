@@ -163,9 +163,9 @@ public:
 
     void UpdateDepGraph(const std::unique_ptr<ark::DependencyGraph> &graph, const std::string &prePkgName);
 
-    void SetBufferCache(const std::unordered_map<std::string, std::string> &bufferCache);
+    void SetBufferCache(const std::unordered_map<std::string, std::string> &buffer);
 
-    void SetBufferCacheForParse(const std::unordered_map<std::string, std::string> &bufferCache);
+    void SetBufferCacheForParse(const std::unordered_map<std::string, std::string> &buffer);
 
     ark::Callbacks *callback = nullptr;
     std::string pkgNameForPath; // Real Package Name

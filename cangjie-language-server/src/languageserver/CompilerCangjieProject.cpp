@@ -725,10 +725,9 @@ std::unique_ptr<LSPCompilerInstance> CompilerCangjieProject::GetCIForDotComplete
     }
 
     newCI->SetBufferCache(pkgInfoMap[pkgName]->bufferCache);
-    if (newCI->srcBuffer.count(filePath) &&
+    if (newCI->bufferCache.count(filePath) &&
         !Cangjie::FileUtil::HasExtension(filePath, CANGJIE_MACRO_FILE_EXTENSION)) {
-        newCI->srcBuffer[filePath] = 
-            CompilerInstance::SrcCodeCacheInfo({CompilerInstance::SrcCodeChangeState::ADDED, contents});
+        newCI->bufferCache.insert_or_assign(filePath, contents);
     }
     newCI->CompilePassForComplete(cjoManager, graph, pos);
     newCI->CompileAfterParse(cjoManager, graph);
@@ -2148,6 +2147,8 @@ bool CompilerCangjieProject::IsCombinedSym(const std::string &curModule, const s
 void CompilerCangjieProject::UpdateFileStatusInCI(const std::string& pkgName, const std::string& file,
     CompilerInstance::SrcCodeChangeState state)
 {
+    // Update file status in CI for parse
+    // Currently, only CHANGED state is updated in CI
     if (CIForParse && CIForParse->pkgNameForPath == pkgName) {
         std::lock_guard lock(CIForParse->fileStatusLock);
         if (CIForParse->fileStatus.find(file) != CIForParse->fileStatus.end() &&
