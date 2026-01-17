@@ -696,6 +696,12 @@ func generateIncrementalCache(buildConfig: BuildConfig, curResolveData: ModuleRe
 func constructCjcInvocation(compileTask: CompileTask, buildConfig: BuildConfig): ArrayList<String> {
     let res: ArrayList<String> = ArrayList<String>()
 
+    if (let LinkOnly <- compileTask.id.compilePhase) {
+        res.add(compileTask.prevStageArtifacts.getOrThrow()[0])
+    } else {
+        res.add(all: ["-p", compileTask.packagePath])
+    }
+
     res.add(all: appendImportPaths(compileTask, buildConfig))
     res.add(all: appendCommandOptions(compileTask))
     res.add(all: getDepLinkCommand(compileTask, buildConfig))
@@ -810,12 +816,6 @@ func getOutput(compileTask: CompileTask): Option<String> {
 
 func getTypeCommand(compileTask: CompileTask): ArrayList<String> {
     let res = ArrayList<String>()
-
-    if (let LinkOnly <- compileTask.id.compilePhase) {
-        res.add(compileTask.prevStageArtifacts.getOrThrow()[0])
-    } else {
-        res.add(all: ["-p", compileTask.packagePath])
-    }
 
     if (compileTask.isAnalysisCompilePerformance) {
         res.add("--profile-compile-time")
