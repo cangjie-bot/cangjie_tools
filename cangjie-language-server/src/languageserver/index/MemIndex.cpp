@@ -374,9 +374,8 @@ void MemIndex::FindCrossSymbolByName(const std::string &packageName, const std::
     std::unordered_set<std::string> targetPackageSet;
     targetPackageSet.insert(packageName);
     if (isComebined) {
-        const auto pkgMap = CompilerCangjieProject::GetInstance()->GetFullPkgNameToPathMap();
-        for (auto &item : pkgMap) {
-            std::string pkgName = item.first;
+        auto pkgNameList = CompilerCangjieProject::GetInstance()->GetPkgNameList();
+        for (auto &pkgName : pkgNameList) {
             if (pkgName.find(packageName) != std::string::npos) {
                 targetPackageSet.insert(pkgName);
             }

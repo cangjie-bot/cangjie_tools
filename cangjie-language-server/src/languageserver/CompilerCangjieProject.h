@@ -121,7 +121,7 @@ public:
 
     ArkAST *GetArkAST(const std::string &fileName)
     {
-        // todo
+        // todo, 好像没问题，再测测
         std::unique_lock<std::recursive_mutex> lock(fileCacheMtx);
         if (fileCache.find(fileName) != fileCache.end()) {
             return fileCache[fileName].get();
@@ -157,11 +157,15 @@ public:
 
     std::string GetPathFromPkg(const std::string &pkgName)
     {
-        auto found = fullPkgNameToPath.find(pkgName);
-        if (found != fullPkgNameToPath.end()) {
-            return fullPkgNameToPath[pkgName];
+        if (pkgInfoMap.find(pkgName) == pkgInfoMap.end()) {
+            return {};
         }
-        return {};
+        std::vector<std::string> paths;
+        paths.push_back(pkgInfoMap[pkgName]->packagePath);
+        for (auto &pkg: pkgInfoMap[pkgName]->derivativePackages) {
+            paths.push_back(pkg->packagePath);
+        }
+        return paths.back();
     }
 
     bool PkgIsFromCIMapNotInSrc(const std::string &fullPkgName) const
@@ -276,9 +280,9 @@ public:
             SetHeadByFilePath(aheadPath);
         }
         if (!PkgHasSemaCache(fullPkgName) || !curDecl->curFile ||
-            fullPkgNameToPath.find(fullPkgName) == fullPkgNameToPath.end()) { return curDecl; }
+            pkgInfoMap.find(fullPkgName) == pkgInfoMap.end()) { return curDecl; }
         auto fileName = curDecl->curFile->fileName;
-        auto dirPath = fullPkgNameToPath[fullPkgName];
+        auto dirPath = GetPathFromPkg(fullPkgName);
         if (packageInstanceCache.find(dirPath) == packageInstanceCache.end() ||
             !packageInstanceCache[dirPath]->package) {
             return curDecl;
@@ -462,21 +466,15 @@ public:
         return modulesHome;
     }
 
-    std::unordered_map<std::string, std::string> GetFullPkgNameToPathMap()
+    std::unordered_set<std::string> GetPkgNameList()
     {
-        return fullPkgNameToPath;
+        return Utils::GetKeys(pkgInfoMap);
     }
 
     std::string GetContentByFile(const std::string& filePath)
     {
-        // todo
         auto fullPkgName = GetFullPkgName(filePath);
-        if (auto found = pkgInfoMap.find(fullPkgName); found != pkgInfoMap.end()) {
-            if (auto buffer = found->second->bufferCache.find(filePath); buffer != found->second->bufferCache.end()) {
-                return buffer->second;
-            }
-        }
-        return {};
+        return GetFileBufferCacheContent(fullPkgName, filePath);
     }
 
     /**
@@ -502,6 +500,10 @@ public:
     void StoreAllPackagesCache();
     
     void EmitDiagsOfFile(const std::string &filePath);
+
+    void SortDerivatePackages(const std::string &packageName);
+
+    PkgType GetPkgType(const std::string &moduelName, const std::string &path);
 
     std::vector<std::string> GetSourceSetNamesByPackage(const std::string &packageName);
 
@@ -591,13 +593,12 @@ private:
     std::unique_ptr<SortModel> model = std::make_unique<SortModel>();
 
     std::unique_ptr<lsp::BackgroundIndexDB> backgroundIndexDb;
-    // todo
-    std::unordered_map<std::string, std::string> fullPkgNameToPath;  // key: fullPkgName
     std::unordered_map<std::string, std::string> pathToFullPkgName;  // key: package path
     std::mutex cimapMtx;
+    // todo, 主要作用在于全量编译阶段，每个包编完以后仅保留一个吧。
     std::unordered_map<std::string, std::unique_ptr<LSPCompilerInstance>> CIMap;
     std::unordered_map<std::string, std::unique_ptr<LSPCompilerInstance>> CIMapNotInSrc;
-    std::unique_ptr<LSPCompilerInstance> CIForParse;
+    std::vector<std::unique_ptr<LSPCompilerInstance>> CIsForParse;
     std::unordered_map<std::string, std::unique_ptr<PkgInfo>> pkgInfoMap;         // key: fullPackageName
     std::unordered_map<std::string, std::unique_ptr<PkgInfo>> pkgInfoMapNotInSrc; // key: dirPath for Cangjie file
     // key: fullPackageName, value: PackageSpec's modifier
