@@ -310,13 +310,6 @@ func getScriptDepLink(modulePath: String, buildConfig: BuildConfig): Option<Arra
         }
     }
 
-    var stdRequires: HashSet<String> = HashSet<String>()
-    for (fullName in res.stdDependencies) {
-        for (importInfo in fullName.importsList) {
-            stdRequires.add(fullName.packageName)
-        }
-    }
-
     let target = if (buildConfig.isCrossCompile) { targetConfigName } else { crossCompileTarget }
     let requireTasks = requires.iterator().map { it => TaskIdentifier(it, target, "") } |> collectHashSet
     let taskId = TaskIdentifier("build-script", target, "")
