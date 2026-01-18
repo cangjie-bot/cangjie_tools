@@ -32,3 +32,7 @@ public func makeTargetExeName(exeName: String, target: String): String {
     }
     return exeName
 }
+
+public func makeTargetObjName(fileName: String, target: String): String {
+    "${swapOrgName(fileName)}.o"
+}
