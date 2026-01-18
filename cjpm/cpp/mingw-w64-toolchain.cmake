@@ -1,0 +1,29 @@
+#  Copyright (c) Huawei Technologies Co., Ltd. 2026. All rights reserved.
+#  This source file is part of the Cangjie project, licensed under Apache-2.0
+#  with Runtime Library Exception.
+# 
+#  See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+set(CMAKE_SYSTEM_NAME Windows)
+set(CMAKE_SYSTEM_PROCESSOR x86_64)
+
+set(TOOLCHAIN_PREFIX x86_64-w64-mingw32)
+set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
+set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)
+set(CMAKE_AR ${TOOLCHAIN_PREFIX}-ar)
+set(CMAKE_RANLIB ${TOOLCHAIN_PREFIX}-ranlib)
+set(CMAKE_LINKER ${TOOLCHAIN_PREFIX}-ld)
+
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -static-libgcc -static-libstdc++")
+
+add_compile_definitions(_WIN32_WINNT=0x0601)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
+add_compile_options(-Wno-unknown-pragmas -Wno-format)
+set(WIN32_SYSTEM_LIBS ws2_32 iphlpapi psapi shell32 user32 advapi32 kernel32 ntdll)
+link_directories(/usr/${TOOLCHAIN_PREFIX}/lib)
