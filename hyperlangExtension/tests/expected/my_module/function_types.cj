@@ -18,16 +18,20 @@ public type ErrorCode = Float64
 /***********ENUM***********/
 
 /* enum EventType {
+	 DefaultEvent
 	}*/
 public enum EventType <: ToString & Equatable < EventType > {
-    
+    | DefaultEvent 
+
     func get(): Int32 {
         match(this) {
+            case DefaultEvent => 0  //todo: please check the value
         }
     }
     
     static func parse(val: Int32): EventType {
         match(val) {
+            case 0 => DefaultEvent  //todo: please check the value
             case _ => throw IllegalArgumentException("unknown value ${val}")
         }
     }
@@ -41,11 +45,13 @@ public enum EventType <: ToString & Equatable < EventType > {
     
     public func toString(): String {
         match(this) {
+            case DefaultEvent => "DefaultEvent"
         }
     }
     
     public override operator func ==(that: EventType): Bool {
         match((this, that)) {
+            case(DefaultEvent, DefaultEvent) => true
             case _ => false
         }
     }
@@ -208,11 +214,11 @@ public open class MyListener {
         }
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener {
+    public static func fromJSValue(context: JSContext, input: JSValue): MyListener {
         MyListener(input.asObject())
     }
 }
@@ -248,11 +254,11 @@ public open class MyListener2 {
         jsObjApiCall < Unit >( arkts_object, "on", { __ctx =>[key.toJSValue(__ctx), jsCallback] })
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener2 {
+    public static func fromJSValue(context: JSContext, input: JSValue): MyListener2 {
         MyListener2(input.asObject())
     }
 }
@@ -288,11 +294,11 @@ public open class MyListener3 {
         jsObjApiCall < Unit >( arkts_object, "on", { __ctx =>[key.toJSValue(__ctx), jsCallback] })
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener3 {
+    public static func fromJSValue(context: JSContext, input: JSValue): MyListener3 {
         MyListener3(input.asObject())
     }
 }
@@ -328,11 +334,11 @@ public open class MyListener5 {
         jsObjApiCall < Unit >( arkts_object, "on", { __ctx =>[key.toJSValue(__ctx), jsCallback] })
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener5 {
+    public static func fromJSValue(context: JSContext, input: JSValue): MyListener5 {
         MyListener5(input.asObject())
     }
 }
@@ -483,7 +489,7 @@ public class MyListener4 {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): MyListener4 {
+    static func fromJSValue(context: JSContext, input: JSValue): MyListener4 {
         MyListener4(input.asObject())
     }
 }

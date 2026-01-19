@@ -61,11 +61,11 @@ public open class VerificationMode {
         jsObjApiCall < Unit >( arkts_object, "atMost", { ctx =>[count] })
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): VerificationMode {
+    public static func fromJSValue(context: JSContext, input: JSValue): VerificationMode {
         VerificationMode(input.asObject())
     }
 }
@@ -114,11 +114,11 @@ public open class when {
         jsObjApiCall < String >( arkts_object, "afterThrow", { ctx =>[e_msg.toJSValue(ctx)] })
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): when {
+    public static func fromJSValue(context: JSContext, input: JSValue): when {
         when(input.asObject())
     }
 }
@@ -233,7 +233,7 @@ public class ArgumentMatchers {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): ArgumentMatchers {
+    static func fromJSValue(context: JSContext, input: JSValue): ArgumentMatchers {
         ArgumentMatchers(input.asObject())
     }
 }
@@ -309,7 +309,7 @@ public class MockKit {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): MockKit {
+    static func fromJSValue(context: JSContext, input: JSValue): MockKit {
         MockKit(input.asObject())
     }
 }

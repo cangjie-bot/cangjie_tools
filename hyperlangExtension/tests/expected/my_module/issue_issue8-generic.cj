@@ -55,7 +55,7 @@ public class C {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): C {
+    static func fromJSValue(context: JSContext, input: JSValue): C {
         C(input.asObject())
     }
 }

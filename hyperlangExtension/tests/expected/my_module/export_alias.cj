@@ -189,7 +189,7 @@ public class ExportedClass {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): ExportedClass {
+    static func fromJSValue(context: JSContext, input: JSValue): ExportedClass {
         ExportedClass(input.asObject())
     }
 }
@@ -207,7 +207,7 @@ public class MyClass {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): MyClass {
+    static func fromJSValue(context: JSContext, input: JSValue): MyClass {
         MyClass(input.asObject())
     }
 }

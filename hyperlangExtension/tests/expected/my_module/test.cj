@@ -44,7 +44,7 @@ public class MessagePackage {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): MessagePackage {
+    static func fromJSValue(context: JSContext, input: JSValue): MessagePackage {
         MessagePackage(input.asObject())
     }
 }
@@ -69,7 +69,7 @@ public class PushReporter {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): PushReporter {
+    static func fromJSValue(context: JSContext, input: JSValue): PushReporter {
         PushReporter(input.asObject())
     }
 }

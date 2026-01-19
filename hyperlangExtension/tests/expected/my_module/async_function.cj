@@ -134,7 +134,7 @@ public class ASC {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): ASC {
+    static func fromJSValue(context: JSContext, input: JSValue): ASC {
         ASC(input.asObject())
     }
 }
@@ -169,7 +169,7 @@ public class ForParamToJs {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): ForParamToJs {
+    static func fromJSValue(context: JSContext, input: JSValue): ForParamToJs {
         ForParamToJs(input.asObject())
     }
 }

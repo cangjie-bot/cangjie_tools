@@ -121,11 +121,11 @@ public open class B<W, M> where W <: JSInteropType<W>, M <: JSInteropType<M> {
         }
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): B<W, M> {
+    public static func fromJSValue(context: JSContext, input: JSValue): B<W, M> {
         B(input.asObject())
     }
 }
@@ -161,7 +161,7 @@ public class A<T, U> where T <: JSInteropType<T>, U <: JSInteropType<U> {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): A<T, U> {
+    static func fromJSValue(context: JSContext, input: JSValue): A<T, U> {
         A(input.asObject())
     }
 }

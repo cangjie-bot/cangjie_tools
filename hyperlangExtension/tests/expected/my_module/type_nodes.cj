@@ -747,7 +747,7 @@ public class ArrayTypesC {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): ArrayTypesC {
+    static func fromJSValue(context: JSContext, input: JSValue): ArrayTypesC {
         ArrayTypesC(input.asObject())
     }
 }

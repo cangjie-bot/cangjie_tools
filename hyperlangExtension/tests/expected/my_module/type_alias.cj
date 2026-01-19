@@ -159,12 +159,12 @@ public enum TA730 {
 
 
 public enum TA740 {
-    | 111
+    | AAA
     | TA710(TA710)
     
     public func toJSValue(context: JSContext): JSValue {
         match(this) {
-            case 111 => context.string("111").toJSValue()
+            case AAA => context.string("aaa").toJSValue()
             case TA710(x) => x.toJSValue(context)
         }
     }
