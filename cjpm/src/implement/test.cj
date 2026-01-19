@@ -77,9 +77,16 @@ public func doTest(unparseArgs: Array<String>, testConfig: TestConfig): Bool {
         return false
     }
 
+    if (!replaceEnvforScriptDir(tomlInfo, Path(DIR_CURRENT))) {
+        return false
+    }
+    let configScriptFileDir = getScriptDirValue(tomlInfo)
+    testConfig.globalConfig.scriptDir = getScriptDirectory(testConfig.globalConfig.scriptDir,
+        testConfig.globalConfig.rootPath, configScriptFileDir, true) ?? return false
+
     var scriptConfig: ScriptConfig = ScriptConfig()
     if (!testConfig.globalConfig.isSkipScript) {
-        scriptConfig = makeScriptConfigByToml(testConfig.globalConfig.rootPath, testConfig.globalConfig.rootPath,
+        scriptConfig = makeScriptConfigByToml(testConfig.globalConfig.scriptDir, testConfig.globalConfig.rootPath,
             tomlInfo, testConfig.isDebug, testConfig.isVerbose, testConfig.isCrossCompile) ?? return false
         if (!runScript(scriptConfig, Pre, testConfig.origCommand)) {
             return false
@@ -124,7 +131,7 @@ public func doTest(unparseArgs: Array<String>, testConfig: TestConfig): Bool {
         testConfig.testModule = HashSet<String>(dm.globalConfig.rootName)
     } else if (!testConfig.testModule.isEmpty()) {
         for (testModuleName in testConfig.testModule) {
-            if (!dm.depPathMap.contains(testModuleName)) {
+            if (!dm.depAnalysisEngine.finalDepMap.contains(testModuleName)) {
                 eprintln("Error: cannot find module '${testModuleName}' of option '--module'")
                 return false
             }
@@ -545,7 +552,7 @@ func getLinkList(res: ModuleResolve, fullName: String, requires: HashSet<String>
         if (r.isPureTestPkg()) {
             continue
         }
-        let libPath = Path(testConfig.globalConfig.targetDir).join(r.rootPkgName).toString()
+        let libPath = Path(testConfig.globalConfig.targetDir).join(swapOrgName(r.rootPkgName)).toString()
         validCommand.add(all: linkPackage(r.fullName, libPath, testConfig.isLto), at: 0)
     }
 
@@ -617,12 +624,12 @@ func getDependencyMap(res: ModuleResolve, testConfig: TestConfig): HashMap<Strin
 }
 
 public func getOutput(targetDir: String, fullName: String, isCross: Bool): String {
-    let output = Path(targetDir).join(UNITTEST_BIN).join(fullName).toString()
+    let output = Path(targetDir).join(UNITTEST_BIN).join(swapOrgName(fullName)).toString()
     return getUnittestOutput(output, isCross)
 }
 
 func getRootPackageDir(pkgInfo: PkgTestInfo, targetDir: String) {
-    let pkgRootName = pkgInfo.fqname.value.split(".")[0]
+    let pkgRootName = swapOrgName(pkgInfo.fqname.value.split(".")[0])
     if (pkgInfo.packagePath.isMultiplatform) {
         let suffix = pkgInfo.packagePath.product.outputSuffix.toString()
         return getPath(targetDir.replace(UNITTEST_BIN, RELEASE), pkgRootName, suffix, pkgRootName)
@@ -634,9 +641,9 @@ func getRootPackageDir(pkgInfo: PkgTestInfo, targetDir: String) {
 func addOptionsForSeparateCompilation(pkgInfo: PkgTestInfo, testConfig: TestConfig) {
     let rootProdPkgDir = getRootPackageDir(pkgInfo, testConfig.globalConfig.targetDir)
     if (testConfig.isLto) {
-        pkgInfo.linkOptions = ["${rootProdPkgDir}${PATH_SPLIT_CHAR}${pkgInfo.fqname}.bc"].concat(pkgInfo.linkOptions)
+        pkgInfo.linkOptions = ["${rootProdPkgDir}${PATH_SPLIT_CHAR}${swapOrgName(pkgInfo.fqname.value)}.bc"].concat(pkgInfo.linkOptions)
     } else {
-        pkgInfo.linkOptions = ["-L", rootProdPkgDir, "-l${pkgInfo.fqname}"].concat(pkgInfo.linkOptions)
+        pkgInfo.linkOptions = ["-L", rootProdPkgDir, "-l${swapOrgName(pkgInfo.fqname.value)}"].concat(pkgInfo.linkOptions)
     }
 }
 
@@ -969,7 +976,7 @@ func checkTestDir(targetDir: String, testPkgsMap: Collection<PkgDescTest>): Bool
     }
 
     for (pkgDesc in testPkgsMap) {
-        let rootPkgName: String = getRootPkgName(pkgDesc.fqname.value)
+        let rootPkgName: String = getRootPkgName(swapOrgName(pkgDesc.fqname.value))
         let logModPath: String = Path(testLogPath).join(rootPkgName).toString()
         if (!createDirectory(logModPath)) {
             return false
@@ -1022,9 +1029,9 @@ func parallelCompileTests(
             DummyTestFile.compile(testConfig, pkgDesc, linkMap)
         }
         testFut.add(spawn { =>
-            let rootPkgName: String = getRootPkgName(pkgDesc.fqname.value)
-            let outLogFile = testLogPath.join(rootPkgName).join("${pkgDesc.fqname}.outlog").toString()
-            let errLogFile = testLogPath.join(rootPkgName).join("${pkgDesc.fqname}.errlog").toString()
+            let rootPkgName: String = getRootPkgName(swapOrgName(pkgDesc.fqname.value))
+            let outLogFile = testLogPath.join(rootPkgName).join("${swapOrgName(pkgDesc.fqname.value)}.outlog").toString()
+            let errLogFile = testLogPath.join(rootPkgName).join("${swapOrgName(pkgDesc.fqname.value)}.errlog").toString()
             let pkgInfo = PkgTestInfo(
                 pkgDesc.fqname,
                 pkgDesc.srcDir,

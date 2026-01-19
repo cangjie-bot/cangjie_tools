@@ -176,8 +176,16 @@ func generateResolveData(buildConfig: BuildConfig, tomlInfo: TomlInfo, isScriptD
     buildConfig.globalConfig.originDir = buildConfig.globalConfig.targetDir
     buildConfig.originTargetPath = buildConfig.globalConfig.targetDir
 
+    if (!replaceEnvforScriptDir(tomlInfo, Path(buildConfig.globalConfig.rootPath))) {
+            return Option<ModuleResolve>.None
+    }
+
     if (!buildConfig.globalConfig.isSkipScript && !isScriptDep) {
-        let scriptConfig: ScriptConfig = makeScriptConfigByToml(buildConfig.globalConfig.rootPath,
+        let configScriptFileDir = getScriptDirValue(tomlInfo)
+        buildConfig.globalConfig.scriptDir = getScriptDirectory(buildConfig.globalConfig.scriptDir,
+            buildConfig.globalConfig.rootPath, configScriptFileDir, true) ??
+            return Option<ModuleResolve>.None
+        let scriptConfig: ScriptConfig = makeScriptConfigByToml(buildConfig.globalConfig.scriptDir,
             buildConfig.globalConfig.rootPath, tomlInfo, buildConfig.isDebug, buildConfig.isVerbose,
             buildConfig.isCrossCompile) ?? return Option.None
         if (buildConfig.globalConfig.isInstall) {
@@ -661,7 +669,7 @@ func generateIncrementalCache(buildConfig: BuildConfig, curResolveData: ModuleRe
 
     var cacheFlag = true
     for ((k, v) in cacheMap) {
-        let cachePath = Path(buildConfig.globalConfig.targetDir).join(k)
+        let cachePath = Path(buildConfig.globalConfig.targetDir).join(swapOrgName(k))
         if (!createDirectory(cachePath.toString())) {
             cacheFlag = false
             continue
@@ -1036,9 +1044,8 @@ func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConf
     for (index in (buildConfig.packageList.all.size - 1)..=0 : -1) {
         let depName = buildConfig.packageList.all[index]
         if (linkSort.contains(depName)) {
-            linkSort.add(all: getDepSet(depName, buildConfig.requiresMap,
-                buildConfig.superPkgSubMap,
-                isForMacroRequire: buildConfig.packageList.macros.contains(depName)))
+            linkSort.add(all: getDepSet(depName, buildConfig.requiresMap, buildConfig.superPkgSubMap,
+            isForMacroRequire: buildConfig.packageList.macros.contains(depName)))
         }
         let depRootName: String = getRootPkgName(depName)
         cLibNameList.add(depRootName, at: 0)
@@ -1047,16 +1054,15 @@ func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConf
         }
         var libPath: String
         if (!isNativeForCross) {
-            libPath = Path(buildConfig.globalConfig.targetDir).join(depRootName).toString()
+            libPath = Path(buildConfig.globalConfig.targetDir).join(swapOrgName(depRootName)).toString()
         } else {
-            libPath = Path(buildConfig.globalConfig.nativeDir).join(depRootName).toString()
+            libPath = Path(buildConfig.globalConfig.nativeDir).join(swapOrgName(depRootName)).toString()
         }
         let linkArray: ArrayList<String> = linkPackage(depName, libPath, buildConfig.isLto)
         if (linkArray.size <= 1) {
             allOptions.add(all: linkArray)
-            binDepSet.add(all: getDepSet(depName, buildConfig.requiresMap,
-            buildConfig.superPkgSubMap,
-            isForMacroRequire: buildConfig.packageList.macros.contains(depName)))
+            binDepSet.add(all: getDepSet(depName, buildConfig.requiresMap, buildConfig.superPkgSubMap,
+                isForMacroRequire: buildConfig.packageList.macros.contains(depName)))
             continue
         }
         if (libPathSet.contains(libPath)) {
@@ -1065,9 +1071,8 @@ func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConf
             allOptions.add(all: linkArray)
             libPathSet.add(libPath)
         }
-        binDepSet.add(all: getDepSet(depName, buildConfig.requiresMap,
-        buildConfig.superPkgSubMap,
-        isForMacroRequire: buildConfig.packageList.macros.contains(depName)))
+        binDepSet.add(all: getDepSet(depName, buildConfig.requiresMap, buildConfig.superPkgSubMap,
+            isForMacroRequire: buildConfig.packageList.macros.contains(depName)))
     }
     res.add(all: allOptions)
 
@@ -1103,13 +1108,13 @@ func getLtoCombineBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConf
 }
 
 func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig,
- 	    isNativeForCross: Bool, features: HashSet<Feature>, isCombined: Bool): ArrayList<String> {
+    isNativeForCross: Bool, features: HashSet<Feature>, isCombined: Bool): ArrayList<String> {
     let res = ArrayList<String>()
     var cLibNameList = ArrayList<String>([resolveConfig.rootPkgName]) // Record dependent root packages
     let superPkgMap = if (isCombined) { buildConfig.superPkgMap } else { HashMap<String, SuperPackageConfig>() }
     var linkSort: HashSet<String> = getDepSet(resolveConfig.fullName, buildConfig.requiresMap,
-        buildConfig.superPkgSubMap, isForMacroRequire: buildConfig.packageList.macros.contains(resolveConfig.fullName),
-        isCombined: isCombined, superPkgMap: superPkgMap) // Record dependent package names
+            buildConfig.superPkgSubMap, isForMacroRequire: buildConfig.packageList.macros.contains(resolveConfig.fullName),
+            isCombined: isCombined, superPkgMap: superPkgMap) // Record dependent package names
 
     if (linkSort.size == 0) {
         appendCLibLinkStr(buildConfig, cLibNameList, res, buildConfig.isCrossCompile && !isNativeForCross)
@@ -1132,9 +1137,9 @@ func getBuildArgs(resolveConfig: ResolveConfig, buildConfig: BuildConfig,
         }
         var libPath: String
         if (!isNativeForCross) {
-            libPath = Path(buildConfig.globalConfig.targetDir).join(depRootName).toString()
+            libPath = Path(buildConfig.globalConfig.targetDir).join(swapOrgName(depRootName)).toString()
         } else {
-            libPath = Path(buildConfig.globalConfig.nativeDir).join(depRootName).toString()
+            libPath = Path(buildConfig.globalConfig.nativeDir).join(swapOrgName(depRootName)).toString()
         }
 
         if (let Some(suffix) <- buildConfig.packageList.bestFitFeatures(features).get(depName)) {
@@ -1208,9 +1213,8 @@ func getForcedLibArgs(resolveConfig: ResolveConfig, superPkgCfg: SuperPackageCon
         let linkArray: ArrayList<String> = forcedLinkPackage(depName, libPath, buildConfig.isLto)
         if (linkArray.size <= 1) {
             allOptions.add(all: linkArray)
-            binDepSet.add(all: getDepSet(depName, buildConfig.requiresMap,
-            buildConfig.superPkgSubMap,
-            isForMacroRequire: buildConfig.packageList.macros.contains(depName)))
+            binDepSet.add(all: getDepSet(depName, buildConfig.requiresMap, buildConfig.superPkgSubMap,
+                isForMacroRequire: buildConfig.packageList.macros.contains(depName)))
             continue
         }
         if (libPathSet.contains(libPath)) {
@@ -1220,9 +1224,8 @@ func getForcedLibArgs(resolveConfig: ResolveConfig, superPkgCfg: SuperPackageCon
             libPathSet.add(libPath)
         }
 
-        binDepSet.add(all: getDepSet(depName, buildConfig.requiresMap,
-        buildConfig.superPkgSubMap,
-        isForMacroRequire: buildConfig.packageList.macros.contains(depName)))
+        binDepSet.add(all: getDepSet(depName, buildConfig.requiresMap, buildConfig.superPkgSubMap,
+            isForMacroRequire: buildConfig.packageList.macros.contains(depName)))
     }
 
     allOptions.add(all: getForcedBinDep(buildConfig, binDepSet, cLibNameList, isNativeForCross))

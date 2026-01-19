@@ -28,25 +28,38 @@ public func runScript(scriptConfig: ScriptConfig, step: BuildScriptStep, command
 
 public func makeScriptConfigByToml(rootPath: String, modulePath: String, tomlInfo: TomlInfo, debug: Bool,
     verbose: Bool, cross: Bool): Option<ScriptConfig> {
-    let (flag, errlog) = tomlInfo.isCompatible()
-    if (!flag) {
-        eprintln("Error: ${errlog} at ${Path(modulePath).join(CONFIG_FILE_NAME).toString()}")
-        return Option.None
-    }
-    var moduleName: String = WORKSPACE_NAME
-    if (tomlInfo.isPkgConfig) {
-        if (!nameCheck(tomlInfo.pkg.name, Path(modulePath).join(CONFIG_FILE_NAME).toString())) {
-            return Option.None
-        }
-        moduleName = tomlInfo.pkg.name
-    }
-
     var scriptConfig: ScriptConfig = ScriptConfig()
     if (!fileExists(Path(modulePath).join(BUILD_SCRIPT_NAME))) {
         if (fileExists(Path(modulePath).join(BUILD_SCRIPT_NAME).toString() + ".bak")) {
             scriptConfig.isRelocated = true
         } else {
             return scriptConfig
+        }
+    }
+
+    let (flag, errlog) = tomlInfo.isCompatible()
+    if (!flag) {
+        eprintln("Error: ${errlog} at ${Path(modulePath).join(CONFIG_FILE_NAME).toString()}")
+        return Option.None
+    }
+    var moduleName: String = WORKSPACE_NAME
+    if (!tomlInfo.pkg.organization.isEmpty() && !tomlInfo.pkg.name.contains("::")) {
+        tomlInfo.pkg.name = tomlInfo.pkg.organization + "::" + tomlInfo.pkg.name
+    }
+
+    if (tomlInfo.isPkgConfig) {
+        if (tomlInfo.pkg.name.contains("::")) {
+            if (!organizationCheck(tomlInfo.pkg.organization, Path(modulePath).join(CONFIG_FILE_NAME).toString()) &&
+                !nameCheck(tomlInfo.pkg.name.removePrefix(tomlInfo.pkg.organization + "::"),
+                    Path(modulePath).join(CONFIG_FILE_NAME).toString())) {
+                return Option.None
+            }
+            moduleName = tomlInfo.pkg.name.split("::")[1]
+        } else {
+            if (!nameCheck(tomlInfo.pkg.name, Path(modulePath).join(CONFIG_FILE_NAME).toString())) {
+                return Option.None
+            }
+            moduleName = tomlInfo.pkg.name
         }
     }
 
@@ -72,7 +85,11 @@ public func makeScriptConfigByToml(rootPath: String, modulePath: String, tomlInf
         targetPath = targetPath.join("release")
     }
     scriptConfig.scriptDep = tomlInfo.getBuildDependencies(modulePath, targetName, debug) ?? return Option.None
-    scriptConfig.scriptTargetDir = targetPath.join(moduleName).toString()
+    if (!tomlInfo.isPkgConfig) {
+        scriptConfig.scriptTargetDir = targetPath.join(moduleName).toString()
+    } else {
+        scriptConfig.scriptTargetDir = targetPath.join(swapOrgName(tomlInfo.pkg.name)).toString()
+    }
 
     scriptConfig.scriptExe = Path(scriptConfig.scriptTargetDir).join("bin").join(BUILD_SCRIPT_OUTPUT).toString()
     scriptConfig.scriptHash = Path(scriptConfig.scriptTargetDir).join("bin").join(BUILD_SCRIPT_CACHE).toString()
@@ -93,8 +110,11 @@ public func makeScriptConfig(modulePath: String, debug: Bool, verbose: Bool, cro
     }
 
     let tomlInfo: TomlInfo = loadModuleFile(modulePath) ?? return Option.None
+    let configScriptFileDir = getScriptDirValue(tomlInfo)
+    var scriptPath: String = getScriptDirectory(DIR_CURRENT, modulePath, configScriptFileDir, true) ??
+        return ScriptConfig()
 
-    return makeScriptConfigByToml(DIR_CURRENT, modulePath, tomlInfo, debug, verbose, cross)
+    return makeScriptConfigByToml(scriptPath, modulePath, tomlInfo, debug, verbose, cross)
 }
 
 func runScriptExe(scriptConfig: ScriptConfig, commandArg: String): Bool {
@@ -111,7 +131,7 @@ func runScriptExe(scriptConfig: ScriptConfig, commandArg: String): Bool {
         envs = getEnvMap(scriptConfig.scriptLdPath)
         if (scriptConfig.isVerbose) {
             cmd = "Run build script: ${getCmdStr(envs, exePath, ArrayList<String>([commandArg]))}"
-            println(cmd)
+ 	        println(cmd)
         }
         RUN_SCRIPT_CMD_MAP.add(scriptConfig.moduleName, (cmd, exePath, envs))
     }
@@ -147,8 +167,17 @@ public func runMultiScriptPost(globalConfig: GlobalConfig): Bool {
 func getDepPath(modulePath: String, depName: String, depInfo: DepInfo): Option<String> {
     if (let Some(depPath) <- depInfo.path) {
         return getPath(modulePath, depPath)
+    } else if (let Some(version) <- depInfo.version) {
+        return "${modulePath}${SCRIPT_DEPENDENCIES_MARK}${depName}-${version}"
+    } else {
+        return if (let Some((path, commit, _)) <- downloadGitDep(depName, depInfo)) {
+            depInfo.commitId = commit
+            getCanonicalPath(path)
+        } else {
+            eprintln("Error: failed to retrieve git dependency ${depName}")
+            Option.None
+        }
     }
-    return getOnlineDepPath(modulePath, depName, depInfo)
 }
 
 func getScriptDeps(scriptConfig: ScriptConfig): HashMap<String, DepInfo> {
@@ -322,7 +351,7 @@ func getCompileArgs(scriptConfig: ScriptConfig, buildConfig: BuildConfig): Optio
         cmd += " ${String.join(depLinkList.toArray(), delimiter: " ")} "
     }
     let env = getEnvMap(scriptConfig.scriptLdPath)
-    let cmdArgs = extractOptionByString(cmd)
+ 	let cmdArgs = extractOptionByString(cmd)
     if (scriptConfig.isVerbose) {
         println("Compiling build script of `${scriptConfig.moduleName}`: ${getCmdStr(env, COMPILE_TOOL, cmdArgs)}")
     }

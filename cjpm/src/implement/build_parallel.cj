@@ -57,7 +57,6 @@ class ParallelBuilder {
     }
 
     func build(): Bool {
-        let originalEnv = getVariables()
         let sem = Semaphore(maxParallelSize)
         let futTasks = HashMap<String, Future<Bool>>()
 
@@ -139,10 +138,10 @@ class ParallelBuilder {
                 }
 
                 var flag: Bool = true
-                if (task.targetPlatform && !runTask(task, this.buildConfig.globalConfig.ldPath, originalEnv)) {
+                if (task.targetPlatform && !runTask(task, this.buildConfig.globalConfig.ldPath)) {
                     flag = false
                 }
-                if (task.nativePlatform && !runTask(task, this.buildConfig.globalConfig.ldPath, originalEnv,
+                if (task.nativePlatform && !runTask(task, this.buildConfig.globalConfig.ldPath,
                     isNativeForCross: true)) {
                     flag = false
                 }
@@ -200,8 +199,7 @@ class ParallelBuilder {
         return delLog
     }
 
-    func runTask(resolveConfig: ResolveConfig, ldPath: HashSet<String>,
- 	    originalEnv: Array<(String, String)>, isNativeForCross!: Bool = false): Bool {
+    func runTask(resolveConfig: ResolveConfig, ldPath: HashSet<String>, isNativeForCross!: Bool = false): Bool {
         let envBuilder = EnvironmentBuilder()
         envBuilder.prepend(LD_PATH, ldPath)
 
@@ -225,7 +223,8 @@ class ParallelBuilder {
                 calculateParallel(CUR_PARALLEL_SIZE.load(), args)
             }
 
-            let commandStr = getCmdStr(envBuilder.asCliStrings(originalEnv), COMPILE_TOOL, args)
+            let env = getVariables()
+            let commandStr = getCmdStr(envBuilder.asCliStrings(env), COMPILE_TOOL, args)
             if (this.buildConfig.isVerbose) {
                 let verbose: String = "Compiling package `${resolveConfig.fullName}`: ${commandStr}\n"
                 if (!isNativeForCross) {
@@ -264,7 +263,7 @@ class ParallelBuilder {
                 return false
             }
             try {
-                if (let Some(returnCode) <- execAndToFile(COMPILE_TOOL, args, outFile, errFile, envBuilder: envBuilder, originalEnv: originalEnv)) {
+                if (let Some(returnCode) <- execAndToFile(COMPILE_TOOL, args, outFile, errFile, envBuilder: envBuilder, originalEnv: env)) {
                     if (returnCode == 0) {
                         execCmdFlag = true
                         if (buildConfig.globalConfig.isAnalysisCompilePerformance) {
@@ -383,8 +382,8 @@ func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
                 buildConfig.indirectRebuilds.contains(resolve.fullName)) {
                 resolveConfig.checkDepCjo = true
             }
-            resolveConfig.outLogFile = Path(finalLogPath).join("${resolveConfig.fullName}.outlog").toString()
-            resolveConfig.errLogFile = Path(finalLogPath).join("${resolveConfig.fullName}.errlog").toString()
+            resolveConfig.outLogFile = Path(finalLogPath).join("${swapOrgName(resolveConfig.fullName)}.outlog").toString()
+            resolveConfig.errLogFile = Path(finalLogPath).join("${swapOrgName(resolveConfig.fullName)}.errlog").toString()
 
             if (resolve.nativePlatform) {
                 resolveConfig.nativePath = getFinalPath(buildConfig.globalConfig.targetDir,
@@ -392,8 +391,8 @@ func parallelBuild(res: ModuleResolve, buildConfig: BuildConfig): Bool {
                     buildConfig.requiredForTests)
                 let nativeLogPath = getLogPath(buildConfig.globalConfig.targetDir, buildConfig.globalConfig.nativeDir,
                     false, resolve.rootPkgName)
-                resolveConfig.nativeOutLog = Path(nativeLogPath).join("${resolveConfig.fullName}.outlog").toString()
-                resolveConfig.nativeErrLog = Path(nativeLogPath).join("${resolveConfig.fullName}.errlog").toString()
+                resolveConfig.nativeOutLog = Path(nativeLogPath).join("${swapOrgName(resolveConfig.fullName)}.outlog").toString()
+                resolveConfig.nativeErrLog = Path(nativeLogPath).join("${swapOrgName(resolveConfig.fullName)}.errlog").toString()
                 if (!createDirectory(resolveConfig.nativePath) || !createDirectory(nativeLogPath)) {
                     return false
                 }
@@ -470,9 +469,9 @@ func getFinalPath(targetDir: String, nativeDir: String, outputType: OutputType, 
         }
     } else {
         if (isTargetPlatform) {
-            res = Path(targetDir).join(name).toString()
+            res = Path(targetDir).join(swapOrgName(name)).toString()
         } else {
-            res = Path(nativeDir).join(name).toString()
+            res = Path(nativeDir).join(swapOrgName(name)).toString()
         }
     }
     return res
@@ -481,9 +480,9 @@ func getFinalPath(targetDir: String, nativeDir: String, outputType: OutputType, 
 func getLogPath(targetDir: String, nativeDir: String, isTargetPlatform: Bool, rootPkgName: String): String {
     var res = ""
     if (isTargetPlatform) {
-        res = Path(targetDir).join(".build-logs").join(rootPkgName).toString()
+        res = Path(targetDir).join(".build-logs").join(swapOrgName(rootPkgName)).toString()
     } else {
-        res = Path(nativeDir).join(".build-logs").join(rootPkgName).toString()
+        res = Path(nativeDir).join(".build-logs").join(swapOrgName(rootPkgName)).toString()
     }
     return res
 }

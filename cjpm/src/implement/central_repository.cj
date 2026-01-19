@@ -9,7 +9,6 @@ package cjpm.implement
 import std.fs.*
 import cjpm.config.*
 
-// used for central repository
 func processRepoDependencyModule(name: String, version: String, modulePath: String): (Bool, String) {
     if (version.isEmpty()) {
         eprintln("Error: the version can't be empty which is listed in 'dependencies' field " +
@@ -26,50 +25,35 @@ func processRepoDependencyModule(name: String, version: String, modulePath: Stri
     return (true, output)
 }
 
-// used for central repository
-func loadModuleFromRepo(name: String, version: String): (Bool, String) {
-    try {
-        if (let Some(depot) <- Depot.new()) {
-            let dependencyPath = Path(depot.getLocalRepo()).join("${name}-${version}").toString()
-            if (directoryExists(dependencyPath)) {
-                return (true, dependencyPath)
-            }
-
-            let (result, output) = depot.download(name, version)
-            if (!result) {
-                return (false, output)
-            }
-            let p = getPath(depot.getLocalRepo(), "${name}-${version}")
-            return (true, p)
-        } else {
-            return (false, "download error")
-        }
-    } catch (e: Exception) {
-        return (false, "download ${name} exception")
-    }
-}
-
-// used for central repository
 public func setRepoRoot(installConfig: InstallConfig, artifact: String): Bool {
     if (installConfig.verbose) {
         println("cjpm install: installing ${artifact} from central repository")
     }
-    let params = artifact.split(":")
+    let params = artifact.split("-")
+    let nameArr = params[0].split("::")
+    let (org, name) = if (nameArr.size == 1) {
+        ("", nameArr[0])
+    } else {
+        (nameArr[0], nameArr[1])
+    }
     try {
-        installConfig.globalConfig.rootPath = Path(DEFAULT_CONFIG_LOCATION)
-            .join(".cjpm")
-            .join("repository")
-            .join("${params[0]}-${params[1]}")
-            .toString()
-        if (directoryExists(installConfig.globalConfig.rootPath)) {
-            if (installConfig.verbose) {
-                println("cjpm install skip downloading ${artifact}: local files exist")
-            }
-            installConfig.globalConfig.targetDir = getPath(installConfig.globalConfig.rootPath, TARGET)
-            return true
-        }
         if (let Some(depot) <- Depot.new()) {
-            let (result, output) = depot.download(params[0], params[1])
+            installConfig.globalConfig.rootPath = Path(depot.localRepo)
+                .join("source")
+                .join(if (org.isEmpty()) { "default" } else { org })
+                .join("${name}-${params[1]}")
+                .toString()
+            if (directoryExists(installConfig.globalConfig.rootPath)) {
+                if (installConfig.verbose) {
+                    println("cjpm install skip downloading ${artifact}: local files exist")
+                }
+                installConfig.globalConfig.targetDir = getPath(installConfig.globalConfig.rootPath, TARGET)
+                return true
+            }
+            if (!depot.updateIndex(name, org)) {
+                return false
+            }
+            let (result, output) = depot.download(name, org, params[1])
             if (!result) {
                 eprintln("Error: ${output}")
                 return false
@@ -85,5 +69,38 @@ public func setRepoRoot(installConfig: InstallConfig, artifact: String): Bool {
     } catch (e: Exception) {
         println("Error: load module failed with network connection error")
         return false
+    }
+}
+
+func loadModuleFromRepo(name: String, version: String): (Bool, String) {
+    if (let Some(depot) <- Depot.new()) {
+        return loadModuleFromRepo(name, version, depot)
+    }
+    return (false, "wrong central repository configuration")
+}
+
+func loadModuleFromRepo(fullName: String, version: String, depot: Depot): (Bool, String) {
+    let nameArr = fullName.split("::")
+    let (org, name) = if (nameArr.size == 1) {
+        ("", nameArr[0])
+    } else {
+        (nameArr[0], nameArr[1])
+    }
+    try {
+        let dependencyPath = Path(depot.localRepo).join("source").
+            join(if (org.isEmpty()) { "default" } else { org }).
+            join("${name}-${version}").toString()
+        if (directoryExists(dependencyPath)) {
+            return (true, dependencyPath)
+        }
+
+        let (result, output) = depot.download(name, org, version)
+        if (!result) {
+            return (false, output)
+        }
+        return (true, dependencyPath)
+    } catch (e: Exception) {
+        eprintln(e.message)
+        return (false, "catch exception while downloading ${name}-${version} from central repository")
     }
 }
