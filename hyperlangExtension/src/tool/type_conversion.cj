@@ -151,6 +151,14 @@ private func genTo(tsType: TsType, gconfig: GlobalConfig, targetObj: Tokens, ctx
     } else {
         quote()
     }
+    if (isOptional) {
+        let innerTarget = quote(v)
+        let innerValue = genTo(tsType, gconfig, innerTarget, ctxParam, typeName, false, arr: arr)
+        return quote(match ($(targetObj)) {
+            case None => $(ctxParam).undefined().toJSValue()
+            case Some(v) => $(innerValue)
+        })
+    }
     let res = if (isOptional) {
         quote(.getOrDefault({=> $(ctxParam).object().toJSValue()}))
     } else {
@@ -162,9 +170,13 @@ private func genTo(tsType: TsType, gconfig: GlobalConfig, targetObj: Tokens, ctx
         quote(.toJSValue($(ctxParam)))
     }
     if (isHashMap) {
-        let secondParam = toCJType(arr.getOrThrow()[1])
+        let valueType = arr.getOrThrow()[1]
+        let secondParam = toCJType(valueType)
         let res = Token(TokenKind.IDENTIFIER, "hashmap2Record<${secondParam}>")
-        quote($(res)($(ctxParam), $(targetObj)$(get), {context, i => i.toJSValue(context)}))
+        let innerCtx = quote(context)
+        let valueVar = quote(i)
+        let valueToJS = toJSValue(valueType, gconfig, valueVar, innerCtx)
+        quote($(res)($(ctxParam), $(targetObj)$(get), {$(innerCtx), $(valueVar) => $(valueToJS)}))
     } else {
         quote($(targetObj)$(get)$(toValue))
     }
@@ -223,6 +235,7 @@ private func toJSValue(tsType: TsType, gconfig: GlobalConfig, targetObj: Tokens,
     let optional = isOptional && initValue.isNone()
     match (tsType) {
         case TsBigInt => quote($(ctxParam).bigint($(targetObj)).toJSValue($(ctxParam)))
+        case TsOptional(elemType) => toJSValue(elemType, gconfig, targetObj, ctxParam, isOptional: true)
         case TsTypeRef(typeName) => genTo(tsType, gconfig, targetObj, ctxParam, Some(typeName), optional)
         case TsTypeRef(typeName, array) => genTo(tsType, gconfig, targetObj, ctxParam, Some(typeName), optional,
             arr: array)
@@ -271,7 +284,8 @@ private func genFrom(tsType: TsType, gconfig: GlobalConfig, targetObj: Tokens, c
     let cjType = tsType.toCJTypeTokens()
     let opt = isOptional && initValue.isNone()
     let tsTypeStr = tsType.toString()
-    let fromValue = if (toCJType(tsType).startsWith("JSValue")) {
+    let cjTypeStr = toCJType(tsType)
+    let fromValue = if (cjTypeStr.startsWith("JSValue")) {
         quote($(targetObj))
     } else {
         quote(.fromJSValue($(ctxParam),$(targetObj)))
@@ -286,21 +300,22 @@ private func genFrom(tsType: TsType, gconfig: GlobalConfig, targetObj: Tokens, c
             case Some("enum-string") => quote(String)
             case Some(_) | None => quote(Int32)
         }
-        let valueType = if (opt) {
-            quote(Option<$(elemType)>)
-        } else {
-            elemType
+        if (opt) {
+            let optValue = quote(fromJSOption<$(elemType)>($(ctxParam), $(targetObj)))
+            return quote($(cjType).$(parse)($(optValue)))
         }
-        return quote($(cjType).$(parse)($(valueType)$(fromValue)))
+        return quote($(cjType).$(parse)($(elemType)$(fromValue)))
     }
-    if (toCJType(tsType).startsWith("JSValue")) {
+    if (opt) {
+        if (cjTypeStr.startsWith("JSValue")) {
+            return quote(fromJSOption<JSValue>($(ctxParam), $(targetObj), {_: JSContext, v: JSValue => v}))
+        }
+        return quote(fromJSOption<$(cjType)>($(ctxParam), $(targetObj), {ctx: JSContext, v: JSValue => $(cjType).fromJSValue(ctx, v)}))
+    }
+    if (cjTypeStr.startsWith("JSValue")) {
         quote($(fromValue))
     } else {
-        if (opt) {
-            quote(Option<$(cjType)>$(fromValue))
-        } else {
-            quote($(cjType)$(fromValue))
-        }
+        quote($(cjType)$(fromValue))
     }
 }
 
@@ -402,10 +417,19 @@ private func fromJSValue(tsType: TsType, gconfig: GlobalConfig, targetObj: Token
             result += quote(\))
             return result
         case TsTypeRef("HashMap", array) =>
-            let secondParam = toCJType(array[1])
-            let res = Token(TokenKind.IDENTIFIER, "record2Hashmap<${secondParam}>")
-            let secondParamToken = Token(TokenKind.IDENTIFIER, secondParam)
-            quote($(res)($(ctxParam), $(targetObj), {context, i => $(secondParamToken).fromJSValue(context, i)}))
+            let valueType = array[1]
+            let secondParam = toCJType(valueType)
+            let opt = isOptional && initValue.isNone()
+            let resName = if (opt) {
+                "record2HashmapOption"
+            } else {
+                "record2Hashmap"
+            }
+            let res = Token(TokenKind.IDENTIFIER, "${resName}<${secondParam}>")
+            let innerCtx = quote(context)
+            let valueToken = quote(i)
+            let valueFromJS = fromJSValue(valueType, gconfig, valueToken, innerCtx)
+            quote($(res)($(ctxParam), $(targetObj), {$(innerCtx), $(valueToken) => $(valueFromJS)}))
         case TsUnion(elems) =>
             let nonNullTypes: ArrayList<TsType> = ArrayList<TsType>()
             for (e in elems) {
