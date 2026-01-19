@@ -22,6 +22,7 @@ package ${moduleName}
 
 public import ohos.base.BusinessException
 public import ohos.base.CallbackObject
+public import ohos.hilog.Hilog
 
 protected type AsyncCallback<T> = (?BusinessException, ?T) -> Unit
 """

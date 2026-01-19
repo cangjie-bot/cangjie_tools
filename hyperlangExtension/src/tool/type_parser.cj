@@ -46,6 +46,35 @@ class Scanner {
         s = input.toRuneArray()
     }
 
+    private func appendUtf8(bytes: ArrayList<UInt8>, r: Rune): Unit {
+        let code = UInt32(r)
+        if (code <= UInt32(127)) {
+            bytes.add(UInt8(code))
+        } else if (code <= UInt32(2047)) {
+            bytes.add(UInt8(UInt32(192) | (code >> 6)))
+            bytes.add(UInt8(UInt32(128) | (code & UInt32(63))))
+        } else if (code <= UInt32(65535)) {
+            bytes.add(UInt8(UInt32(224) | (code >> 12)))
+            bytes.add(UInt8(UInt32(128) | ((code >> 6) & UInt32(63))))
+            bytes.add(UInt8(UInt32(128) | (code & UInt32(63))))
+        } else {
+            bytes.add(UInt8(UInt32(240) | (code >> 18)))
+            bytes.add(UInt8(UInt32(128) | ((code >> 12) & UInt32(63))))
+            bytes.add(UInt8(UInt32(128) | ((code >> 6) & UInt32(63))))
+            bytes.add(UInt8(UInt32(128) | (code & UInt32(63))))
+        }
+    }
+
+    private func sliceRunes(start: Int64, end: Int64): String {
+        let bytes = ArrayList<UInt8>()
+        var i = start
+        while (i < end) {
+            appendUtf8(bytes, s[i])
+            i += 1
+        }
+        String.fromUtf8(bytes.toArray())
+    }
+
     func peek(): SExpToken {
         skipWhite()
         if (pos >= s.size) {
@@ -78,7 +107,7 @@ class Scanner {
                 do {
                     pos++
                 } while (isAlpha(s[pos]) || isDigit(s[pos]) || s[pos] == r'_' || s[pos] == r'.')
-                Identifier(input[start..pos])
+                Identifier(sliceRunes(start, pos))
             case isDigit(c) =>
                 var num = 0
                 do {
@@ -92,7 +121,7 @@ class Scanner {
                     pos++
                 } while (s[pos] != r'"')
                 pos++
-                Str(input[start + 1..pos - 1])
+                Str(sliceRunes(start + 1, pos - 1))
             case _ => throw IllegalArgumentException("Unexpected token: ${c}")
         }
     }
