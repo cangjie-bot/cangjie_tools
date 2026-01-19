@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 type ErrorCode = number;
 
-enum EventType {}
-
 enum ListenerStatusNumeric {
     on,
     off

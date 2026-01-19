@@ -211,9 +211,7 @@ public class TransObject {
                 property.append(quote(var arkts_object: JSObject))
             }
             isPublicType = processArkMethod(constructorToken, methodToken, paramToken)
-            let modifiers = if (this.cjModifiers.contains("open")) {
-                "public open "
-            } else if (arkParents.size > 0) {
+            let modifiers = if (arkParents.size > 0 || this.cjModifiers.contains("open")) {
                 "public "
             } else {
                 ""
@@ -223,7 +221,7 @@ public class TransObject {
                     arkts_object.toJSValue()
                 }
 
-                $(getTokenWithoutNL(modifiers))static func fromJSValue(context: JSContext, input: JSValue): $(templateClassNameToken) {
+                $(getTokenWithoutNL(modifiers + "static"))func fromJSValue(context: JSContext, input: JSValue): $(templateClassNameToken) {
                     $(classNameToken)\(input.asObject()\)
                 })
             methodToken.append(proMethodTemplate)

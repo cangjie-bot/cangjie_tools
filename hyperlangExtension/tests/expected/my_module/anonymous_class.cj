@@ -236,7 +236,7 @@ public class AnonymousClass {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): AnonymousClass {
+    static func fromJSValue(context: JSContext, input: JSValue): AnonymousClass {
         AnonymousClass(input.asObject())
     }
 }

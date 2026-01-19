@@ -74,7 +74,7 @@ public class AppSettings {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): AppSettings {
+    static func fromJSValue(context: JSContext, input: JSValue): AppSettings {
         AppSettings(input.asObject())
     }
 }

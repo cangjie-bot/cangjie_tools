@@ -41,7 +41,7 @@ public class Greeter {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): Greeter {
+    static func fromJSValue(context: JSContext, input: JSValue): Greeter {
         Greeter(input.asObject())
     }
 }

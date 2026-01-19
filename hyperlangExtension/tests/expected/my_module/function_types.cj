@@ -17,45 +17,6 @@ public type ErrorCode = Float64
 
 /***********ENUM***********/
 
-/* enum EventType {
-	}*/
-public enum EventType <: ToString & Equatable < EventType > {
-    
-    func get(): Int32 {
-        match(this) {
-        }
-    }
-    
-    static func parse(val: Int32): EventType {
-        match(val) {
-            case _ => throw IllegalArgumentException("unknown value ${val}")
-        }
-    }
-    
-    static func tryParse(val: ?Int32): ?EventType {
-        match(val) {
-            case Some(v) => parse(v)
-            case None => None
-        }
-    }
-    
-    public func toString(): String {
-        match(this) {
-        }
-    }
-    
-    public override operator func ==(that: EventType): Bool {
-        match((this, that)) {
-            case _ => false
-        }
-    }
-    
-    public override operator func !=(that: EventType): Bool {
-        !(this == that)
-    }
-}
-
-
 /* enum ListenerStatusNumeric {
 	 on,
 	 off
@@ -208,11 +169,11 @@ public open class MyListener {
         }
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener {
+    public static func fromJSValue(context: JSContext, input: JSValue): MyListener {
         MyListener(input.asObject())
     }
 }
@@ -248,11 +209,11 @@ public open class MyListener2 {
         jsObjApiCall < Unit >( arkts_object, "on", { __ctx =>[key.toJSValue(__ctx), jsCallback] })
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener2 {
+    public static func fromJSValue(context: JSContext, input: JSValue): MyListener2 {
         MyListener2(input.asObject())
     }
 }
@@ -288,11 +249,11 @@ public open class MyListener3 {
         jsObjApiCall < Unit >( arkts_object, "on", { __ctx =>[key.toJSValue(__ctx), jsCallback] })
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener3 {
+    public static func fromJSValue(context: JSContext, input: JSValue): MyListener3 {
         MyListener3(input.asObject())
     }
 }
@@ -328,11 +289,11 @@ public open class MyListener5 {
         jsObjApiCall < Unit >( arkts_object, "on", { __ctx =>[key.toJSValue(__ctx), jsCallback] })
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): MyListener5 {
+    public static func fromJSValue(context: JSContext, input: JSValue): MyListener5 {
         MyListener5(input.asObject())
     }
 }
@@ -351,7 +312,7 @@ public open class TestListener {
     private var onDestroy!: Option<() -> Unit> = None,
     private var onError!: Option<(code: ErrorCode, msg: String) -> Unit> = None,
     private var onTouch!: Option<() -> Unit> = None,
-    private var onEvent!: Option<(e: EventType) -> Unit> = None) { }
+    private var onEvent!: Option<(e: JSValue/* FIXME: `EventType` */) -> Unit> = None) { }
     
     
     public open func toJSValue(context: JSContext): JSValue {
@@ -384,7 +345,7 @@ public open class TestListener {
         }
         if(let Some(v) <- onEvent) {
             obj["onEvent"] = context.function({ ctx, info =>
-                let p0 = EventType.parse(Int32.fromJSValue(ctx, info[0]))
+                let p0 = info[0]
                 v(p0)
                 ctx.undefined().toJSValue()
             }).toJSValue()
@@ -436,9 +397,9 @@ public open class TestListener {
         onEvent: if(obj["onEvent"].isUndefined()) {
             None
         } else {
-            { e: EventType =>
+            { e: JSValue/* FIXME: `EventType` */ =>
                 checkThreadAndCall < Unit >(context, { ctx =>
-                    let arg0 = e.get().toJSValue(ctx)
+                    let arg0 = e
                     obj["onEvent"].asFunction().call([arg0])
                 })
             }
@@ -483,7 +444,7 @@ public class MyListener4 {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): MyListener4 {
+    static func fromJSValue(context: JSContext, input: JSValue): MyListener4 {
         MyListener4(input.asObject())
     }
 }

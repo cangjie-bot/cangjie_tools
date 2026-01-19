@@ -65,11 +65,11 @@ public open class Calculator {
         jsObjApiCall < String >( arkts_object, "add", { ctx =>[x.toJSValue(ctx), y.toJSValue(ctx)] })
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): Calculator {
+    public static func fromJSValue(context: JSContext, input: JSValue): Calculator {
         Calculator(input.asObject())
     }
 }
@@ -84,11 +84,11 @@ public open class Callback1 {
     
     
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): Callback1 {
+    public static func fromJSValue(context: JSContext, input: JSValue): Callback1 {
         Callback1(input.asObject())
     }
 }
@@ -126,11 +126,11 @@ public open class Config {
     
     
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): Config {
+    public static func fromJSValue(context: JSContext, input: JSValue): Config {
         Config(input.asObject())
     }
 }
@@ -145,11 +145,11 @@ public open class Dictionary {
     
     
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): Dictionary {
+    public static func fromJSValue(context: JSContext, input: JSValue): Dictionary {
         Dictionary(input.asObject())
     }
 }
@@ -191,11 +191,11 @@ public open class IWBAPI {
         jsObjApiCall < Unit >( arkts_object, "authorizeClient", { ctx =>[context, listener] })
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): IWBAPI {
+    public static func fromJSValue(context: JSContext, input: JSValue): IWBAPI {
         IWBAPI(input.asObject())
     }
 }
@@ -268,11 +268,11 @@ public open class LoggerAdapter {
         }
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): LoggerAdapter {
+    public static func fromJSValue(context: JSContext, input: JSValue): LoggerAdapter {
         LoggerAdapter(input.asObject())
     }
 }
@@ -309,11 +309,11 @@ public open class Person {
         jsObjApiCall < String >( arkts_object, "greet", emptyArg)
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): Person {
+    public static func fromJSValue(context: JSContext, input: JSValue): Person {
         Person(input.asObject())
     }
 }
@@ -345,11 +345,11 @@ public open class PluginContainer {
         }
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): PluginContainer {
+    public static func fromJSValue(context: JSContext, input: JSValue): PluginContainer {
         PluginContainer(input.asObject())
     }
 }
@@ -435,11 +435,11 @@ public open class UnionInterface {
         }
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): UnionInterface {
+    public static func fromJSValue(context: JSContext, input: JSValue): UnionInterface {
         UnionInterface(input.asObject())
     }
 }
@@ -643,11 +643,11 @@ public open class BasePlugin {
         }
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): BasePlugin {
+    public static func fromJSValue(context: JSContext, input: JSValue): BasePlugin {
         BasePlugin(input.asObject())
     }
 }
@@ -702,7 +702,7 @@ public class DefaultPluginContainer <: PluginContainer {
         arkts_object.toJSValue()
     }
     
-    public  static func fromJSValue(context: JSContext, input: JSValue): DefaultPluginContainer {
+    public static func fromJSValue(context: JSContext, input: JSValue): DefaultPluginContainer {
         DefaultPluginContainer(input.asObject())
     }
 }

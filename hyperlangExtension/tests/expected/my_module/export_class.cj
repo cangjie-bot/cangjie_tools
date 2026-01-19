@@ -62,7 +62,7 @@ public class UserInfoManager {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): UserInfoManager {
+    static func fromJSValue(context: JSContext, input: JSValue): UserInfoManager {
         UserInfoManager(input.asObject())
     }
 }

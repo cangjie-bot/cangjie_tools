@@ -176,11 +176,11 @@ public open class Drivable {
         jsObjApiCall < Unit >( arkts_object, "stop", emptyArg)
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): Drivable {
+    public static func fromJSValue(context: JSContext, input: JSValue): Drivable {
         Drivable(input.asObject())
     }
 }
@@ -225,7 +225,7 @@ public open class IM {
 	 */
     public func f4(e: EMStr): (s: String) -> Unit {
         jsObjApiCall < (s: String) -> Unit >( arkts_object, "f4", { ctx =>[e.get().toJSValue(ctx)] }) {
-            ctx, info => (s: String) -> Unit.fromJSValue(ctx, info)
+            ctx, info => {s: String => Unit.fromJSValue(ctx, info)}
         }
     }
     /**
@@ -261,11 +261,11 @@ public open class IM {
         }
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): IM {
+    public static func fromJSValue(context: JSContext, input: JSValue): IM {
         IM(input.asObject())
     }
 }
@@ -318,11 +318,11 @@ public open class Animal {
         jsObjApiCall < Unit >( arkts_object, "move", { ctx =>[distance.toJSValue(ctx)] })
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): Animal {
+    public static func fromJSValue(context: JSContext, input: JSValue): Animal {
         Animal(input.asObject())
     }
 }
@@ -363,7 +363,7 @@ public class AnimalProtect {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): AnimalProtect {
+    static func fromJSValue(context: JSContext, input: JSValue): AnimalProtect {
         AnimalProtect(input.asObject())
     }
 }
@@ -406,7 +406,7 @@ public class Box<T> where T <: JSInteropType<T> {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): Box<T> {
+    static func fromJSValue(context: JSContext, input: JSValue): Box<T> {
         Box(input.asObject())
     }
 }
@@ -552,7 +552,7 @@ public class CM {
 	 */
     public func f4(e: EMStr): (s: String) -> Unit {
         jsObjApiCall < (s: String) -> Unit >( arkts_object, "f4", { ctx =>[e.get().toJSValue(ctx)] }) {
-            ctx, info => (s: String) -> Unit.fromJSValue(ctx, info)
+            ctx, info => {s: String => Unit.fromJSValue(ctx, info)}
         }
     }
     /**
@@ -590,13 +590,13 @@ public class CM {
     /**
 	 * @brief f8(result: string | Promise<string>): boolean
 	 */
-    public func f8(callback: AsyncCallback < Bool >, result: string|Promise<String>): Unit {
+    public func f8(callback: AsyncCallback < Bool >, result: String): Unit {
         jsObjApiCallPromise < Bool >( arkts_object, "f8", callback, { ctx =>[result.toJSValue(ctx)] })
     }
     /**
 	 * @brief f8(result: string | Promise<string>): boolean
 	 */
-    public func f8(callback: AsyncCallback < Bool >, result: string|Promise<String>): Unit {
+    public func f8(callback: AsyncCallback < Bool >, result: JSValue/* FIXME: `Promise<string>` */): Unit {
         jsObjApiCallPromise < Bool >( arkts_object, "f8", callback, { ctx =>[result] })
     }
     
@@ -604,7 +604,7 @@ public class CM {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): CM {
+    static func fromJSValue(context: JSContext, input: JSValue): CM {
         CM(input.asObject())
     }
 }
@@ -647,7 +647,7 @@ public class Calculator {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): Calculator {
+    static func fromJSValue(context: JSContext, input: JSValue): Calculator {
         Calculator(input.asObject())
     }
 }
@@ -689,7 +689,7 @@ public class Car {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): Car {
+    static func fromJSValue(context: JSContext, input: JSValue): Car {
         Car(input.asObject())
     }
 }
@@ -721,7 +721,7 @@ public class Car1 <: Drivable {
         arkts_object.toJSValue()
     }
     
-    public  static func fromJSValue(context: JSContext, input: JSValue): Car1 {
+    public static func fromJSValue(context: JSContext, input: JSValue): Car1 {
         Car1(input.asObject())
     }
 }
@@ -746,7 +746,7 @@ public class Dog <: Animal {
         arkts_object.toJSValue()
     }
     
-    public  static func fromJSValue(context: JSContext, input: JSValue): Dog {
+    public static func fromJSValue(context: JSContext, input: JSValue): Dog {
         Dog(input.asObject())
     }
 }
@@ -781,7 +781,7 @@ public class Greeter {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): Greeter {
+    static func fromJSValue(context: JSContext, input: JSValue): Greeter {
         Greeter(input.asObject())
     }
 }
@@ -831,7 +831,7 @@ public class MyClass {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): MyClass {
+    static func fromJSValue(context: JSContext, input: JSValue): MyClass {
         MyClass(input.asObject())
     }
 }
@@ -849,7 +849,7 @@ public class Person {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): Person {
+    static func fromJSValue(context: JSContext, input: JSValue): Person {
         Person(input.asObject())
     }
 }
@@ -927,7 +927,7 @@ public class RecordTest {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): RecordTest {
+    static func fromJSValue(context: JSContext, input: JSValue): RecordTest {
         RecordTest(input.asObject())
     }
 }
@@ -949,11 +949,11 @@ public open class Shape {
         jsObjApiCall < Float64 >( arkts_object, "getArea", emptyArg)
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): Shape {
+    public static func fromJSValue(context: JSContext, input: JSValue): Shape {
         Shape(input.asObject())
     }
 }
@@ -994,7 +994,7 @@ public class TE {
     /**
 	 * @brief f1(result: string | Promise<string>): Promise<String>
 	 */
-    public func f1(callback: AsyncCallback < JSValue/* FIXME: `Promise<string>` */ >, result: string|Promise<String>): Unit {
+    public func f1(callback: AsyncCallback < JSValue/* FIXME: `Promise<string>` */ >, result: String): Unit {
         jsObjApiCallPromise < JSValue/* FIXME: `Promise<string>` */ >( arkts_object, "f1", callback, { ctx =>[result.toJSValue(ctx)] }) {
             ctx, info => info
         }
@@ -1002,7 +1002,7 @@ public class TE {
     /**
 	 * @brief f1(result: string | Promise<string>): Promise<String>
 	 */
-    public func f1(callback: AsyncCallback < JSValue/* FIXME: `Promise<string>` */ >, result: string|Promise<String>): Unit {
+    public func f1(callback: AsyncCallback < JSValue/* FIXME: `Promise<string>` */ >, result: JSValue/* FIXME: `Promise<string>` */): Unit {
         jsObjApiCallPromise < JSValue/* FIXME: `Promise<string>` */ >( arkts_object, "f1", callback, { ctx =>[result] }) {
             ctx, info => info
         }
@@ -1012,7 +1012,7 @@ public class TE {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): TE {
+    static func fromJSValue(context: JSContext, input: JSValue): TE {
         TE(input.asObject())
     }
 }
@@ -1075,7 +1075,7 @@ public class UMConfig {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): UMConfig {
+    static func fromJSValue(context: JSContext, input: JSValue): UMConfig {
         UMConfig(input.asObject())
     }
 }

@@ -77,11 +77,11 @@ public open class BuglyLogAdapter <: p29 {
     
     
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): BuglyLogAdapter {
+    public static func fromJSValue(context: JSContext, input: JSValue): BuglyLogAdapter {
         BuglyLogAdapter(input.asObject())
     }
 }
@@ -102,11 +102,11 @@ public open class C {
         jsObjApiCall < Unit >( arkts_object, "f", emptyArg)
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): C {
+    public static func fromJSValue(context: JSContext, input: JSValue): C {
         C(input.asObject())
     }
 }
@@ -120,11 +120,11 @@ public open class D <: C {
     
     
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): D {
+    public static func fromJSValue(context: JSContext, input: JSValue): D {
         D(input.asObject())
     }
 }
@@ -168,11 +168,11 @@ public open class F <: C {
         jsObjApiCall < Unit >( arkts_object, "g", emptyArg)
     }
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): F {
+    public static func fromJSValue(context: JSContext, input: JSValue): F {
         F(input.asObject())
     }
 }
@@ -229,7 +229,7 @@ public class SubClass <: SuperClass {
         arkts_object.toJSValue()
     }
     
-    public  static func fromJSValue(context: JSContext, input: JSValue): SubClass {
+    public static func fromJSValue(context: JSContext, input: JSValue): SubClass {
         SubClass(input.asObject())
     }
 }
@@ -262,7 +262,7 @@ public class SubClass1 <: SuperClass1 {
         arkts_object.toJSValue()
     }
     
-    public  static func fromJSValue(context: JSContext, input: JSValue): SubClass1 {
+    public static func fromJSValue(context: JSContext, input: JSValue): SubClass1 {
         SubClass1(input.asObject())
     }
 }
@@ -311,7 +311,7 @@ public class SubInterface <: SuperInterface {
         arkts_object.toJSValue()
     }
     
-    public  static func fromJSValue(context: JSContext, input: JSValue): SubInterface {
+    public static func fromJSValue(context: JSContext, input: JSValue): SubInterface {
         SubInterface(input.asObject())
     }
 }
@@ -340,11 +340,11 @@ public open class SuperClass {
     }
     
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): SuperClass {
+    public static func fromJSValue(context: JSContext, input: JSValue): SuperClass {
         SuperClass(input.asObject())
     }
 }
@@ -373,11 +373,11 @@ public open class SuperClass1 {
     }
     
     
-    public open func toJSValue(context: JSContext): JSValue {
+    public func toJSValue(context: JSContext): JSValue {
         arkts_object.toJSValue()
     }
     
-    public open  static func fromJSValue(context: JSContext, input: JSValue): SuperClass1 {
+    public static func fromJSValue(context: JSContext, input: JSValue): SuperClass1 {
         SuperClass1(input.asObject())
     }
 }

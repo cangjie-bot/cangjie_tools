@@ -202,7 +202,7 @@ public class TDDiagBuilder {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): TDDiagBuilder {
+    static func fromJSValue(context: JSContext, input: JSValue): TDDiagBuilder {
         TDDiagBuilder(input.asObject())
     }
 }
@@ -278,7 +278,7 @@ public class d10 {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): d10 {
+    static func fromJSValue(context: JSContext, input: JSValue): d10 {
         d10(input.asObject())
     }
 }

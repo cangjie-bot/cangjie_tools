@@ -487,6 +487,12 @@ public class TransMethod {
                         index => $(innerToken)$(fromValue)
                     }
             }))
+        } else if (cjType.contains("->")) {
+            let innerToken = Token(TokenKind.IDENTIFIER, 
+                                   "{${retType.replace("->", "=>").replace("(", "").replace(")", "")}.fromJSValue(ctx, ${quote($(valueToken))})}")
+            retToken.append(quote({
+                ctx, info => $(innerToken)
+            }))
         } else {
             let innerToken = if (quote($(retTypeToken)).toString().startsWith("JSValue")) {
                 quote($(valueToken))
@@ -553,7 +559,7 @@ public class TransMethod {
         if (this.methodType.params.size > 0) {
             paramToken.append(commaToken)
         }
-        paramToken.append(getParamToken())
+        paramToken.append(paramListToCJ() )
         let ctxToken = quote(ctx)
 
         let transparamToken = (parametersToJS(ctxToken) |> reduce {l, r => l + commaToken + r}).getOrDefault {

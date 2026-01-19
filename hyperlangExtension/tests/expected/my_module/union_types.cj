@@ -329,7 +329,7 @@ public class UnionTypes {
         arkts_object.toJSValue()
     }
     
-     static func fromJSValue(context: JSContext, input: JSValue): UnionTypes {
+    static func fromJSValue(context: JSContext, input: JSValue): UnionTypes {
         UnionTypes(input.asObject())
     }
 }
