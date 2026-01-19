@@ -276,6 +276,8 @@ void CompilerCangjieProject::IncrementCompile(const std::string &filePath, const
         curPackages.push_back(ptr.get());
         callback->RemoveDiagOfCurPkg(ptr->packagePath);
     }
+    std::string curSourceSetName = GetSourceSetNameByPath(filePath);
+    std::unique_ptr<LSPCompilerInstance> curSourceSetCompilerInstance;
     std::vector<std::unique_ptr<LSPCompilerInstance>> curPkgCompilerInstances;
     bool isPlatformPkg = false;
     std::string sourceSetName = "";
@@ -292,14 +294,17 @@ void CompilerCangjieProject::IncrementCompile(const std::string &filePath, const
     }
     
     // 1. parse and update dependency
+    std::set<std::string> upstreamPkgs;
     for (size_t i = 0; i < curPackages.size() && i < curPkgCompilerInstances.size(); i++) {
         const auto &package = curPackages[i];
         const auto &ci = curPkgCompilerInstances[i];
         // only parse, common part cjo is not exist
         ci->invocation.globalOptions.commonPartCjo.reset();
+        ci->upstreamPkgs.insert(upstreamPkgs.begin(), upstreamPkgs.end());
         if (!UpdateDependencies(fullPkgName, ci, package->bufferCache)) {
             continue;
         }
+        upstreamPkgs.insert(ci->upstreamPkgs.begin(), ci->upstreamPkgs.end());
     }
     
     // detect circular dependency
@@ -338,6 +343,7 @@ void CompilerCangjieProject::IncrementCompile(const std::string &filePath, const
         const std::string &realpkgName =
             package->sourceSetName.empty() ? fullPkgName : package->sourceSetName + "-" + fullPkgName;
         changed |= ci->CompileAfterParse(cjoManager, graph, realpkgName);
+        curPkgCompilerInstances[i] = std::move(ci);
     }
     // Updates the status of the downstream package cjo cache.
     if (changed) {
@@ -347,6 +353,13 @@ void CompilerCangjieProject::IncrementCompile(const std::string &filePath, const
     auto ret = InitCache(curPkgCompilerInstances.back(), fullPkgName, true);
     if (!ret) {
         Trace::Elog("InitCache Failed");
+    }
+
+    for (int i = curPkgCompilerInstances.size() - 2; i >= 0; i--) {
+        if (curPkgCompilerInstances[i] == nullptr) {
+            continue;
+        }
+        InitCache(curPkgCompilerInstances[i], fullPkgName, true);
     }
 
     ReportCombinedCycles();
@@ -359,10 +372,25 @@ void CompilerCangjieProject::IncrementCompile(const std::string &filePath, const
     if (CompilerCangjieProject::GetInstance() && CompilerCangjieProject::GetInstance()->GetBgIndexDB()) {
         CompilerCangjieProject::GetInstance()->GetBgIndexDB()->DeleteFiles({filePath});
     }
-    BuildIndex(curPkgCompilerInstances.back());
+    bool isFirst = true;
+    for (size_t i = 0; i < curPkgCompilerInstances.size() && i < curPackages.size(); i++) {
+        const auto &package = curPackages[i];
+        auto &ci = curPkgCompilerInstances[i];
+        if (!ci) {
+            continue;
+        }
+        BuildIndex(ci, false, !isFirst);
+        isFirst = false;
+        if (i != curPackages.size() - 1 && curSourceSetName == package->sourceSetName) {
+            curSourceSetCompilerInstance = std::move(curPkgCompilerInstances[i]);
+        }
+    }
 
     // 5. set LRUCache
     pLRUCache->Set(fullPkgName, curPkgCompilerInstances.back());
+    if (curSourceSetCompilerInstance) {
+        pLRUCache->Set(curSourceSetName + "-" + fullPkgName, curSourceSetCompilerInstance);
+    }
     Trace::Log("Finish incremental compilation for package: ", fullPkgName);
 }
 
@@ -404,7 +432,6 @@ bool CompilerCangjieProject::UpdateDependencies(
             fullPkgName = pkgName;
         }
     }
-    // todo
     ci->UpdateDepGraph(graph, fullPkgName, ci->upstreamSourceSetName.empty());
     if (!ci->GetSourcePackages()[0]->files.empty()) {
         if (ci->GetSourcePackages()[0]->files[0]->package) {
@@ -500,6 +527,7 @@ void CompilerCangjieProject::SubmitTasksToPool(const std::unordered_set<std::str
                 }
                 ci->PreCompileProcess();
                 changed |= ci->CompileAfterParse(cjoManager, graph, realpkgName);
+                this->BuildIndex(ci, false, i != 0);
                 if (!isLastPackage) {
                     continue;
                 }
@@ -507,7 +535,6 @@ void CompilerCangjieProject::SubmitTasksToPool(const std::unordered_set<std::str
                     Trace::Log("cjo has changed, need to update down stream packages status", package);
                     cjoManager->UpdateDownstreamPackages(package, graph);
                 }
-                this->BuildIndex(ci);
                 auto ret = InitCache(ci, package);
                 if (!ret) {
                     Trace::Elog("InitCache Failed");
@@ -557,6 +584,7 @@ void CompilerCangjieProject::IncrementTempPkgCompile(const std::string &basicStr
         }
     }
     std::string sourceSetName = "";
+    std::set<std::string> upstreamPkgs;
     for (size_t i = 0; i < derivativePackages.size(); i++) {
         bool isLastPackage = i == derivativePackages.size() - 1;
         const auto &package = derivativePackages[i];
@@ -581,15 +609,17 @@ void CompilerCangjieProject::IncrementTempPkgCompile(const std::string &basicStr
         } else {
             newCI->invocation.globalOptions.commonPartCjo.reset();
         }
+        newCI->upstreamPkgs.insert(upstreamPkgs.begin(), upstreamPkgs.end());
         if (!UpdateDependencies(pkgName, newCI, package->bufferCache)) {
             continue;
         }
+        upstreamPkgs.insert(newCI->upstreamPkgs.begin(), newCI->upstreamPkgs.end());
         const auto realPkgName = package->sourceSetName.empty() ? pkgName : package->sourceSetName + "-" + pkgName;
         newCI->CompileAfterParse(cjoManager, graph, realPkgName);
         if (!isLastPackage) {
             continue;
         }
-        BuildIndex(newCI);
+        BuildIndex(newCI, false, i != 0);
         InitCache(newCI, fullPkgName);
         pLRUCache->Set(fullPkgName, newCI);
     }
@@ -841,7 +871,6 @@ void CompilerCangjieProject::CompilerOneFile(
 void CompilerCangjieProject::IncrementCompileForComplete(
     const std::string &name, const std::string &filePath, Position pos, const std::string &contents)
 {
-    // todo, 补全有问题，parse过程不会融合
     std::string pkgName = GetFullPkgName(filePath);
     if (pkgInfoMap.find(pkgName) == pkgInfoMap.end()) {
         return;
@@ -1330,6 +1359,7 @@ void CompilerCangjieProject::InitPkgInfoAndParseInModule()
             }
             bool isPlatformPkg = false;
             std::string sourceSetName = "";
+            std::set<std::string> upstreamPkgs;
             for (const auto &package : packages) {
                 auto pkgCompiler = std::make_unique<LSPCompilerInstance>(
                     callback, *package->compilerInvocation, *package->diag, package->packageName, moduleManager);
@@ -1338,7 +1368,9 @@ void CompilerCangjieProject::InitPkgInfoAndParseInModule()
                     sourceSetName = package->sourceSetName;
                 }
                 pkgCompiler->invocation.globalOptions.commonPartCjo.reset();
+                pkgCompiler->upstreamPkgs.insert(upstreamPkgs.begin(), upstreamPkgs.end());
                 ParseAndUpdateDepGraph(pkgCompiler, *package, package->bufferCache);
+                upstreamPkgs.insert(pkgCompiler->upstreamPkgs.begin(), pkgCompiler->upstreamPkgs.end());
                 const auto &realPkgName = 
                     package->sourceSetName.empty() ? item.first : package->sourceSetName + "-" + item.first;
                 CIMap[realPkgName] = std::move(pkgCompiler);
@@ -1388,7 +1420,6 @@ void CompilerCangjieProject::ParseAndUpdateDepGraph(
         return;
     }
     std::string fullPackageName = pkgInfo.packageName;
-    // todo
     pkgCompiler->UpdateDepGraph(graph, fullPackageName, pkgCompiler->upstreamSourceSetName.empty());
     if (!pkgCompiler->GetSourcePackages()[0]->files.empty()) {
         if (pkgCompiler->GetSourcePackages()[0]->files[0]->package) {
@@ -1589,18 +1620,17 @@ void CompilerCangjieProject::FullCompilation()
                     ci->PreCompileProcess();
                 }
                 changed |= ci->CompileAfterParse(cjoManager, graph, realPackage);
+                BuildIndex(ci, true, i != 0);
                 if (!isLastPkg) {
                     continue;
                 }
                 if (changed) {
                     Trace::Log("cjo has changed, need to update down stream packages status", package);
-                    // todo
                     auto downPackages = graph->FindAllDependents(package);
                     auto directDownPackages = graph->FindMayDependents(package);
                     cjoManager->UpdateStatus(directDownPackages, DataStatus::STALE);
                     cjoManager->UpdateStatus(downPackages, DataStatus::WEAKSTALE);
                 }
-                BuildIndex(ci, true);
                 pLRUCache->SetForFullCompiler(package, CIMap[realPackage]);
             }
             thrdPool->TaskCompleted(taskId);
@@ -1780,13 +1810,21 @@ void CompilerCangjieProject::InitInstance(Callbacks *cb, lsp::IndexDatabase *ark
     }
 }
 
-Ptr<Package> CompilerCangjieProject::GetSourcePackagesByPkg(const std::string &fullPkgName)
+Ptr<Package> CompilerCangjieProject::GetSourcePackagesByPkg(const std::string &fullPkgName, const std::string &sourceSetName)
 {
-    if (!instance->pLRUCache->Get(fullPkgName) ||
-        instance->pLRUCache->Get(fullPkgName)->GetSourcePackages().empty()) {
-        return nullptr;
+    std::string realPkgName = fullPkgName;
+    if (!sourceSetName.empty()) {
+        realPkgName = sourceSetName + "-" + realPkgName;
     }
-    return instance->pLRUCache->Get(fullPkgName)->GetSourcePackages()[0];
+    if (instance->pLRUCache->Get(realPkgName) &&
+        !instance->pLRUCache->Get(realPkgName)->GetSourcePackages().empty()) {
+        return instance->pLRUCache->Get(realPkgName)->GetSourcePackages()[0];
+    }
+    if (instance->pLRUCache->Get(fullPkgName) &&
+        !instance->pLRUCache->Get(fullPkgName)->GetSourcePackages().empty()) {
+        return instance->pLRUCache->Get(fullPkgName)->GetSourcePackages()[0];
+    }
+    return nullptr;
 }
 
 std::string CompilerCangjieProject::GetModuleSrcPath(const std::string &modulePath, const std::string &targetPath)
@@ -2131,11 +2169,22 @@ Callbacks* CompilerCangjieProject::GetCallback()
 bool CompilerCangjieProject::FileHasSemaCache(const std::string &fileName)
 {
     std::string fullPkgName = GetFullPkgName(fileName);
-    if (pLRUCache->HasCache(fullPkgName)) {
+    std::string curSourceSetName = GetSourceSetNameByPath(fileName);
+    std::string realPkgName = fullPkgName;
+    if (!curSourceSetName.empty() && pkgInfoMap.find(fullPkgName) != pkgInfoMap.end()) {
+        const auto &pkgInfo = pkgInfoMap[fullPkgName];
+        std::string pkgSourceSetName = pkgInfo->sourceSetName;
+        if (!pkgInfo->derivativePackages.empty()) {
+            pkgSourceSetName = pkgInfo->derivativePackages.back()->sourceSetName;
+        }
+        if (pkgSourceSetName != curSourceSetName) {
+            realPkgName = curSourceSetName + "-" + fullPkgName;
+        }
+    }
+    if (pLRUCache->HasCache(realPkgName)) {
         return true;
     }
-    std::string dirPath = GetDirPath(fileName);
-    if (pLRUCache->HasCache(dirPath)) {
+    if (pLRUCache->HasCache(realPkgName)) {
         return true;
     }
     return false;
@@ -2276,7 +2325,7 @@ void CompilerCangjieProject::StorePackageCache(const std::string& pkgName)
         pkgName, Digest(GetPathFromPkg(pkgName)), *cjoManager->GetData(pkgName));
 }
 // LCOV_EXCL_STOP
-void CompilerCangjieProject::BuildIndex(const std::unique_ptr<LSPCompilerInstance> &ci, bool isFullCompilation)
+void CompilerCangjieProject::BuildIndex(const std::unique_ptr<LSPCompilerInstance> &ci, bool isFullCompilation, bool isAppend)
 {
     auto packages = ci->GetSourcePackages();
     if (!packages[0] || !ci->typeManager) {
@@ -2339,6 +2388,7 @@ void CompilerCangjieProject::BuildIndex(const std::unique_ptr<LSPCompilerInstanc
     sc.SetArkAstMap(std::move(astMap));
     sc.Build(*packages[0]);
     if (useDB) {
+        // todo, 叠加的话需要处理
         auto shard = lsp::IndexFileOut();
         shard.symbols = sc.GetSymbolMap();
         shard.refs = sc.GetReferenceMap();
@@ -2351,7 +2401,13 @@ void CompilerCangjieProject::BuildIndex(const std::unique_ptr<LSPCompilerInstanc
         // Merge index to memory
         std::unique_lock<std::mutex> indexLock(indexMtx);
         (void) memIndex->pkgSymsMap.insert_or_assign(curPkgName, *sc.GetSymbolMap());
-        (void) memIndex->pkgRefsMap.insert_or_assign(curPkgName, *sc.GetReferenceMap());
+        if (isAppend) {
+            std::map<std::string, lsp::RefSlab> refs;
+            refs.insert_or_assign(curPkgName, *sc.GetReferenceMap());
+            memIndex->mergeMaps(memIndex->pkgRefsMap, refs);
+        } else {
+            (void) memIndex->pkgRefsMap.insert_or_assign(curPkgName, *sc.GetReferenceMap());
+        }
         (void) memIndex->pkgRelationsMap.insert_or_assign(curPkgName, *sc.GetRelations());
         (void) memIndex->pkgExtendsMap.insert_or_assign(curPkgName, *sc.GetSymbolExtendMap());
         (void) memIndex->pkgCrossSymsMap.insert_or_assign(curPkgName, *sc.GetCrossSymbolMap());

@@ -121,7 +121,6 @@ public:
 
     ArkAST *GetArkAST(const std::string &fileName)
     {
-        // todo, 好像没问题，再测测
         std::unique_lock<std::recursive_mutex> lock(fileCacheMtx);
         if (fileCache.find(fileName) != fileCache.end()) {
             return fileCache[fileName].get();
@@ -225,7 +224,7 @@ public:
 
     std::string GetFullPkgByDir(const std::string &dirPath) const;
 
-    Ptr<Package> GetSourcePackagesByPkg(const std::string &fullPkgName);
+    Ptr<Package> GetSourcePackagesByPkg(const std::string &fullPkgName, const std::string &sourceSetName = "");
 
     std::string GetModuleSrcPath(const std::string &modulePath, const std::string &targetPath = "");
 
@@ -552,7 +551,7 @@ private:
 
     void BuildIndexFromCache(const std::string &package);
 
-    void BuildIndex(const std::unique_ptr<LSPCompilerInstance> &ci, bool isFullCompilation = false);
+    void BuildIndex(const std::unique_ptr<LSPCompilerInstance> &ci, bool isFullCompilation = false, bool isAppend = false);
 
     bool LoadASTCache(const std::string &package);
 
@@ -580,7 +579,6 @@ private:
 
     std::unordered_map<std::string, std::unique_ptr<ArkAST>> fileCache;
     std::unordered_map<std::string, std::unique_ptr<ArkAST>> fileCacheForParse;
-    // todo
     std::unordered_map<std::string, std::unique_ptr<PackageInstance>> packageInstanceCache;    // key: packagePath
     std::unique_ptr<PackageInstance> packageInstanceCacheForParse;
 
@@ -595,7 +593,7 @@ private:
     std::unique_ptr<lsp::BackgroundIndexDB> backgroundIndexDb;
     std::unordered_map<std::string, std::string> pathToFullPkgName;  // key: package path
     std::mutex cimapMtx;
-    // todo, 主要作用在于全量编译阶段，每个包编完以后仅保留一个吧。
+    // value used in full compilation, then key will be used in incremental compilation to search package was compiled
     std::unordered_map<std::string, std::unique_ptr<LSPCompilerInstance>> CIMap;
     std::unordered_map<std::string, std::unique_ptr<LSPCompilerInstance>> CIMapNotInSrc;
     std::vector<std::unique_ptr<LSPCompilerInstance>> CIsForParse;

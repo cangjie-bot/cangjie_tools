@@ -386,6 +386,7 @@ bool LSPCompilerInstance::CompileAfterParse(
     cjoData.data = data;
     cjoData.status = ark::DataStatus::FRESH;
     cjoManager->SetData(cjoDataPkgName, cjoData);
+    cjoManager->SetData(pkgNameForPath, cjoData);
     return changed;
 }
 // LCOV_EXCL_START
