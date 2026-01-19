@@ -536,7 +536,7 @@ protected func fromJSArray<T>(ctx: JSContext, input: JSValue, constructor: (JSCo
 }
 
 protected func fromJSArrayOption<T>(ctx: JSContext, input: JSValue): Option<Array<T>> where T <: JSInteropType<T> {
-    if (input.isUndefined()) {
+    if (input.isUndefined() || input.isNull()) {
         None<Array<T>>
     } else {
         Some(fromJSArray<T>(ctx, input))
@@ -544,10 +544,26 @@ protected func fromJSArrayOption<T>(ctx: JSContext, input: JSValue): Option<Arra
 }
 
 protected func fromJSArrayOption<T>(ctx: JSContext, input: JSValue, constructor: (JSContext, JSValue) -> T): Option<Array<T>> {
-    if (input.isUndefined()) {
+    if (input.isUndefined() || input.isNull()) {
         None<Array<T>>
     } else {
         Some(fromJSArray(ctx, input, constructor))
+    }
+}
+
+protected func fromJSOption<T>(ctx: JSContext, input: JSValue): Option<T> where T <: JSInteropType<T> {
+    if (input.isUndefined() || input.isNull()) {
+        None<T>
+    } else {
+        Some(T.fromJSValue(ctx, input))
+    }
+}
+
+protected func fromJSOption<T>(ctx: JSContext, input: JSValue, constructor: (JSContext, JSValue) -> T): Option<T> {
+    if (input.isUndefined() || input.isNull()) {
+        None<T>
+    } else {
+        Some(constructor(ctx, input))
     }
 }
 

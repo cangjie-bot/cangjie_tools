@@ -455,6 +455,43 @@ public class TransMethod {
         }
     }
 
+    private func getOptionInnerType(typeStr: String): ?String {
+        if (!typeStr.startsWith("Option<") || !typeStr.endsWith(">")) {
+            return None
+        }
+        Some(typeStr[7..(typeStr.size - 1)])
+    }
+
+    private func optionFromJS(innerType: String, valueToken: Token): Tokens {
+        let ctxToken = quote(ctx)
+        let valueTokens = Tokens(valueToken)
+        if (gconfig.isEnum(innerType)) {
+            let innerToken = Token(TokenKind.IDENTIFIER, innerType)
+            let elemType = match (gconfig.moduleMeta.symbols.get(innerType)) {
+                case Some("enum-string") => quote(String)
+                case Some(_) | None => quote(Int32)
+            }
+            let optValue = quote(fromJSOption<$(elemType)>($(ctxToken), $(valueTokens)))
+            return quote($(innerToken).tryParse($(optValue)))
+        } else if (isArray(innerType)) {
+            let elemType = getArrayInnerType(innerType)
+            let elemToken = Token(TokenKind.IDENTIFIER, elemType)
+            let elemCtor = if (elemType.startsWith("JSValue")) {
+                quote({_: JSContext, v: JSValue => v})
+            } else {
+                quote({ctx: JSContext, v: JSValue => $(elemToken).fromJSValue(ctx, v)})
+            }
+            return quote(fromJSArrayOption<$(elemToken)>($(ctxToken), $(valueTokens), $(elemCtor)))
+        } else if (isBigInt(innerType)) {
+            return quote(fromJSOption<BigInt>($(ctxToken), $(valueTokens), {ctx: JSContext, v: JSValue => v.asBigInt(ctx).toBigInt()}))
+        } else if (innerType.startsWith("JSValue")) {
+            return quote(fromJSOption<JSValue>($(ctxToken), $(valueTokens), {_: JSContext, v: JSValue => v}))
+        } else {
+            let innerToken = Token(TokenKind.IDENTIFIER, innerType)
+            return quote(fromJSOption<$(innerToken)>($(ctxToken), $(valueTokens), {ctx: JSContext, v: JSValue => $(innerToken).fromJSValue(ctx, v)}))
+        }
+    }
+
     func getAsyncRetToken(retType: String, retTypeToken: Token, sync!: Bool = false): Tokens {
         let cjType = TypeMap.typeMap(retType)
         if (interopTypes.contains(cjType)) {
@@ -466,6 +503,13 @@ public class TransMethod {
             Token(TokenKind.IDENTIFIER, "info")
         }
         let retToken = Tokens()
+        if (let Some(innerType) <- getOptionInnerType(cjType)) {
+            let optValue = optionFromJS(innerType, valueToken)
+            retToken.append(quote({
+                ctx, info => $(optValue)
+            }))
+            return retToken
+        }
         if (gconfig.isEnum(cjType)) {
             retToken.append(
                 quote({
@@ -507,6 +551,14 @@ public class TransMethod {
             return quote()
         }
         let retToken = Tokens()
+        if (let Some(innerType) <- getOptionInnerType(cjType)) {
+            let valueToken = Token(TokenKind.IDENTIFIER, "info")
+            let optValue = optionFromJS(innerType, valueToken)
+            retToken.append(quote({
+                ctx, info => $(optValue)
+            }))
+            return retToken
+        }
         if (gconfig.isEnum(cjType)) {
             retToken.append(
                 quote({
