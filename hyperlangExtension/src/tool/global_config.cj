@@ -429,7 +429,7 @@ public class GlobalConfig {
                             let result = Property()
                             result.propKey = name
                             result.propType = ty.toString()
-                            result.cjKey = name
+                            result.cjKey = checkCangjieKeyword(name)
                             result.isOptional = optional
                             result.typeNode = ty
                             boxed.value.add(result)

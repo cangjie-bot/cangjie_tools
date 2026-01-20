@@ -430,7 +430,7 @@ public class TransObject {
     func genProp(i: Int64, propertyMethod: Tokens) {
         let arkProp = arkProperties[i]
         propertyMethod.append(Token(TokenKind.COMMENT, arkProp.comment))
-        let propName = Token(TokenKind.IDENTIFIER, arkProp.propKey)
+        let propName = Token(TokenKind.IDENTIFIER, arkProp.cjKey)
         let propType = arkProp.typeNode.toCJTypeTokens()
         let propAccess = if (arkProp.isStatic()) {
             quote(getClassConstructorObj($(gconfig.requireModuleName), $(arkName))[$(arkProp.propKey)])
