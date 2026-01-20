@@ -50,7 +50,8 @@ void GetDocumentHighlightItems(unsigned int fileID, const Decl &decl, std::set<D
     std::string path = CompilerCangjieProject::GetInstance()->GetFilePathByID(DocumentHighlightImpl::curFilePath,
                                                                               fileID);
     auto pkgName = CompilerCangjieProject::GetInstance()->GetFullPkgName(path);
-    auto package = CompilerCangjieProject::GetInstance()->GetSourcePackagesByPkg(pkgName);
+    auto sourceSetName = CompilerCangjieProject::GetInstance()->GetSourceSetNameByPath(path);
+    auto package = CompilerCangjieProject::GetInstance()->GetSourcePackagesByPkg(pkgName, sourceSetName);
     if (!package) { return; }
     auto users = FindDeclUsage(decl, *package);
     // push the users

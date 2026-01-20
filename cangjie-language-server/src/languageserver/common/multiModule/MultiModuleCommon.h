@@ -16,15 +16,21 @@ namespace ark {
 enum class CangjieFileKind {
     MISSING,
     IN_OLD_PACKAGE,
+    IN_NEW_DERIVATIVE_PACKAGE,
     IN_NEW_PACKAGE,
     IN_PROJECT_NOT_IN_SOURCE
 };
 
 struct ModuleInfo {
+    // todo，优化结构
     std::string moduleName;
     std::string modulePath;
     std::unordered_map<std::string, std::string> cjoRequiresMap;
     std::string srcPath;
+    bool isCommonPlatformModule = false;
+    // common root path -> platform root path
+    std::pair<std::string, std::vector<std::string>> commonPlatformPaths;
+    std::vector<std::string> sourceSetNames;
 };
 
 std::string GetLSPServerDir();
