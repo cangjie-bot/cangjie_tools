@@ -50,14 +50,25 @@ struct SCCParam {
              const std::unordered_map<std::string, bool> &inSt) : dfn(dfn), low(low), inSt(inSt) {};
 };
 
+enum class PkgType {
+    NORMAL,
+    COMMON,
+    SPECIFIC
+};
+
 struct PkgInfo {
 public:
+    // in common-specific module, this mean common package path
     std::string packagePath{};
     std::string packageName{};
     std::string modulePath{};
     std::string moduleName{};
     bool isSourceDir = false;
     bool needReCompile = false;
+    std::string sourceSetName{};
+    PkgType pkgType = PkgType::NORMAL;
+    // in common-specific module, this set specific package
+    std::vector<std::unique_ptr<PkgInfo>> derivativePackages;
 
     std::mutex pkgInfoMutex;
     std::unique_ptr<CompilerInvocation> compilerInvocation;
@@ -66,7 +77,7 @@ public:
     std::unique_ptr<DiagnosticEngine> diagTrash;
 
     explicit PkgInfo(const std::string &pkgPath, const std::string &curModulePath,
-                        const std::string &curModuleName, Callbacks *callback);
+        const std::string &curModuleName, Callbacks *callback, PkgType pkgType = PkgType::NORMAL);
 
     ~PkgInfo() = default;
 };
@@ -145,11 +156,15 @@ public:
 
     std::string GetPathFromPkg(const std::string &pkgName)
     {
-        auto found = fullPkgNameToPath.find(pkgName);
-        if (found != fullPkgNameToPath.end()) {
-            return fullPkgNameToPath[pkgName];
+        if (pkgInfoMap.find(pkgName) == pkgInfoMap.end()) {
+            return {};
         }
-        return {};
+        std::vector<std::string> paths;
+        paths.push_back(pkgInfoMap[pkgName]->packagePath);
+        for (auto &pkg: pkgInfoMap[pkgName]->derivativePackages) {
+            paths.push_back(pkg->packagePath);
+        }
+        return paths.back();
     }
 
     bool PkgIsFromCIMapNotInSrc(const std::string &fullPkgName) const
@@ -187,6 +202,11 @@ public:
 
     void InitPkgInfoAndParseInModule();
 
+    void ParseAndUpdateDepGraph(
+        std::unique_ptr<LSPCompilerInstance> &pkgCompiler, 
+        PkgInfo &item,
+        const std::unordered_map<std::string, std::string> &bufferCache);
+
     void InitPkgInfoAndParseNotInModule();
 
     void InitPkgInfoAndParse();
@@ -204,9 +224,11 @@ public:
 
     std::string GetFullPkgByDir(const std::string &dirPath) const;
 
-    Ptr<Package> GetSourcePackagesByPkg(const std::string &fullPkgName);
+    Ptr<Package> GetSourcePackagesByPkg(const std::string &fullPkgName, const std::string &sourceSetName = "");
 
-    std::string GetModuleSrcPath(const std::string &modulePath);
+    std::string GetModuleSrcPath(const std::string &modulePath, const std::string &targetPath = "");
+
+    std::vector<std::string> GetCommonSpecificModuleSrcPaths(const std::string &modulePath);
 
     void SetHead(const std::string &fullPkgName) const
     {
@@ -257,9 +279,9 @@ public:
             SetHeadByFilePath(aheadPath);
         }
         if (!PkgHasSemaCache(fullPkgName) || !curDecl->curFile ||
-            fullPkgNameToPath.find(fullPkgName) == fullPkgNameToPath.end()) { return curDecl; }
+            pkgInfoMap.find(fullPkgName) == pkgInfoMap.end()) { return curDecl; }
         auto fileName = curDecl->curFile->fileName;
-        auto dirPath = fullPkgNameToPath[fullPkgName];
+        auto dirPath = GetPathFromPkg(fullPkgName);
         if (packageInstanceCache.find(dirPath) == packageInstanceCache.end() ||
             !packageInstanceCache[dirPath]->package) {
             return curDecl;
@@ -443,20 +465,15 @@ public:
         return modulesHome;
     }
 
-    std::unordered_map<std::string, std::string> GetFullPkgNameToPathMap()
+    std::unordered_set<std::string> GetPkgNameList()
     {
-        return fullPkgNameToPath;
+        return Utils::GetKeys(pkgInfoMap);
     }
 
     std::string GetContentByFile(const std::string& filePath)
     {
         auto fullPkgName = GetFullPkgName(filePath);
-        if (auto found = pkgInfoMap.find(fullPkgName); found != pkgInfoMap.end()) {
-            if (auto buffer = found->second->bufferCache.find(filePath); buffer != found->second->bufferCache.end()) {
-                return buffer->second;
-            }
-        }
-        return {};
+        return GetFileBufferCacheContent(fullPkgName, filePath);
     }
 
     /**
@@ -483,6 +500,21 @@ public:
     
     void EmitDiagsOfFile(const std::string &filePath);
 
+    void SortDerivatePackages(const std::string &packageName);
+
+    PkgType GetPkgType(const std::string &moduelName, const std::string &path);
+
+    std::vector<std::string> GetSourceSetNamesByPackage(const std::string &packageName);
+
+    std::string GetSourceSetNameByPath(const std::string &path);
+
+    PkgInfo* GetTargetPkgInfo(const std::string &fullPackageName, const std::string &filePath);
+
+    void InsertFileBufferCache(
+        const std::string &fullPackageName, const std::string &filePath, const std::string &content);
+
+    std::string GetFileBufferCacheContent(const std::string &fullPackageName, const std::string &filePath);
+
 private:
     CompilerCangjieProject(Callbacks *cb, lsp::IndexDatabase *arkIndexDB);
 
@@ -506,7 +538,10 @@ private:
 
     void ClearCacheForDelete(const std::string &fullPkgName, const std::string &dirPath, bool isInModule);
 
-    bool UpdateDependencies(std::string &fullPkgName, const std::unique_ptr<LSPCompilerInstance> &ci);
+    bool UpdateDependencies(
+        std::string &fullPkgName,
+        const std::unique_ptr<LSPCompilerInstance> &ci,
+        const std::unordered_map<std::string, std::string> &bufferCache);
 
     bool ParseAndUpdateNotInSrcDep(const std::string &dirPath, const std::unique_ptr<LSPCompilerInstance> &newCI);
 
@@ -516,7 +551,7 @@ private:
 
     void BuildIndexFromCache(const std::string &package);
 
-    void BuildIndex(const std::unique_ptr<LSPCompilerInstance> &ci, bool isFullCompilation = false);
+    void BuildIndex(const std::unique_ptr<LSPCompilerInstance> &ci, bool isFullCompilation = false, bool isAppend = false);
 
     bool LoadASTCache(const std::string &package);
 
@@ -556,12 +591,12 @@ private:
     std::unique_ptr<SortModel> model = std::make_unique<SortModel>();
 
     std::unique_ptr<lsp::BackgroundIndexDB> backgroundIndexDb;
-    std::unordered_map<std::string, std::string> fullPkgNameToPath;  // key: fullPkgName
     std::unordered_map<std::string, std::string> pathToFullPkgName;  // key: package path
     std::mutex cimapMtx;
+    // value used in full compilation, then key will be used in incremental compilation to search package was compiled
     std::unordered_map<std::string, std::unique_ptr<LSPCompilerInstance>> CIMap;
     std::unordered_map<std::string, std::unique_ptr<LSPCompilerInstance>> CIMapNotInSrc;
-    std::unique_ptr<LSPCompilerInstance> CIForParse;
+    std::vector<std::unique_ptr<LSPCompilerInstance>> CIsForParse;
     std::unordered_map<std::string, std::unique_ptr<PkgInfo>> pkgInfoMap;         // key: fullPackageName
     std::unordered_map<std::string, std::unique_ptr<PkgInfo>> pkgInfoMapNotInSrc; // key: dirPath for Cangjie file
     // key: fullPackageName, value: PackageSpec's modifier

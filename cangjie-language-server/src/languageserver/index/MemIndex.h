@@ -206,6 +206,45 @@ public:
 
     std::map<std::string, CrossSymbolSlab> pkgCrossSymsMap{};
 
+    void mergeMaps(
+        std::map<std::string, std::map<SymbolID, std::vector<Ref>>>& target,
+        const std::map<std::string, std::map<SymbolID, std::vector<Ref>>>& source
+    ) 
+    {
+        // 遍历源 map 的外层 string 键值对
+        for (const auto& outerPair : source) {
+            const std::string& outerKey = outerPair.first;
+            const std::map<SymbolID, std::vector<Ref>>& innerSourceMap = outerPair.second;
+
+            // 检查目标 map 中是否存在该外层键，不存在则直接插入整个内层 map
+            auto outerIt = target.find(outerKey);
+            if (outerIt == target.end()) {
+                target[outerKey] = innerSourceMap;
+                continue;
+            }
+
+            // 存在外层键，遍历内层 SymbolID 键值对
+            std::map<SymbolID, std::vector<Ref>>& innerTargetMap = outerIt->second;
+            for (const auto& innerPair : innerSourceMap) {
+                const SymbolID& symbolId = innerPair.first;
+                const std::vector<Ref>& sourceVec = innerPair.second;
+
+                // 检查目标内层是否存在该 SymbolID
+                auto innerIt = innerTargetMap.find(symbolId);
+                if (innerIt == innerTargetMap.end()) {
+                    // 不存在则直接插入
+                    innerTargetMap[symbolId] = sourceVec;
+                } else {
+                    // 存在则合并 vector：逐个 push_back
+                    std::vector<Ref>& targetVec = innerIt->second;
+                    for (const Ref& ref : sourceVec) {
+                        targetVec.push_back(ref);
+                    }
+                }
+            }
+        }
+    }
+
     void FindRiddenUp(SymbolID id, std::unordered_set<SymbolID> &ids, SymbolID &topId) override
     {
         for (const auto &relations : pkgRelationsMap) {
