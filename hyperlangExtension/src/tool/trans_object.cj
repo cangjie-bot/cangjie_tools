@@ -29,6 +29,8 @@ public class TransObject {
     public var cjCategory: String = "class"
     var gconfig: GlobalConfig
     let unionTypeSet: ArrayList<String> = ArrayList<String>()
+    var interfaceFieldDecls: Tokens = Tokens()
+    var interfaceCtorAssignments: Tokens = Tokens()
 
     public init(objectType: ObjectType, gconfig: GlobalConfig) {
         this.arkProperties = objectType.properties
@@ -104,7 +106,48 @@ public class TransObject {
             let ctxToken = Tokens(Token(TokenKind.IDENTIFIER, "context"))
 
             let isLast = i >= totalProperties.size - 1
-            genfieldSign(property, arkProp, proName, proType, last: isLast, fromParent: fromParent)
+            if (arkProp.isOptional) {
+                let (typeToken, defToken) = if (let Some(def) <- arkProp.defValue) {
+                    (proType, Token(TokenKind.IDENTIFIER, def))
+                } else {
+                    (Tokens(Token(TokenKind.IDENTIFIER, "Option<${proType}>")), noneToken)
+                }
+                property.append(quote($(proName)!: $(typeToken) = $(defToken)))
+                if (!fromParent) {
+                    let prefix = if (arkProp.isReadOnly()) {
+                        Token(TokenKind.IDENTIFIER, "let")
+                    } else {
+                        Token(TokenKind.IDENTIFIER, "var")
+                    }
+                    let access = if (this.arkCategory == "interface" && !arkName.startsWith("AutoGenType")) {
+                        Token(TokenKind.IDENTIFIER, "private")
+                    } else {
+                        Token(TokenKind.IDENTIFIER, "public")
+                    }
+                    interfaceFieldDecls.append(quote($(access) $(prefix) $(proName): $(typeToken)))
+                    interfaceFieldDecls.append(nl)
+                    interfaceCtorAssignments.append(quote(this.$(proName) = $(proName)))
+                    interfaceCtorAssignments.append(nl)
+                }
+            } else {
+                property.append(quote($(proName): $(proType)))
+                if (!fromParent) {
+                    let prefix = if (arkProp.isReadOnly()) {
+                        Token(TokenKind.IDENTIFIER, "let")
+                    } else {
+                        Token(TokenKind.IDENTIFIER, "var")
+                    }
+                    let access = if (this.arkCategory == "interface" && !arkName.startsWith("AutoGenType")) {
+                        Token(TokenKind.IDENTIFIER, "private")
+                    } else {
+                        Token(TokenKind.IDENTIFIER, "public")
+                    }
+                    interfaceFieldDecls.append(quote($(access) $(prefix) $(proName): $(proType)))
+                    interfaceFieldDecls.append(nl)
+                    interfaceCtorAssignments.append(quote(this.$(proName) = $(proName)))
+                    interfaceCtorAssignments.append(nl)
+                }
+            }
 
             // generate toJS statement for this field
             getPropertyItem.append(
@@ -128,6 +171,7 @@ public class TransObject {
             fromJSValueItem.append(fromJs)
 
             if (!isLast) {
+                property.append(commaToken + nl)
                 getPropertyItem.append(nl)
                 fromJSValueItem.append(commaToken + nl)
             }
@@ -140,6 +184,8 @@ public class TransObject {
         if (!isPropOfInterface) {
             return false
         }
+        interfaceFieldDecls = Tokens()
+        interfaceCtorAssignments = Tokens()
         let classNameToken = Token(TokenKind.IDENTIFIER, arkName)
         let getPropertyItem = Tokens()
         let fromJSValueItem = Tokens()
@@ -182,6 +228,9 @@ public class TransObject {
                         $(fromJSValueItem)
                     )
                 })
+        if (interfaceFieldDecls.size > 0) {
+            propertyMethod.append(interfaceFieldDecls)
+        }
         propertyMethod.append(proMethodTemplate)
         return true
     }
@@ -248,8 +297,8 @@ public class TransObject {
         return isPublicType
     }
 
-    private func generateSuper() {
-        var res = "{ super("
+    private func generateSuperArgs() {
+        var res = ""
         for (i in 0..arkParentsProperties.size) {
             let arkProp = arkParentsProperties[i]
             let isLast = i >= arkParentsProperties.size - 1
@@ -258,7 +307,6 @@ public class TransObject {
                 res += ", "
             }
         }
-        res += ") }"
         return res
     }
 
@@ -311,8 +359,24 @@ public class TransObject {
                 $(modifiersTokens) class $(templateClassNameToken)$(parent)$(classConstraintsToken) {
                     $(eventManager)
                     protected $(classNameToken)($(property)))
-        let brackets = if (propertyOnly && arkParentsProperties.size > 0) {
-            Token(TokenKind.IDENTIFIER, generateSuper()).toTokens()
+        let brackets = if (propertyOnly) {
+            var constructorBody = Tokens()
+            constructorBody.append(quote({))
+            if (arkParentsProperties.size > 0 || interfaceCtorAssignments.size > 0) {
+                constructorBody.append(nl)
+            }
+            if (arkParentsProperties.size > 0) {
+                let superArgs = Token(TokenKind.IDENTIFIER, generateSuperArgs())
+                constructorBody.append(quote(super($(superArgs))))
+                if (interfaceCtorAssignments.size > 0) {
+                    constructorBody.append(nl)
+                }
+            }
+            if (interfaceCtorAssignments.size > 0) {
+                constructorBody.append(interfaceCtorAssignments)
+            }
+            constructorBody.append(quote(}))
+            constructorBody
         } else {
             var constructorBody = Tokens()
                 if (arkParents.size > 0 && (arkParentsCategories[0] == "class" || arkParentsMethods.size > 0)) {
