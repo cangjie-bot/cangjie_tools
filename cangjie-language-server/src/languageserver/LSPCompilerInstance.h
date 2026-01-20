@@ -145,13 +145,16 @@ public:
         const std::unique_ptr<ark::CjoManager> &cjoManager, const std::unique_ptr<ark::DependencyGraph> &graph);
 
     bool CompileAfterParse(
-        const std::unique_ptr<ark::CjoManager> &cjoManager, const std::unique_ptr<ark::DependencyGraph> &graph);
+        const std::unique_ptr<ark::CjoManager> &cjoManager,
+        const std::unique_ptr<ark::DependencyGraph> &graph,
+        const std::string &realPkgName = ""
+    );
 
-    std::unordered_map<std::string, ark::EdgeType> UpdateUpstreamPkgs();
+    std::unordered_map<std::string, ark::EdgeType> UpdateUpstreamPkgs(bool isCear = true);
 
     void UpdateDepGraph(bool isIncrement = true, const std::string &prePkgName = "");
 
-    void UpdateDepGraph(const std::unique_ptr<ark::DependencyGraph> &graph, const std::string &prePkgName);
+    void UpdateDepGraph(const std::unique_ptr<ark::DependencyGraph> &graph, const std::string &prePkgName, bool isCear = true);
 
     ark::Callbacks *callback = nullptr;
     std::string pkgNameForPath; // Real Package Name
@@ -159,6 +162,7 @@ public:
     bool macroExpandSuccess = false;
     std::set<std::string> upstreamPkgs;
     const std::unique_ptr<ark::ModuleManager> &moduleManger;
+    std::string upstreamSourceSetName;
 
     static inline std::shared_mutex mtx;
     static inline PackageMap dependentPackageMap;
