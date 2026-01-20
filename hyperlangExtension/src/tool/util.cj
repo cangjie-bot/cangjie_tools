@@ -32,10 +32,11 @@ public func dedupVarName(name: String): String {
 }
 
 public func checkCangjieKeyword(name: String): String {
-    if (cangjieKeyword.contains(name)) {
-        "`${name}`"
+    let cleaned = name.replace("$", "_")
+    if (cangjieKeyword.contains(cleaned)) {
+        "`${cleaned}`"
     } else {
-        name
+        cleaned
     }
 }
 
