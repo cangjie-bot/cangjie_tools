@@ -398,7 +398,13 @@ func printBundle(logStr: String, isVerbose: Bool): Unit {
 
 @When [os != "Windows"]
 func verifyReadme(): Bool {
-    return fileExists(getPath(DIR_CURRENT, README_FILE)) || fileExists(getPath(DIR_CURRENT, README_ZH_FILE))
+    let fileList = getFileList(DIR_CURRENT)
+    for(fileInfo in fileList){
+        if (Path(fileInfo.path.toString()).fileName == README_FILE || Path(fileInfo.path.toString()).fileName == README_ZH_FILE) {
+            return true
+        }
+    }
+    return false
 }
 
 @When [os == "Windows"]
