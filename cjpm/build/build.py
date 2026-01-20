@@ -36,10 +36,10 @@ def check_call(command, cwd=None):
         return e.returncode
 
 # Build libuv
-def build_uv():
+def build_uv(cmake_option=""):
     if not os.path.exists(LIBUV_BUILD_DIR):
         os.makedirs(LIBUV_BUILD_DIR)
-    returncode = check_call(f"cmake .. -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DUV_BUILD_TESTS=OFF", cwd=LIBUV_BUILD_DIR)
+    returncode = check_call(f"cmake .. {cmake_option} -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DUV_BUILD_TESTS=OFF", cwd=LIBUV_BUILD_DIR)
     if returncode != 0:
         return returncode
     returncode = check_call(f"make -j4", cwd=LIBUV_BUILD_DIR)
@@ -54,7 +54,7 @@ def build_uv():
     return 0
 
 # Build libfswatcher
-def build_fswatcher():
+def build_fswatcher(cmake_option=""):
     if os.path.exists(CPP_OUT_DIR):
         shutil.rmtree(CPP_OUT_DIR)
     if not os.path.exists(THIRD_PARTY_LIBUV_DIR):
@@ -65,10 +65,10 @@ def build_fswatcher():
         if returncode != 0:
             return returncode
     os.makedirs(CPP_BUILD_DIR, exist_ok=True)
-    returncode = check_call("cmake .. -DCMAKE_BUILD_TYPE=Release", cwd=CPP_BUILD_DIR)
+    returncode = check_call(f"cmake .. {cmake_option} -DCMAKE_BUILD_TYPE=Release", cwd=CPP_BUILD_DIR)
     if returncode != 0:
         return returncode
-    returncode = check_call("make -j4", cwd=CPP_BUILD_DIR)
+    returncode = check_call(f"make -j4", cwd=CPP_BUILD_DIR)
     if returncode != 0:
         return returncode
     os.makedirs(CPP_OUT_DIR, exist_ok=True)
@@ -153,10 +153,16 @@ def build(build_type, target, rpath=None):
     os.makedirs(os.path.join(CURRENT_DIR, 'bin', 'cjpm'), exist_ok=True)
     os.makedirs(os.path.join(CURRENT_DIR, '..', 'dist'), exist_ok=True)
 
-    returncode = build_fswatcher()
+    if is_linux or is_macos:
+        returncode = build_fswatcher("")
+    if is_cross_windows:
+        returncode = build_fswatcher("-DCMAKE_TOOLCHAIN_FILE=../mingw-w64-toolchain.cmake -DUV_BUILD_TESTS=OFF")
     if returncode != 0:
         return returncode
-    returncode = build_uv()
+    if is_linux or is_macos:
+        returncode = build_uv("")
+    if is_cross_windows:
+        returncode = build_uv("-DCMAKE_TOOLCHAIN_FILE=../cmake-toolchains/cross-mingw32.cmake -DHOST_ARCH=x86_64")
     if returncode != 0:
         return returncode
 
@@ -180,7 +186,7 @@ def build(build_type, target, rpath=None):
     if is_macos:
         returncode = check_call(f"{cjc} {common_option} {rpath_set_option} --import-path {os.environ['CANGJIE_STDX_PATH']} -L {os.path.join(CURRENT_DIR, 'bin', 'cjpm')} -lcjpm.command -lcjpm.implement -lcjpm.config -lcjpm.util -lcjpm.toml -L {os.environ['CANGJIE_STDX_PATH']} -lstdx.encoding.json -lstdx.serialization.serialization -lstdx.net.tls -lstdx.net.http -lstdx.net.tls.common -lstdx.logger -lstdx.log -lstdx.encoding.url -lstdx.encoding.json.stream -lstdx.crypto.x509 -lstdx.crypto.keys -lstdx.encoding.hex -lstdx.crypto.crypto -lstdx.crypto.digest -lstdx.crypto.common -lstdx.encoding.base64 -lstdx.compress -lstdx.compress.zlib -lstdx.compress.tar -L {os.path.join(CURRENT_DIR, '../cpp/out')} -lfswatcher -luv -lc++ -ldl -lpthread -p {os.path.join(CURRENT_DIR, '..', 'src')} -O2 --output-dir {os.path.join(CURRENT_DIR, 'bin', 'cjpm')} -o cjpm")
     if is_cross_windows:
-        returncode = check_call(f"{cjc} --target=x86_64-windows-gnu {common_option} --import-path {os.path.join(CURRENT_DIR, 'bin')} --import-path {os.environ['CANGJIE_STDX_PATH']} --link-options=--no-insert-timestamp -L {os.path.join(CURRENT_DIR, 'bin', 'cjpm')} -lcjpm.command -lcjpm.implement -lcjpm.config -lcjpm.util -lcjpm.toml -L {os.environ['CANGJIE_STDX_PATH']} -lstdx.encoding.json -lstdx.serialization.serialization -lstdx.net.tls -lstdx.net.http -lstdx.net.tls.common -lstdx.logger -lstdx.log -lstdx.encoding.url -lstdx.encoding.json.stream -lstdx.crypto.x509 -lstdx.crypto.keys -lstdx.encoding.hex -lstdx.crypto.crypto -lstdx.crypto.digest -lstdx.crypto.common -lstdx.encoding.base64 -lstdx.compress -lstdx.compress.zlib -lstdx.compress.tar -lcrypt32 -lpthread -p {os.path.join(CURRENT_DIR, '..', 'src')} -O2 --output-dir {os.path.join(CURRENT_DIR, 'bin', 'cjpm')} -o cjpm.exe")
+        returncode = check_call(f"{cjc} --target=x86_64-windows-gnu {common_option} --import-path {os.path.join(CURRENT_DIR, 'bin')} --import-path {os.environ['CANGJIE_STDX_PATH']} --link-options=--no-insert-timestamp -L {os.path.join(CURRENT_DIR, 'bin', 'cjpm')} -lcjpm.command -lcjpm.implement -lcjpm.config -lcjpm.util -lcjpm.toml -L {os.environ['CANGJIE_STDX_PATH']} -lstdx.encoding.json -lstdx.serialization.serialization -lstdx.net.tls -lstdx.net.http -lstdx.net.tls.common -lstdx.logger -lstdx.log -lstdx.encoding.url -lstdx.encoding.json.stream -lstdx.crypto.x509 -lstdx.crypto.keys -lstdx.encoding.hex -lstdx.crypto.crypto -lstdx.crypto.digest -lstdx.crypto.common -lstdx.encoding.base64 -lstdx.compress -lstdx.compress.zlib -lstdx.compress.tar -lcrypt32 -L {os.path.join(CURRENT_DIR, '../cpp/out')} -lfswatcher -luv -lstdc++ -lgcc -lpthread -p {os.path.join(CURRENT_DIR, '..', 'src')} -O2 --output-dir {os.path.join(CURRENT_DIR, 'bin', 'cjpm')} -o cjpm.exe")
     if is_windows:
         returncode = check_call(f"{cjc} {common_option} --import-path {os.path.join(CURRENT_DIR, 'bin')} --import-path {os.environ['CANGJIE_STDX_PATH']} --link-options=--no-insert-timestamp -L {os.path.join(CURRENT_DIR, 'bin', 'cjpm')} -lcjpm.command -lcjpm.implement -lcjpm.config -lcjpm.util -lcjpm.toml -L {os.environ['CANGJIE_STDX_PATH']} -lstdx.encoding.json -lstdx.serialization.serialization -lstdx.net.tls -lstdx.net.http -lstdx.net.tls.common -lstdx.logger -lstdx.log -lstdx.encoding.url -lstdx.encoding.json.stream -lstdx.crypto.x509 -lstdx.crypto.keys -lstdx.encoding.hex -lstdx.crypto.crypto -lstdx.crypto.digest -lstdx.crypto.common -lstdx.encoding.base64 -lstdx.compress -lstdx.compress.zlib -lstdx.compress.tar -lcrypt32 -lpthread -p {os.path.join(CURRENT_DIR, '..', 'src')} -O2 --output-dir {os.path.join(CURRENT_DIR, 'bin', 'cjpm')} -o cjpm.exe")
     if is_cross_ohos:
