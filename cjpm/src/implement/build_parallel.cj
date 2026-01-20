@@ -190,7 +190,7 @@ class ParallelBuilder {
     }
 
     private func printNotification(downstreamTask: TaskIdentifier, task: TaskIdentifier, notification: Notification): Unit {
-        if (!buildConfig.isVerbose) {
+        if (!buildConfig.isVerbose || !buildConfig.isCompilePipelineParallel) {
             return
         }
         println("Task `${taskId2String(task)}` notifies Task `${taskId2String(downstreamTask)}` with notification `${notification.toString()}`, waiting for ${scs[downstreamTask].count.toString()} tasks")
@@ -284,7 +284,7 @@ class ParallelBuilder {
 
             let future = spawn { =>
                 scs[taskId].waitUntilZero()
-                if (buildConfig.isVerbose) {
+                if (buildConfig.isVerbose && buildConfig.isCompilePipelineParallel) {
                     println("Task `${taskId2String(taskId)}` starts")
                 }
                 let res = action()
@@ -293,7 +293,7 @@ class ParallelBuilder {
                     outputType2Notification.get(task.outputType.toString()).getOrThrow()
                 } else { Err }
                 notify(taskId, notification)
-                if (buildConfig.isVerbose) {
+                if (buildConfig.isVerbose && buildConfig.isCompilePipelineParallel) {
                     let result = if (res) { "success" } else { "failure" }
                     println("Task `${taskId2String(taskId)}` ends in ${result}")
                 }
@@ -748,7 +748,7 @@ private func getDownstreamTasksAndSynCounters(buildConfig: BuildConfig, taskMap:
                 depTasks.add(k)
                 downstreamTasks.addIfAbsent(k, HashSet<TaskIdentifier>())
                 downstreamTasks[k].add(taskId)
-                printDependency(taskId, k, buildConfig.isVerbose)
+                printDependency(taskId, k, buildConfig.isVerbose && buildConfig.isCompilePipelineParallel)
             }
         } else {
             let task = taskMap[taskId]
@@ -756,7 +756,7 @@ private func getDownstreamTasksAndSynCounters(buildConfig: BuildConfig, taskMap:
                 depTasks.add(dep)
                 downstreamTasks.addIfAbsent(dep, HashSet<TaskIdentifier>())
                 downstreamTasks[dep].add(taskId)
-                printDependency(taskId, dep, buildConfig.isVerbose)
+                printDependency(taskId, dep, buildConfig.isVerbose && buildConfig.isCompilePipelineParallel)
             }
 
             for (dep in task.subPkgSet) {
@@ -767,7 +767,7 @@ private func getDownstreamTasksAndSynCounters(buildConfig: BuildConfig, taskMap:
                 depTasks.add(depId)
                 downstreamTasks.addIfAbsent(depId, HashSet<TaskIdentifier>())
                 downstreamTasks[depId].add(taskId)
-                printDependency(taskId, depId, buildConfig.isVerbose)
+                printDependency(taskId, depId, buildConfig.isVerbose && buildConfig.isCompilePipelineParallel)
             }
         }
         scs[taskId] = SyncCounter(depTasks.size)
