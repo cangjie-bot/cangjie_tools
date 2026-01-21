@@ -20,6 +20,11 @@ public let FIXED_SUBPACKAGE = HashSet<String>()
 
 // Command build implement.
 public func doBuild(tomlInfo: TomlInfo, buildConfig: BuildConfig, isScriptDep!: Bool = false): Bool {
+    // check top-level build-related configuration
+    if (!checkBuildConfiguration(tomlInfo, buildConfig)) {
+        return false
+    }
+
     let curResolveData: ModuleResolve = generateResolveData(buildConfig, tomlInfo, isScriptDep) ?? return false
 
     // record '.cjpm-history' file at originTargetPath
@@ -92,6 +97,24 @@ public func doBuild(tomlInfo: TomlInfo, buildConfig: BuildConfig, isScriptDep!: 
                 return false
             }
         }
+    }
+
+    return true
+}
+
+// Check top-level build-related configuration
+func checkBuildConfiguration(tomlInfo: TomlInfo, buildConfig: BuildConfig): Bool {
+    // check cjc-jobs
+    if (let Some(cjcJobs) <- tomlInfo.profile.build.cjcJobs) {
+        if (tomlInfo.profile.build.heuristic) {
+            eprintln("Error: cannot configure both 'profile.build.cjc-jobs' and " +
+                "'profile.build.enable-heuristic-parallelism' at the same time " +
+                "in '${Path(buildConfig.globalConfig.modulePath).join(CONFIG_FILE_NAME).toString()}'")
+            return false
+        }
+        buildConfig.cjcJobs = CjcParallelConfig.Spicific(cjcJobs)
+    } else if (tomlInfo.profile.build.heuristic) {
+        buildConfig.cjcJobs = CjcParallelConfig.Heuristic
     }
 
     return true
