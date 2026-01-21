@@ -74,6 +74,8 @@ std::vector<CodeSnippet> KeywordCompleter::codeSnippetList = {
     {"prop", "prop name: T {get(){val}}", "prop ${0:name}: ${1:T} {\n\tget() {\n\t\t${3:val}\n\t}\n}"},
     {"prop", "prop name: T {get(){val} set(v){}}",
         "prop ${0:name}: ${1:T} {\n\tget() {\n\t\t${3:val}\n\t}\n\tset(v) {\n\t}\n}"},
+    {"common", "common", "common"},
+    {"specific", "specific", "specific"},
 };
 
 std::vector<std::string> KeywordCompleter::keyWordFromLSP = {"true", "false", "When"};
