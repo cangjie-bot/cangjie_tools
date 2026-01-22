@@ -8,6 +8,31 @@ package cjpm.implement
 
 import std.collection.*
 import cjpm.config.*
+import std.env.*
+import std.fs.*
+
+@When[os == "macOS"]
+private func buildCjlintEnvMapMac(): HashMap<String, String> {
+    let envMap = HashMap<String, String>()
+
+    let home = getVariable("CANGJIE_HOME") 
+    if (home.isSome() && !home.getOrThrow().isEmpty()) {
+        let toolLib = Path("${home.getOrThrow()}/tool/lib").toString()
+        envMap["DYLD_LIBRARY_PATH"] = toolLib + ":"
+        envMap["DYLD_FALLBACK_LIBRARY_PATH"] = toolLib + ":"
+    } else {
+
+        eprintln("Warning: CANGJIE_HOME/CJ_HOME not set, cjlint may fail to load dylibs.")
+    }
+
+    return envMap
+}
+
+@When[os != "macOS"]
+private func buildCjlintEnvMapMac(): HashMap<String, String> {
+    return HashMap<String, String>()
+}
+
 
 // Use cjlint to check codes in srcDir
 func buildCodeCheck(buildConfig: BuildConfig): Bool {
@@ -16,7 +41,7 @@ func buildCodeCheck(buildConfig: BuildConfig): Bool {
     }
 
     var tomlInfo = loadModuleFile(DIR_CURRENT) ?? return false
-
+    let cjlintEnv = buildCjlintEnvMapMac()
     if (state.isExperimental) {
         var totalflag = true
         var hasErrors = false
@@ -26,7 +51,7 @@ func buildCodeCheck(buildConfig: BuildConfig): Bool {
                 let cmdStr: String = "cjlint -f ${path} 2>&1"
                 println("check codes in ${path}: ${cmdStr}")
             }
-            let (flag, outInfo, errInfo) = execWithOutput("cjlint", ArrayList<String>(["-f", path.toString()]), spawnForScript: true)
+            let (flag, outInfo, errInfo) = execWithOutput("cjlint", ArrayList<String>(["-f", path.toString()]), envMap: cjlintEnv, spawnForScript: true)
             let output: String = errInfo + outInfo
             print(output)
             totalflag &&= flag
