@@ -41,10 +41,10 @@ func buildCodeCheck(buildConfig: BuildConfig): Bool {
     }
 
     var tomlInfo = loadModuleFile(DIR_CURRENT) ?? return false
-    let cjlintEnv = buildCjlintEnvMapMac()
     if (state.isExperimental) {
         var totalflag = true
         var hasErrors = false
+        let cjlintEnv = buildCjlintEnvMapMac()
         for (path in tomlInfo.pkg.actualSources.allPaths) {
             // Default operation: cjlint -f srcDir
             if (buildConfig.isVerbose) {
