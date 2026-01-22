@@ -820,13 +820,16 @@ void ItemResolverUtil::ResolveFuncParams(std::string &detail,
         if (param->ty == nullptr) {
             continue;
         }
+        auto tyName = GetString(*param->ty);
         bool getTypeByNodeAndType = param->type != nullptr &&
-                                    (GetString(*param->ty) == "UnknownType" ||
+                                    (tyName == "UnknownType" ||
                                         (sourceManager && param->type->astKind == Cangjie::AST::ASTKind::FUNC_TYPE));
         if (getTypeByNodeAndType) {
-            AddTypeByNodeAndType(detail, filePath, param->type.get(), sourceManager);
+            std::string typeName{};
+            AddTypeByNodeAndType(typeName, filePath, param->type.get(), sourceManager);
+            detail += typeName.empty() ? tyName : typeName;
         } else {
-            detail += GetString(*param->ty);
+            detail += tyName;
         }
         GetFuncNamedParam(detail, sourceManager, filePath, param);
     }
@@ -1049,28 +1052,34 @@ int ItemResolverUtil::ResolveFuncParamInsert(std::string &detail, const std::str
             assignExpr = assignExpr->desugarExpr;
         }
         bool flag = param->ty && assignExpr && !assignExpr->ToString().empty();
+        auto tyName = GetString(*param->ty);
         bool getTypeByNodeAndType = param->type != nullptr &&
-                                    (GetString(*param->ty) == "UnknownType" ||
+                                    (tyName == "UnknownType" ||
                                     (sourceManager && param->type->astKind == Cangjie::AST::ASTKind::FUNC_TYPE));
         if (getTypeByNodeAndType) {
-            ItemResolverUtil::AddTypeByNodeAndType(detail, myFilePath, param->type.get(), sourceManager);
+            std::srting typeName{};
+            ItemResolverUtil::AddTypeByNodeAndType(typeName, myFilePath, param->type.get(), sourceManager);
+            detail += typeName.empty() ? tyName : typeName;
             detail += flag ? " = " : "";
             ItemResolverUtil::AddTypeByNodeAndType(detail, myFilePath, assignExpr, sourceManager);
         } else {
-            detail += param->ty ? GetString(*param->ty) : "";
+            detail += param->ty ? tyName : "";
             detail += flag ? (" = " + assignExpr->ToString()) : "";
         }
     } else {
         detail += "${" + std::to_string(numParm) + ":";
         numParm++;
         detail += (paramName.empty() ? "" : (paramName + ": "));
+        auto tyName = GetString(*param->ty);
         bool getTypeByNodeAndType = param->type != nullptr &&
-                                    (GetString(*param->ty) == "UnknownType" ||
+                                    (tyName == "UnknownType" ||
                                     (sourceManager && param->type->astKind == Cangjie::AST::ASTKind::FUNC_TYPE));
         if (getTypeByNodeAndType) {
-            ItemResolverUtil::AddTypeByNodeAndType(detail, myFilePath, param->type.get(), sourceManager);
+            std::srting typeName{};
+            ItemResolverUtil::AddTypeByNodeAndType(typeName, myFilePath, param->type.get(), sourceManager);
+            detail += typeName.empty() ? tyName : typeName;
         } else {
-            detail += (param->ty ? GetString(*param->ty) : "");
+            detail += (param->ty ? tyName : "");
         }
     }
     return numParm;
