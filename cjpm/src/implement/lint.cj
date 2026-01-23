@@ -12,24 +12,18 @@ import std.env.*
 import std.fs.*
 
 @When[os == "macOS"]
-private func buildCjlintEnvMapMac(): HashMap<String, String> {
+private func exportCjlintDylib(): HashMap<String, String> {
     let envMap = HashMap<String, String>()
 
-    let home = getVariable("CANGJIE_HOME") 
-    if (home.isSome() && !home.getOrThrow().isEmpty()) {
-        let toolLib = Path("${home.getOrThrow()}/tool/lib").toString()
-        envMap["DYLD_LIBRARY_PATH"] = toolLib + ":"
-        envMap["DYLD_FALLBACK_LIBRARY_PATH"] = toolLib + ":"
-    } else {
-
-        eprintln("Warning: CANGJIE_HOME/CJ_HOME not set, cjlint may fail to load dylibs.")
+    if (let Some(home) <- getVariable("CANGJIE_HOME") ){
+        envMap["DYLD_LIBRARY_PATH"] = "${home}/tools/lib:"
     }
 
     return envMap
 }
 
 @When[os != "macOS"]
-private func buildCjlintEnvMapMac(): HashMap<String, String> {
+private func exportCjlintDylib(): HashMap<String, String> {
     return HashMap<String, String>()
 }
 
@@ -40,11 +34,11 @@ func buildCodeCheck(buildConfig: BuildConfig): Bool {
         return true
     }
 
-    var tomlInfo = loadModuleFile(DIR_CURRENT) ?? return false
+    var tomlInfo = loadModuleFile(DIR_CURRENT) ?? return false  
     if (state.isExperimental) {
         var totalflag = true
         var hasErrors = false
-        let cjlintEnv = buildCjlintEnvMapMac()
+        let cjlintEnv = exportCjlintDylib()
         for (path in tomlInfo.pkg.actualSources.allPaths) {
             // Default operation: cjlint -f srcDir
             if (buildConfig.isVerbose) {
@@ -89,3 +83,4 @@ func buildCodeCheck(buildConfig: BuildConfig): Bool {
         return true
     }
 }
+
