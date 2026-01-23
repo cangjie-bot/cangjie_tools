@@ -104,6 +104,10 @@ public:
     {
         useDB = flag;
     }
+    static void SetIncrementalOptimize(const bool flag)
+    {
+        incrementalOptimize = flag;
+    }
     static void InitInstance(Callbacks *cb, lsp::IndexDatabase *arkIndexDB);
     void UpdateBuffCache(const std::string &file, bool isContentChange = false);
     void GetRealPath(std::string &path);
@@ -603,6 +607,7 @@ private:
     // key: fullPackageName, value: PackageSpec's modifier
     std::unordered_map<std::string, Modifier> pkgToModMap;
     static bool useDB;
+    static bool incrementalOptimize;
 };
 } // namespace ark
 

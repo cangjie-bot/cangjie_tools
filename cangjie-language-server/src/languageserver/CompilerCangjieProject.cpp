@@ -59,7 +59,7 @@ const unsigned int PROPER_THREAD_COUNT = MAX_THREAD_COUNT == 1 ? MAX_THREAD_COUN
 const int LSP_ERROR_CODE = 503;
 CompilerCangjieProject *CompilerCangjieProject::instance = nullptr;
 bool CompilerCangjieProject::useDB = false;
-
+bool CompilerCangjieProject::incrementalOptimize = true;
 CompilerCangjieProject::CompilerCangjieProject(Callbacks *cb, lsp::IndexDatabase *arkIndexDB) : callback(cb)
 {
     if (useDB) {
@@ -771,7 +771,7 @@ void CompilerCangjieProject::IncrementCompileForComplete(
     const std::string &name, const std::string &filePath, Position pos, const std::string &contents)
 {
     std::string fullPkgName = GetFullPkgName(filePath);
-    if (CIForParse && CIForParse->pkgNameForPath == fullPkgName) {
+    if (incrementalOptimize && CIForParse && CIForParse->pkgNameForPath == fullPkgName) {
         if (pkgInfoMap[fullPkgName]->bufferCache.count(filePath) &&
             !Cangjie::FileUtil::HasExtension(filePath, CANGJIE_MACRO_FILE_EXTENSION)) {
             {
