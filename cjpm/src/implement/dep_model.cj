@@ -851,8 +851,8 @@ class DepModel {
                     result.isMacroPackage = isMacro
                     result.mockUsed = scans |> any { it => it.mockUsed }
                     result.testUsed = scans |> any { it => it.testUsed }
-                    result.dependencies = scans |> flatMap { it => it.dependencies.iterator() } |> collectHashSet |> collectArrayList
-                    result.stdDependencies = scans |> flatMap { it => it.stdDependencies.iterator() } |> collectHashSet |> collectArrayList
+                    result.dependencies = scans.iterator().flatMap { it => it.dependencies.iterator() } |> collectHashSet |> collectArrayList
+                    result.stdDependencies = scans.iterator().flatMap { it => it.stdDependencies.iterator() } |> collectHashSet |> collectArrayList
                     result.features = HashSet() // Isn't necessary further
                     result.timeStamp = (scans.map { it => it.timeStamp } |> max) ?? 0
                     return Ok<RequiresPackages, Array<ScanDependencyError>>(result)
