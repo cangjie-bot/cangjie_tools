@@ -1658,11 +1658,9 @@ bool ItemResolverUtil::IsCustomAnnotation(const Cangjie::AST::Decl &decl)
 
 void ItemResolverUtil::DealAliasType(Ptr<Cangjie::AST::Type> type, std::string &detail)
 {
-    // if (!type || !Ty::IsInitialTy(type->aliasTy)) { return false; }
     if (!type || !type->aliasTy) {
         return;
     }
-    // detail += ": ";
     if (type->astKind == ASTKind::TUPLE_TYPE) {
         auto tupleType = DynamicCast<TupleType>(type.get());
         if (!tupleType) {
@@ -1674,7 +1672,7 @@ void ItemResolverUtil::DealAliasType(Ptr<Cangjie::AST::Type> type, std::string &
             if (!first) {
                 name += ", ";
             }
-            name += GetTypeString(*fieldType);
+            name += GetTypeString(fieldType);
             first = false;
         }
         name += ")";
@@ -1707,13 +1705,12 @@ void ItemResolverUtil::DealAliasType(Ptr<Cangjie::AST::Type> type, std::string &
     auto typeName2 = type->aliasTy->name;
 
     detail += typeName;
-    // GetInitializerInfo(detail, decl, sourceManager, true);
     return;
 }
 
-std::string ItemResolverUtil::GetTypeString(const Cangjie::AST::Type &type)
+std::string ItemResolverUtil::GetTypeString(Ptr<Cangjie::AST::Type> type)
 {
-    if (type.ty == nullptr) {
+    if (!type || !type->ty) {
         return "";
     }
 

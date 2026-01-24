@@ -180,7 +180,7 @@ private:
 
     static void DealAliasType(Ptr<Cangjie::AST::Type> type, std::string &detail);
 
-    static std::string GetTypeString(const Cangjie::AST::Type &type);
+    static std::string GetTypeString(Ptr<Cangjie::AST::Type> type);
 };
 } // namespace ark
 
