@@ -1619,7 +1619,7 @@ void ItemResolverUtil::ResolveTypeAliasDetail(std::string &detail, const Cangjie
 void ItemResolverUtil::DealTypeDetail(std::string &detail, Ptr<Cangjie::AST::Type> type,
                                       const std::string &filePath, Cangjie::SourceManager *sourceManager)
 {
-    if (!Ty::IsInitialTy(type->aliasTy)) {
+    if (!type || !Ty::IsInitialTy(type->aliasTy)) {
         DealAliasType(type, detail);
         return;
     }
@@ -1658,11 +1658,9 @@ bool ItemResolverUtil::IsCustomAnnotation(const Cangjie::AST::Decl &decl)
 
 void ItemResolverUtil::DealAliasType(Ptr<Cangjie::AST::Type> type, std::string &detail)
 {
-    // if (!type || !Ty::IsInitialTy(type->aliasTy)) { return false; }
     if (!type || !type->aliasTy) {
         return;
     }
-    // detail += ": ";
     if (type->astKind == ASTKind::TUPLE_TYPE) {
         auto tupleType = DynamicCast<TupleType>(type.get());
         if (!tupleType) {
@@ -1674,7 +1672,7 @@ void ItemResolverUtil::DealAliasType(Ptr<Cangjie::AST::Type> type, std::string &
             if (!first) {
                 name += ", ";
             }
-            name += GetTypeString(*fieldType);
+            name += GetTypeString(fieldType);
             first = false;
         }
         name += ")";
@@ -1707,18 +1705,20 @@ void ItemResolverUtil::DealAliasType(Ptr<Cangjie::AST::Type> type, std::string &
     auto typeName2 = type->aliasTy->name;
 
     detail += typeName;
-    // GetInitializerInfo(detail, decl, sourceManager, true);
     return;
 }
 
-std::string ItemResolverUtil::GetTypeString(const Cangjie::AST::Type &type)
+std::string ItemResolverUtil::GetTypeString(Ptr<Cangjie::AST::Type> type)
 {
-    if (type.ty == nullptr) {
+    if (!type) {
         return "";
     }
 
     std::string identifier{};
-    return Meta::match(type)([](const RefType &type) { return type.ref.identifier.Val(); },
+    return Meta::match(*type)(
+        [](const RefType &type) {
+            return type.ref.identifier.Val(); 
+        },
         [](const Cangjie::AST::Type &type) {
             auto name = type.ToString();
             return name;
