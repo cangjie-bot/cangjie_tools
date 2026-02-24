@@ -1304,7 +1304,7 @@ void CompletionEnv::CompleteInitFuncDecl(Ptr<Node> node, const std::string &alia
         if (isInvalid) { return; }
         auto targetDecl = decl->type->GetTarget();
         if (targetDecl->IsStructOrClassDecl()) {
-            CompleteInitFuncDecl(targetDecl, aliasName, true);
+            CompleteInitFuncDecl(targetDecl, aliasName.empty() ? decl->identifier : aliasName, true);
         }
     }
 }
