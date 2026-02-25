@@ -253,6 +253,7 @@
 {"completion":{"testFile":"LSP_Completion_EnumConstructor_001.test","id":"9"}}
 {"completion":{"testFile":"LSP_Completion_Common_Specific_01.test","id":"9"}}
 {"completion":{"testFile":"LSP_Completion_Common_Specific_02.test","id":"9"}}
+{"completion":{"testFile":"LSP_Completion_2026021318131.test","id":"12"}}
 
 {"diagnostic":{"testFile":"LSP_Diagnostic_Tuple_001.test"}}
 {"diagnostic":{"testFile":"LSP_Diagnostic_Operator_001.test"}}
