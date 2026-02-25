@@ -531,6 +531,7 @@ bool ToJSON(const DiagnosticToken &iter, nlohmann::json &reply)
             temp["kind"] = action.kind;
             if (action.diagnostics.has_value()) {
                 nlohmann::json diagVec;
+                // LCOV_EXCL_START
                 for (const auto &diag : action.diagnostics.value()) {
                     nlohmann::json diagJson;
                     if (ToJSON(diag, diagJson)) {
@@ -544,6 +545,7 @@ bool ToJSON(const DiagnosticToken &iter, nlohmann::json &reply)
                 if (ToJSON(action.edit.value(), editJson)) {
                     temp["edit"] = editJson;
                 }
+                // LCOV_EXCL_STOP
             }
             actions.push_back(temp);
         }

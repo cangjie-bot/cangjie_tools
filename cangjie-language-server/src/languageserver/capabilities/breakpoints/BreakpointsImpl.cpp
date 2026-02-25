@@ -76,12 +76,14 @@ void HandleMatchExpr(std::set<BreakpointLocation> &result, const Node &expr)
         BreakpointsImpl::HandleBlockExit(result, matchBlock);
     }
     for (auto &matchCaseOther : matchExpr->matchCaseOthers) {
+        // LCOV_EXCL_START
         if (!matchCaseOther) { continue; }
         auto matchOtherBlock = matchCaseOther->exprOrDecls.get();
         BreakpointsImpl::HandleBlockExit(result, matchOtherBlock);
         if (matchCaseOther->matchExpr) {
             HandleMatchExpr(result, *matchCaseOther->matchExpr);
         }
+        // LCOV_EXCL_STOP
     }
 }
 

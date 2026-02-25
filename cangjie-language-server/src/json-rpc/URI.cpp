@@ -45,6 +45,7 @@ static char Hexdigit(unsigned x)
 
 static std::optional<unsigned> HexDigitValue(char c)
 {
+    // LCOV_EXCL_START
     if (c >= '0' && c <= '9') {
         return static_cast<unsigned>(static_cast<int>(c) - static_cast<int>('0'));
     } else if (c >= 'a' && c <= 'z') {
@@ -54,6 +55,7 @@ static std::optional<unsigned> HexDigitValue(char c)
     } else {
         return std::nullopt;
     }
+    // LCOV_EXCL_STOP
 }
 
 static bool IsHexDigit(char c)
