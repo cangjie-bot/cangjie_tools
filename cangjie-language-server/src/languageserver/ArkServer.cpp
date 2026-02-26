@@ -84,7 +84,7 @@ void ArkServer::FindDocumentHighlights(const std::string &file, const TextDocume
         }
 
         DocumentHighlightImpl::FindDocumentHighlights(*(inputAST.ast), result, pos);
-        
+
         if (inputAST.useASTCache) {
             std::vector<DiagnosticToken> diagnostics = callback->GetDiagsOfCurFile(file);
             UpdateModifierDiag(inputAST, diagnostics, file);
@@ -651,19 +651,8 @@ void ArkServer::FindCompletion(const CompletionParams &params, const std::string
         reply(value);
     };
 
-    int fileId;
-    if (Options::GetInstance().IsOptionSet("test")) {
-        fileId = CompilerCangjieProject::GetInstance()->GetFileID(file);
-    } else {
-        fileId = CompilerCangjieProject::GetInstance()->GetFileIDForCompete(file);
-    }
-    if (fileId < 0) {
-        nullValueReply();
-        return;
-    }
-
     Cangjie::Position pos = {
-        static_cast<unsigned int>(fileId),
+        static_cast<unsigned int>(0),
         params.position.line,
         params.position.column
     };
@@ -676,7 +665,6 @@ void ArkServer::FindCompletion(const CompletionParams &params, const std::string
             return;
         }
         CompletionImpl::CodeComplete(*(input.ast), pos, result, prefix);
-        CompilerCangjieProject::GetInstance()->ClearParseCache();
         CompletionList completionList;
         for (auto &iter : result.completions) {
             if (prefix.back() == '.' || IsMatchingCompletion(prefix, iter.name)) {
@@ -694,7 +682,6 @@ void ArkServer::FindCompletion(const CompletionParams &params, const std::string
         }
         ValueOrError val(ValueOrErrorCheck::VALUE, jsonItems);
         reply(val);
-        CompilerCangjieProject::GetInstance()->ClearParseCache();
     };
 
     arkSchedulerOfComplete->RunWithASTCache("Completion", file, pos, action);
@@ -742,24 +729,9 @@ void ArkServer::FindSignatureHelp(const SignatureHelpParams &params, const std::
         ValueOrError value(ValueOrErrorCheck::VALUE, jsonValue);
         reply(value);
     };
-    auto nullValueReply = [reply]() {
-        ValueOrError value(ValueOrErrorCheck::VALUE, nullptr);
-        reply(value);
-    };
- 
-    int fileId;
-    if (Options::GetInstance().IsOptionSet("test")) {
-        fileId = CompilerCangjieProject::GetInstance()->GetFileID(file);
-    } else {
-        fileId = CompilerCangjieProject::GetInstance()->GetFileIDForCompete(file);
-    }
-    if (fileId < 0) {
-        nullValueReply();
-        return;
-    }
- 
+
     Cangjie::Position pos = {
-        static_cast<unsigned int>(fileId),
+        static_cast<unsigned int>(0),
         params.position.line,
         params.position.column
     };
@@ -908,8 +880,11 @@ void ArkServer::ChangeWatchedFiles(const std::string &file, FileChangeType type,
                 Logger::Instance().LogMessage(MessageType::MSG_INFO, "recieve file change, but contens are same.");
                 return;
             }
+            auto pkgName = CompilerCangjieProject::GetInstance()->GetFullPkgName(file);
             int64_t version = docMgr->AddDoc(file, 0, contents);
             AddDoc(file, contents, version, ark::NeedDiagnostics::YES, true);
+            CompilerCangjieProject::GetInstance()->
+                UpdateFileStatusInCI(pkgName, file, CompilerInstance::SrcCodeChangeState::CHANGED);
             return;
         }
         if (type == FileChangeType::CREATED) {
@@ -925,7 +900,9 @@ void ArkServer::ChangeWatchedFiles(const std::string &file, FileChangeType type,
         if (type == FileChangeType::DELETED) {
             Logger::Instance().LogMessage(MessageType::MSG_INFO, "delete the file:  " + file);
             CompilerCangjieProject::GetInstance()->IncrementForFileDelete(file);
-            CompilerCangjieProject::GetInstance()->GetBgIndexDB()->DeleteFiles({file});
+            if (CompilerCangjieProject::GetUseDB()) {
+                CompilerCangjieProject::GetInstance()->GetBgIndexDB()->DeleteFiles({file});
+            }
             this->callback->RemoveDocByFile(input.inputs.fileName);
         }
         if (!FileUtil::FileExist(input.onEditFile)) {
